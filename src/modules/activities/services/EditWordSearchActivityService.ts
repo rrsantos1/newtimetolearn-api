@@ -141,6 +141,8 @@ export class EditWordSearchActivityService {
     };
     version.status = ActivityVersionStatus.DRAFT;
     version.submittedAt = null;
+    version.reviewFeedback = null;
+    version.reviewedAt = null;
 
     const savedVersion = await this.activityVersionRepository.save(
       this.manager,

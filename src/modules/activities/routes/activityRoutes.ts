@@ -7,6 +7,7 @@ import { getActivityBySlugController } from "../controllers/getActivityBySlugCon
 import { listActivitiesController } from "../controllers/listActivitiesController";
 import { updateWordSearchActivityController } from "../controllers/updateWordSearchActivityController";
 import { approveActivityVersionController } from "../controllers/approveActivityVersionController";
+import { reviewActivityVersionController } from "../controllers/reviewActivityVersionController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -64,5 +65,16 @@ export async function activityRoutes(
       ],
     },
     approveActivityVersionController,
+  );
+
+  app.patch(
+    "/:slug/review",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.ADMIN),
+      ],
+    },
+    reviewActivityVersionController,
   );
 }
