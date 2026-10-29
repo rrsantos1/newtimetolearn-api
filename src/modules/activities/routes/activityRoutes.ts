@@ -9,6 +9,7 @@ import { updateWordSearchActivityController } from "../controllers/updateWordSea
 import { approveActivityVersionController } from "../controllers/approveActivityVersionController";
 import { reviewActivityVersionController } from "../controllers/reviewActivityVersionController";
 import { submitActivityVersionController } from "../controllers/submitActivityVersionController";
+import { deleteActivityController } from "../controllers/deleteActivityController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -88,5 +89,16 @@ export async function activityRoutes(
       ],
     },
     submitActivityVersionController,
+  );
+
+  app.delete(
+    "/:slug",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    deleteActivityController,
   );
 }
