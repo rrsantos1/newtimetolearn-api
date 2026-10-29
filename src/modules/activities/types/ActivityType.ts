@@ -1,0 +1,16 @@
+export enum ActivityType {
+  QUIZ = "quiz",
+  WORD_SEARCH = "word_search",
+  CROSSWORD = "crossword",
+  CLOZE = "cloze",
+  MULTIPLE_CHOICE = "multiple_choice",
+  FILL_IN_THE_BLANK = "fill_in_the_blank",
+  DRAG_DROP = "drag_drop",
+  SENTENCE_ORDER = "sentence_order",
+  BOARD_GAME = "board_game",
+  ROULETTE = "roulette",
+  HANGMAN = "hangman",
+  MEMORY = "memory",
+  FILL_IN_BLANKS = "fill_in_blanks",
+  MOLE_HIT = "mole_hit",
+}
