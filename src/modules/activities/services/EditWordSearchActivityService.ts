@@ -141,12 +141,16 @@ export class EditWordSearchActivityService {
       wordPositions: generatedData.wordPositions,
     };
     version.status = input.isAdmin
-        ? ActivityVersionStatus.PUBLISHED
-        : ActivityVersionStatus.DRAFT;
+    ? ActivityVersionStatus.PUBLISHED
+    : ActivityVersionStatus.DRAFT;
+
     version.publishedAt = input.isAdmin ? new Date() : null;
     version.submittedAt = null;
-    version.reviewFeedback = null;
-    version.reviewedAt = null;
+
+    if (input.isAdmin) {
+        version.reviewFeedback = null;
+        version.reviewedAt = null;
+    }
 
     const savedVersion = await this.activityVersionRepository.save(
       this.manager,
