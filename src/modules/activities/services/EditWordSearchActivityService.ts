@@ -17,6 +17,7 @@ import { ActivityType } from "../types/ActivityType";
 interface EditWordSearchActivityInput extends CreateWordSearchActivityBody {
   slug: string;
   teacherId: string;
+  isAdmin: boolean;
 }
 
 interface EditWordSearchActivityResult {
@@ -139,7 +140,10 @@ export class EditWordSearchActivityService {
       grid: generatedData.grid,
       wordPositions: generatedData.wordPositions,
     };
-    version.status = ActivityVersionStatus.DRAFT;
+    version.status = input.isAdmin
+        ? ActivityVersionStatus.PUBLISHED
+        : ActivityVersionStatus.DRAFT;
+    version.publishedAt = input.isAdmin ? new Date() : null;
     version.submittedAt = null;
     version.reviewFeedback = null;
     version.reviewedAt = null;
@@ -148,6 +152,13 @@ export class EditWordSearchActivityService {
       this.manager,
       version,
     );
+
+    if (input.isAdmin) {
+        activity.status = ActivityStatus.PUBLISHED;
+        activity.currentPublishedVersionId = savedVersion.id;
+
+        await this.activityRepository.save(this.manager, activity);
+    }
 
     return {
       activity,

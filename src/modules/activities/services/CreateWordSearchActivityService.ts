@@ -102,7 +102,9 @@ export class CreateWordSearchActivityService {
       grid: generatedData.grid,
       wordPositions: generatedData.wordPositions,
     };
-    version.status = ActivityVersionStatus.DRAFT;
+    version.status = input.isAdmin
+        ? ActivityVersionStatus.PUBLISHED
+        : ActivityVersionStatus.DRAFT;
     version.revision = 1;
     version.submittedAt = null;
     version.publishedAt = null;

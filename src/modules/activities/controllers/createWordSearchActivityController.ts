@@ -3,6 +3,7 @@ import { AppDataSource } from "../../../shared/database/data-source";
 import { AppError } from "../../../shared/errors/AppError";
 import { makeCreateWordSearchActivityService } from "../factories/make-create-word-search-activity-service";
 import { createWordSearchActivitySchema } from "../schemas/createWordSearchActivitySchema";
+import { RoleCode } from "../../users/types/RoleCode";
 
 export async function createWordSearchActivityController(
   request: FastifyRequest,
@@ -34,6 +35,7 @@ export async function createWordSearchActivityController(
 
         return service.execute({
           teacherId: request.user.sub,
+          isAdmin: request.user.roles.includes(RoleCode.ADMIN),
           ...parsedBody.data,
         });
       },

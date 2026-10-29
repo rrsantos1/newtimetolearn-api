@@ -4,6 +4,7 @@ import { AppDataSource } from "../../../shared/database/data-source";
 import { AppError } from "../../../shared/errors/AppError";
 import { makeEditWordSearchActivityService } from "../factories/make-edit-word-search-activity-service";
 import { createWordSearchActivitySchema } from "../schemas/createWordSearchActivitySchema";
+import { RoleCode } from "../../users/types/RoleCode";
 
 const paramsSchema = z.object({
   slug: z.string().min(1),
@@ -51,9 +52,10 @@ export async function updateWordSearchActivityController(
         const service = makeEditWordSearchActivityService(manager);
 
         return service.execute({
-          slug: parsedParams.data.slug,
-          teacherId: request.user.sub,
-          ...parsedBody.data,
+            slug: parsedParams.data.slug,
+            teacherId: request.user.sub,
+            isAdmin: request.user.roles.includes(RoleCode.ADMIN),
+            ...parsedBody.data,
         });
       },
     );

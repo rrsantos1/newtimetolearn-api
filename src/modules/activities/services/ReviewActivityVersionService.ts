@@ -61,12 +61,14 @@ export class ReviewActivityVersionService {
       );
     }
 
-    if (latestVersion.status !== ActivityVersionStatus.DRAFT) {
-      throw new AppError(
-        "ACTIVITY_VERSION_NOT_REVIEWABLE",
-        409,
-        "A versão mais recente não está disponível para revisão.",
-      );
+    if (
+        latestVersion.status !== ActivityVersionStatus.PENDING_REVIEW
+        ) {
+        throw new AppError(
+            "ACTIVITY_VERSION_NOT_REVIEWABLE",
+            409,
+            "A versão mais recente não está aguardando revisão administrativa.",
+        );
     }
 
     const feedback = input.feedback.trim();

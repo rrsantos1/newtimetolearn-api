@@ -57,12 +57,14 @@ export class ApproveActivityVersionService {
       );
     }
 
-    if (latestVersion.status !== ActivityVersionStatus.DRAFT) {
-      throw new AppError(
-        "ACTIVITY_VERSION_NOT_AWAITING_APPROVAL",
-        409,
-        "A versão mais recente não está aguardando aprovação.",
-      );
+    if (
+        latestVersion.status !== ActivityVersionStatus.PENDING_REVIEW
+        ) {
+        throw new AppError(
+            "ACTIVITY_VERSION_NOT_AWAITING_APPROVAL",
+            409,
+            "A versão mais recente não está aguardando aprovação.",
+        );
     }
 
     const publishedAt = new Date();
