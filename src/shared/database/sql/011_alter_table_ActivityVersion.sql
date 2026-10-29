@@ -1,0 +1,3 @@
+ALTER TABLE activity_versions
+  ADD COLUMN IF NOT EXISTS review_feedback VARCHAR(2000),
+  ADD COLUMN IF NOT EXISTS reviewed_at TIMESTAMPTZ;

@@ -96,4 +96,19 @@ export class ActivityVersion extends BaseEntity {
     nullable: true,
   })
   generatedData!: Record<string, unknown> | null;
+
+  @Column({
+    name: "review_feedback",
+    type: "varchar",
+    length: 2000,
+    nullable: true,
+  })
+  reviewFeedback!: string | null;
+
+  @Column({
+    name: "reviewed_at",
+    type: "timestamptz",
+    nullable: true,
+  })
+  reviewedAt!: Date | null;
 }
