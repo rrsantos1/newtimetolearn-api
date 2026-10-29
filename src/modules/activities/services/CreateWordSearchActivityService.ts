@@ -103,16 +103,24 @@ export class CreateWordSearchActivityService {
       wordPositions: generatedData.wordPositions,
     };
     version.status = input.isAdmin
-        ? ActivityVersionStatus.PUBLISHED
-        : ActivityVersionStatus.DRAFT;
+      ? ActivityVersionStatus.PUBLISHED
+      : ActivityVersionStatus.DRAFT;
+
     version.revision = 1;
     version.submittedAt = null;
-    version.publishedAt = null;
+    version.publishedAt = input.isAdmin ? new Date() : null;
 
     const savedVersion = await this.activityVersionRepository.save(
       this.manager,
       version,
     );
+
+    if (input.isAdmin) {
+      savedActivity.status = ActivityStatus.PUBLISHED;
+      savedActivity.currentPublishedVersionId = savedVersion.id;
+
+      await this.activityRepository.save(this.manager, savedActivity);
+    }
 
     return {
       activity: savedActivity,
