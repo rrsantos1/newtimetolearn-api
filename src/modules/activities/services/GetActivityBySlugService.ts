@@ -23,6 +23,7 @@ export interface ActivityVersionDetails {
   generatedData: Record<string, unknown> | null;
   submittedAt: Date | null;
   publishedAt: Date | null;
+  reviewFeedback: string | null;
 }
 
 export interface GetActivityBySlugResponse {
@@ -124,6 +125,7 @@ export class GetActivityBySlugService {
         generatedData: selectedVersion.generatedData,
         submittedAt: selectedVersion.submittedAt,
         publishedAt: selectedVersion.publishedAt,
+        reviewFeedback: selectedVersion.reviewFeedback,
       },
     };
   }
