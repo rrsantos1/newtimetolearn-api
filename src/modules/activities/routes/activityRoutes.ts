@@ -6,6 +6,7 @@ import { createWordSearchActivityController } from "../controllers/createWordSea
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
 import { listActivitiesController } from "../controllers/listActivitiesController";
 import { updateWordSearchActivityController } from "../controllers/updateWordSearchActivityController";
+import { approveActivityVersionController } from "../controllers/approveActivityVersionController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -52,5 +53,16 @@ export async function activityRoutes(
       ],
     },
     updateWordSearchActivityController,
+  );
+
+  app.patch(
+    "/:slug/approve",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.ADMIN),
+      ],
+    },
+    approveActivityVersionController,
   );
 }
