@@ -8,6 +8,7 @@ import { listActivitiesController } from "../controllers/listActivitiesControlle
 import { updateWordSearchActivityController } from "../controllers/updateWordSearchActivityController";
 import { approveActivityVersionController } from "../controllers/approveActivityVersionController";
 import { reviewActivityVersionController } from "../controllers/reviewActivityVersionController";
+import { submitActivityVersionController } from "../controllers/submitActivityVersionController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -76,5 +77,16 @@ export async function activityRoutes(
       ],
     },
     reviewActivityVersionController,
+  );
+
+  app.patch(
+    "/:slug/submit",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    submitActivityVersionController,
   );
 }
