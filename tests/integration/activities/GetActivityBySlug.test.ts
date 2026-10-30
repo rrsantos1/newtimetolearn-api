@@ -373,6 +373,60 @@ describe("GET /api/v1/activities/:slug - integração HTTP", () => {
     ]);
   });
 
+  it("preserva o gabarito da cruzadinha para o professor proprietário", async () => {
+    const owner = await createUserWithRole(RoleCode.TEACHER);
+    const token = createToken(owner.id, RoleCode.TEACHER);
+    const slug = createSlug();
+
+    await createActivityWithVersions({
+      teacherId: owner.id,
+      slug,
+      type: ActivityType.CROSSWORD,
+      status: ActivityStatus.PUBLISHED,
+      versions: [
+        {
+          name: "Minha cruzadinha",
+          status: ActivityVersionStatus.PUBLISHED,
+        },
+      ],
+      currentPublishedVersionIndex: 0,
+      content: {
+        title: "Animais",
+        words: [
+          { word: "GATO", clue: "Felino doméstico" },
+          { word: "CÃO", clue: "Melhor amigo do homem" },
+        ],
+      },
+      generatedData: {
+        grid: [["G", "A", "T", "O"]],
+        clues: [
+          { number: 1, clue: "Felino doméstico", direction: "across", row: 0, col: 0, word: "GATO" },
+        ],
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/v1/activities/${slug}`,
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    const body = response.json();
+    expect(body.data.isOwner).toBe(true);
+    expect(body.data.version.content.words).toEqual([
+      { word: "GATO", clue: "Felino doméstico" },
+      { word: "CÃO", clue: "Melhor amigo do homem" },
+    ]);
+    expect(body.data.version.generatedData.grid).toEqual([
+      ["G", "A", "T", "O"],
+    ]);
+    expect(body.data.version.generatedData.clues[0].word).toBe("GATO");
+  });
+
   it("não permite que um aluno consulte uma atividade não publicada", async () => {
     const owner = await createUserWithRole(RoleCode.TEACHER);
     const student = await createUserWithRole(RoleCode.STUDENT);
