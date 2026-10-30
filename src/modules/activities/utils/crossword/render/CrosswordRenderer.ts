@@ -1,4 +1,5 @@
 import { CrosswordBoard } from "../board/CrosswordBoard";
+import { CrosswordGenerationError } from "../../../errors/CrosswordGenerationError";
 
 export interface CrosswordClue {
   readonly number: number;
@@ -62,11 +63,17 @@ export class CrosswordRenderer {
             placement.word.word.length
           )
       ) {
-        grid[
-          coordinate.row
-        ][coordinate.col] =
-          placement.word.word[index];
+        const gridRow = grid[coordinate.row];
+        const letter = placement.word.word[index];
 
+        if (!gridRow || letter === undefined) {
+          throw new CrosswordGenerationError(
+            "O gerador retornou uma posição inválida ao montar a grade.",
+            "INVALID_PLACEMENT"
+          );
+        }
+
+        gridRow[coordinate.col] = letter;
         index++;
       }
     }
