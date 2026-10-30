@@ -199,11 +199,9 @@ export class CrosswordBoard {
 
   public clone(): CrosswordBoard {
     const clonedCellStore = this.cellStore.clone();
-    const clonedLetterStore = new LetterStore();
-
-    for (const cell of clonedCellStore.values()) {
-      clonedLetterStore.register(cell);
-    }
+    const clonedLetterStore = this.letterStore.clone(
+      clonedCellStore.values()
+    );
 
     return new CrosswordBoard(
       this.rows,
