@@ -77,9 +77,20 @@ export class SubmitWordSearchAttemptService {
       expectedWords = clueWords;
     }
 
-    const normalizedExpectedWords = [...new Set(expectedWords)];
-    const normalizedFoundWords = [...new Set(input.wordsFound.map(normalizeWord).filter(Boolean))];
-    const validFoundWords = normalizedFoundWords.filter((word) => normalizedExpectedWords.includes(word));
+    const normalizedExpectedWords = activity.type === ActivityType.WORD_SEARCH
+      ? [...new Set(expectedWords)]
+      : expectedWords;
+    const normalizedFoundWords = input.wordsFound.map(normalizeWord).filter(Boolean);
+    const answersToMatch = activity.type === ActivityType.WORD_SEARCH
+      ? [...new Set(normalizedFoundWords)]
+      : normalizedFoundWords;
+    const remainingExpectedWords = [...normalizedExpectedWords];
+    const validFoundWords = answersToMatch.flatMap((word) => {
+      const matchingIndex = remainingExpectedWords.indexOf(word);
+      if (matchingIndex < 0) return [];
+      remainingExpectedWords.splice(matchingIndex, 1);
+      return [word];
+    });
 
     const elapsedSeconds = Math.max(0, Math.floor(input.elapsedSeconds));
     const timeLimitSeconds = Math.max(1, version.timeLimitSeconds ?? 900);
