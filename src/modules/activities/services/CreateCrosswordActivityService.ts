@@ -9,6 +9,7 @@ import { ActivityVisibility } from "../types/ActivityVisibility";
 import { DEFAULT_ACTIVITY_TIME_LIMIT_SECONDS } from "../constants/activityDefaults";
 import { generateActivitySlug } from "../utils/generateActivitySlug";
 import { generateCrosswordPuzzle } from "../utils/crossword/generateCrosswordPuzzle";
+import { normalizeCrosswordAnswer } from "../utils/crossword/normalizeCrosswordAnswer";
 import type { CrosswordRenderResult } from "../utils/crossword/render/CrosswordRenderer";
 import type { CreateCrosswordActivityInput } from "../types/crossword/CreateCrosswordActivityInput";
 import { AppError } from "../../../shared/errors/AppError";
@@ -40,7 +41,10 @@ export class CreateCrosswordActivityService {
 
     try {
       generatedData = generateCrosswordPuzzle(
-        validatedContent.words,
+        validatedContent.words.map((entry) => ({
+          ...entry,
+          word: normalizeCrosswordAnswer(entry.word).normalized,
+        })),
         25,
         25,
       );
