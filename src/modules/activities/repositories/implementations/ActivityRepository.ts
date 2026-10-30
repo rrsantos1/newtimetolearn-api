@@ -77,42 +77,46 @@ export class ActivityRepository implements IActivityRepository {
   async list(
     filters: ListActivitiesFilters,
   ): Promise<ListActivitiesResult> {
-    const { page, limit, teacherId, includeAll } = filters;
+    const { page, limit, teacherId, scope } = filters;
 
     const query = this.repository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.versions", "version")
       .where("activity.deleted_at IS NULL");
 
-    if (!includeAll) {
+    if (scope === "mine") {
       if (!teacherId) {
         throw new Error(
-          "O identificador do professor é obrigatório para listar atividades.",
+          "O identificador do professor é obrigatório para listar atividades próprias.",
         );
       }
 
-      query.andWhere(
-        `(
-          activity.teacher_id = :teacherId
-          OR (
-            activity.status = :publishedStatus
-            AND activity.current_published_version_id IS NOT NULL
-            AND EXISTS (
-              SELECT 1
-              FROM activity_versions published_version
-              WHERE published_version.id =
-                activity.current_published_version_id
-                AND published_version.activity_id = activity.id
-                AND published_version.status = :versionPublishedStatus
-            )
-          )
-        )`,
-        {
-          teacherId,
+      query.andWhere("activity.teacher_id = :teacherId", { teacherId });
+    }
+
+    if (scope === "explore") {
+      if (!teacherId) {
+        throw new Error(
+          "O identificador do professor é obrigatório para explorar atividades.",
+        );
+      }
+
+      query
+        .andWhere("activity.teacher_id <> :teacherId", { teacherId })
+        .andWhere("activity.status = :publishedStatus", {
           publishedStatus: ActivityStatus.PUBLISHED,
-          versionPublishedStatus: ActivityVersionStatus.PUBLISHED,
-        },
-      );
+        })
+        .andWhere("activity.current_published_version_id IS NOT NULL")
+        .andWhere(
+          `EXISTS (
+            SELECT 1
+            FROM activity_versions published_version
+            WHERE published_version.id = activity.current_published_version_id
+              AND published_version.activity_id = activity.id
+              AND published_version.status = :versionPublishedStatus
+          )`,
+          { versionPublishedStatus: ActivityVersionStatus.PUBLISHED },
+        );
     }
 
     const [items, total] = await query
