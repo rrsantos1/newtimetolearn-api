@@ -5,7 +5,7 @@ export interface ListActivitiesFilters {
   page: number;
   limit: number;
   teacherId?: string;
-  includeAll: boolean;
+  scope: "mine" | "explore" | "all";
 }
 
 export interface ListActivitiesResult {
