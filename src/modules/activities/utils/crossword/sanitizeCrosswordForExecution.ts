@@ -120,7 +120,13 @@ export function sanitizeCrosswordForExecution(
     for (let index = 0; index < length; index += 1) {
       const row = clue.row + (clue.direction === "down" ? index : 0);
       const col = clue.col + (clue.direction === "across" ? index : 0);
-      grid[row][col] = "";
+      const gridRow = grid[row];
+
+      if (!gridRow) {
+        return { content: safeContent, generatedData: null };
+      }
+
+      gridRow[col] = "";
     }
   }
 
