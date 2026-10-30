@@ -34,6 +34,7 @@ export class CrosswordBuilder {
     }
 
     const remainingWords = [...words];
+    const initialPlacementCount = this.board.getPlacements().length;
     const workingBoard = this.board.clone();
     const workingBuilder = new CrosswordBuilder(workingBoard);
 
@@ -51,7 +52,7 @@ export class CrosswordBuilder {
       );
     }
 
-    for (const placement of result.getPlacements()) {
+    for (const placement of result.getPlacements().slice(initialPlacementCount)) {
       this.writer.write({
         word: placement.word,
         row: placement.row,
