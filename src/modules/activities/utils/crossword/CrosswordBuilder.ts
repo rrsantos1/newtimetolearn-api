@@ -257,9 +257,13 @@ export class CrosswordBuilder {
       index < remainingWords.length;
       index++
     ) {
+      const candidate = remainingWords[index];
+      const currentLongest = remainingWords[longestIndex];
+
       if (
-        remainingWords[index].word.length >
-        remainingWords[longestIndex].word.length
+        candidate &&
+        currentLongest &&
+        candidate.word.length > currentLongest.word.length
       ) {
         longestIndex = index;
       }
