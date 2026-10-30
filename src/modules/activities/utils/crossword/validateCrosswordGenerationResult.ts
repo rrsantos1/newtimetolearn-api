@@ -77,10 +77,11 @@ export function validateCrosswordGenerationResult(
 
   const occupiedCells = new Map<
     string,
-    { letter: string; direction: "across" | "down" }
+    { letter: string; direction: "across" | "down"; placementIndex: number }
   >();
+  const connectedPlacements = placements.map(() => new Set<number>());
 
-  for (const placement of placements) {
+  for (const [placementIndex, placement] of placements.entries()) {
     const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
     const length = normalizedWord.length;
     const hasValidCoordinates =
@@ -129,12 +130,44 @@ export function validateCrosswordGenerationResult(
             "INVALID_PLACEMENT",
           );
         }
+
+        connectedPlacements[placementIndex].add(existingCell.placementIndex);
+        connectedPlacements[existingCell.placementIndex].add(placementIndex);
       } else {
         occupiedCells.set(key, {
           letter,
           direction: placement.direction,
+          placementIndex,
         });
       }
+    }
+  }
+
+  if (placements.length > 1) {
+    const visited = new Set<number>();
+    const pending = [0];
+
+    while (pending.length > 0) {
+      const currentIndex = pending.pop();
+
+      if (currentIndex === undefined || visited.has(currentIndex)) {
+        continue;
+      }
+
+      visited.add(currentIndex);
+
+      for (const neighbor of connectedPlacements[currentIndex]) {
+        if (!visited.has(neighbor)) {
+          pending.push(neighbor);
+        }
+      }
+    }
+
+    if (visited.size !== placements.length) {
+      throw new CrosswordGenerationError(
+        "Todas as respostas precisam formar uma única estrutura conectada.",
+        "INVALID_PLACEMENT",
+      );
     }
   }
 }
