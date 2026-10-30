@@ -11,6 +11,10 @@ describe("normalizeCrosswordAnswer", () => {
   it("preserva o texto original sem espaços externos", () => {
     expect(normalizeCrosswordAnswer("  Coração  ").original).toBe("Coração");
   });
+
+  it("normaliza caracteres acentuados em forma Unicode decomposta", () => {
+    expect(normalizeCrosswordAnswer("Cafe\u0301").normalized).toBe("CAFE");
+  });
 });
 
 describe("crosswordContentSchema", () => {
@@ -59,6 +63,18 @@ describe("crosswordContentSchema", () => {
     }));
 
     expect(crosswordContentSchema.safeParse({ words }).success).toBe(false);
+  });
+
+  it("rejeita respostas equivalentes após remover espaços e hífens", () => {
+    expect(
+      crosswordContentSchema.safeParse({
+        words: [
+          { word: "Sistema Solar", clue: "Pista A" },
+          { word: "SISTEMA-SOLAR", clue: "Pista B" },
+          { word: "Oceano", clue: "Pista C" },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it("rejeita respostas repetidas após normalização", () => {
