@@ -12,9 +12,9 @@ describe("sanitizeCrosswordForExecution", () => {
 
   const generatedData: Record<string, unknown> = {
     grid: [
-      ["C", "A", "O"],
-      ["", "", ""],
-      ["G", "A", "T"],
+      ["C", "A", "O", ""],
+      ["", "", "", ""],
+      ["G", "A", "T", "O"],
     ],
     clues: [
       { number: 1, clue: "Melhor amigo do homem", direction: "across", row: 0, col: 0, word: "CAO" },
