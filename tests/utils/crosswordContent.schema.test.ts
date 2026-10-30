@@ -7,6 +7,10 @@ describe("normalizeCrosswordAnswer", () => {
     expect(normalizeCrosswordAnswer(" Água-Viva ").normalized).toBe("AGUAVIVA");
     expect(normalizeCrosswordAnswer("Sistema Solar").normalized).toBe("SISTEMASOLAR");
   });
+
+  it("preserva o texto original sem espaços externos", () => {
+    expect(normalizeCrosswordAnswer("  Coração  ").original).toBe("Coração");
+  });
 });
 
 describe("crosswordContentSchema", () => {
@@ -18,8 +22,20 @@ describe("crosswordContentSchema", () => {
     ],
   };
 
-  it("aceita respostas e pistas válidas", () => {
+  it("aceita respostas com letras Unicode, acentos e hífens", () => {
     expect(crosswordContentSchema.safeParse(validContent).success).toBe(true);
+  });
+
+  it("rejeita caracteres que não sejam letras, espaços ou hífens", () => {
+    expect(
+      crosswordContentSchema.safeParse({
+        words: [
+          { word: "Água1", clue: "Pista A" },
+          { word: "Oceano", clue: "Pista B" },
+          { word: "Planeta", clue: "Pista C" },
+        ],
+      }).success,
+    ).toBe(false);
   });
 
   it("rejeita menos de 3 palavras", () => {
