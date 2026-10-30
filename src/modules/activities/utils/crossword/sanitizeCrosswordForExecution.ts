@@ -7,7 +7,7 @@ export interface SafeCrosswordClue {
   readonly length: number;
 }
 
-export interface SafeCrosswordGeneratedData {
+export interface SafeCrosswordGeneratedData extends Record<string, unknown> {
   readonly grid: (string | null)[][];
   readonly clues: readonly SafeCrosswordClue[];
 }
