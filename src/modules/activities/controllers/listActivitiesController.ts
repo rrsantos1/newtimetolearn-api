@@ -30,13 +30,22 @@ export async function listActivitiesController(
 
   try {
     const isAdmin = request.user.roles.includes(RoleCode.ADMIN);
+    const scope = parsedQuery.data.scope ?? (isAdmin ? "all" : "mine");
+
+    if (scope === "all" && !isAdmin) {
+      throw new AppError(
+        "FORBIDDEN",
+        403,
+        "Você não tem permissão para listar todas as atividades.",
+      );
+    }
 
     const service = makeListActivitiesService();
 
     const result = await service.execute({
       ...parsedQuery.data,
-      teacherId: isAdmin ? undefined : request.user.sub,
-      includeAll: isAdmin,
+      scope,
+      teacherId: request.user.sub,
     });
 
     return reply.status(200).send({
