@@ -2,12 +2,12 @@ import { describe, expect, it } from "vitest";
 import { CrosswordGenerationError } from "../../src/modules/activities/errors/CrosswordGenerationError";
 import { validateCrosswordGenerationResult } from "../../src/modules/activities/utils/crossword/validateCrosswordGenerationResult";
 
-const words = ["Água-viva", "Oceano", "Planeta"];
+const words = ["Água-viva", "Viva", "Planeta"];
 
 const placements = [
   { word: { word: "AGUAVIVA" }, row: 2, col: 1, direction: "across" as const },
-  { word: { word: "OCEANO" }, row: 4, col: 4, direction: "down" as const },
-  { word: { word: "PLANETA" }, row: 7, col: 2, direction: "across" as const },
+  { word: { word: "VIVA" }, row: 1, col: 6, direction: "down" as const },
+  { word: { word: "PLANETA" }, row: 0, col: 1, direction: "down" as const },
 ];
 
 describe("validateCrosswordGenerationResult", () => {
@@ -58,7 +58,7 @@ describe("validateCrosswordGenerationResult", () => {
         words,
         [
           placements[0],
-          { word: { word: "OCEANO" }, row: 1, col: 2, direction: "down" },
+          { word: { word: "VIVA" }, row: 1, col: 2, direction: "down" },
           placements[2],
         ],
         10,
@@ -73,8 +73,23 @@ describe("validateCrosswordGenerationResult", () => {
         words,
         [
           placements[0],
-          { word: { word: "OCEANO" }, row: 2, col: 2, direction: "across" },
+          { word: { word: "VIVA" }, row: 2, col: 2, direction: "across" },
           placements[2],
+        ],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
+  it("rejeita respostas que não fazem parte da mesma estrutura conectada", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        words,
+        [
+          placements[0],
+          placements[1],
+          { word: { word: "PLANETA" }, row: 8, col: 2, direction: "across" },
         ],
         10,
         10,
