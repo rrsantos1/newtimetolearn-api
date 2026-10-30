@@ -8,7 +8,7 @@ const paramsSchema = z.object({
 });
 
 const bodySchema = z.object({
-  wordsFound: z.array(z.string().trim().max(120)).max(100),
+  wordsFound: z.array(z.string().trim().min(1).max(120)).max(100),
   elapsedSeconds: z.number().int().min(0).max(86_400),
 });
 
