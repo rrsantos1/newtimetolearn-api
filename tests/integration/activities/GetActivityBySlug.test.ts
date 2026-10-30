@@ -261,25 +261,78 @@ describe("GET /api/v1/activities/:slug - integração HTTP", () => {
     });
   });
 
-  it("retorna 403 quando um aluno tenta consultar uma atividade", async () => {
+  it("permite que um aluno consulte uma atividade publicada", async () => {
+    const owner = await createUserWithRole(RoleCode.TEACHER);
     const student = await createUserWithRole(RoleCode.STUDENT);
     const token = createToken(student.id, RoleCode.STUDENT);
+    const slug = createSlug();
+
+    await createActivityWithVersions({
+      teacherId: owner.id,
+      slug,
+      status: ActivityStatus.PUBLISHED,
+      versions: [
+        {
+          name: "Caça-palavras publicado",
+          status: ActivityVersionStatus.PUBLISHED,
+        },
+      ],
+      currentPublishedVersionIndex: 0,
+    });
 
     const response = await app.inject({
       method: "GET",
-      url: `/api/v1/activities/${createSlug()}`,
+      url: `/api/v1/activities/${slug}`,
       headers: {
         authorization: `Bearer ${token}`,
       },
     });
 
-    expect(response.statusCode).toBe(403);
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toMatchObject({
+      success: true,
+      data: {
+        slug,
+        isOwner: false,
+        version: {
+          name: "Caça-palavras publicado",
+          status: ActivityVersionStatus.PUBLISHED,
+        },
+      },
+    });
+  });
 
+  it("não permite que um aluno consulte uma atividade não publicada", async () => {
+    const owner = await createUserWithRole(RoleCode.TEACHER);
+    const student = await createUserWithRole(RoleCode.STUDENT);
+    const token = createToken(student.id, RoleCode.STUDENT);
+    const slug = createSlug();
+
+    await createActivityWithVersions({
+      teacherId: owner.id,
+      slug,
+      status: ActivityStatus.DRAFT,
+      versions: [
+        {
+          name: "Rascunho privado",
+          status: ActivityVersionStatus.DRAFT,
+        },
+      ],
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/v1/activities/${slug}`,
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
     expect(response.json()).toMatchObject({
       success: false,
       error: {
-        code: "FORBIDDEN",
-        message: "Você não tem permissão para executar esta ação.",
+        code: "ACTIVITY_NOT_FOUND",
       },
     });
   });

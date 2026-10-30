@@ -41,7 +41,7 @@ export async function activityRoutes(
     {
       preHandler: [
         authMiddleware,
-        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT),
       ],
     },
     getActivityBySlugController,
