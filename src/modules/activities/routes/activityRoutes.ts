@@ -11,6 +11,7 @@ import { reviewActivityVersionController } from "../controllers/reviewActivityVe
 import { submitActivityVersionController } from "../controllers/submitActivityVersionController";
 import { deleteActivityController } from "../controllers/deleteActivityController";
 import { submitWordSearchAttemptController } from "../controllers/submitWordSearchAttemptController";
+import { listActivityAttemptsController } from "../controllers/listActivityAttemptsController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -46,6 +47,17 @@ export async function activityRoutes(
       ],
     },
     submitWordSearchAttemptController,
+  );
+
+  app.get(
+    "/:slug/attempts",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    listActivityAttemptsController,
   );
 
   app.get(
