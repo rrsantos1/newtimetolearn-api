@@ -6,6 +6,9 @@ export interface ListActivitiesFilters {
   limit: number;
   teacherId?: string;
   scope: "mine" | "explore" | "all";
+  search?: string;
+  type?: Activity["type"];
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
 }
 
 export interface ListActivitiesResult {
