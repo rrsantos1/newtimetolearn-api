@@ -6,7 +6,7 @@ const words = ["Água-viva", "Oceano", "Planeta"];
 
 const placements = [
   { word: { word: "AGUAVIVA" }, row: 2, col: 1, direction: "across" as const },
-  { word: { word: "OCEANO" }, row: 0, col: 9, direction: "down" as const },
+  { word: { word: "OCEANO" }, row: 4, col: 4, direction: "down" as const },
   { word: { word: "PLANETA" }, row: 7, col: 2, direction: "across" as const },
 ];
 
