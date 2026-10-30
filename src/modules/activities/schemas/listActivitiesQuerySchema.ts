@@ -1,26 +1,10 @@
 import { z } from "zod";
-
-const activityTypes = [
-  "quiz",
-  "word_search",
-  "crossword",
-  "cloze",
-  "multiple_choice",
-  "fill_in_the_blank",
-  "drag_drop",
-  "sentence_order",
-  "board_game",
-  "roulette",
-  "hangman",
-  "memory",
-  "fill_in_blanks",
-  "mole_hit",
-] as const;
+import { ActivityType } from "../types/ActivityType";
 
 export const listActivitiesQuerySchema = z.object({
   scope: z.enum(["mine", "explore", "all"]).optional(),
   search: z.string().trim().max(120, "A busca deve ter no máximo 120 caracteres.").optional(),
-  type: z.enum(activityTypes).optional(),
+  type: z.nativeEnum(ActivityType).optional(),
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).optional(),
   page: z.coerce
     .number()
