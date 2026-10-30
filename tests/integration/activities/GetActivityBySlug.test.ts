@@ -427,6 +427,54 @@ describe("GET /api/v1/activities/:slug - integração HTTP", () => {
     expect(body.data.version.generatedData.clues[0].word).toBe("GATO");
   });
 
+  it("preserva o gabarito da cruzadinha para o administrador", async () => {
+    const owner = await createUserWithRole(RoleCode.TEACHER);
+    const admin = await createUserWithRole(RoleCode.ADMIN);
+    const token = createToken(admin.id, RoleCode.ADMIN);
+    const slug = createSlug();
+
+    await createActivityWithVersions({
+      teacherId: owner.id,
+      slug,
+      type: ActivityType.CROSSWORD,
+      status: ActivityStatus.PUBLISHED,
+      versions: [
+        {
+          name: "Cruzadinha para revisão administrativa",
+          status: ActivityVersionStatus.PUBLISHED,
+        },
+      ],
+      currentPublishedVersionIndex: 0,
+      content: {
+        words: [{ word: "GATO", clue: "Felino doméstico" }],
+      },
+      generatedData: {
+        grid: [["G", "A", "T", "O"]],
+        clues: [
+          { number: 1, clue: "Felino doméstico", direction: "across", row: 0, col: 0, word: "GATO" },
+        ],
+      },
+    });
+
+    const response = await app.inject({
+      method: "GET",
+      url: `/api/v1/activities/${slug}`,
+      headers: {
+        authorization: `Bearer ${token}`,
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+
+    const body = response.json();
+    expect(body.data.isOwner).toBe(false);
+    expect(body.data.version.content.words[0].word).toBe("GATO");
+    expect(body.data.version.generatedData.grid).toEqual([
+      ["G", "A", "T", "O"],
+    ]);
+    expect(body.data.version.generatedData.clues[0].word).toBe("GATO");
+  });
+
   it("não permite que um aluno consulte uma atividade não publicada", async () => {
     const owner = await createUserWithRole(RoleCode.TEACHER);
     const student = await createUserWithRole(RoleCode.STUDENT);
