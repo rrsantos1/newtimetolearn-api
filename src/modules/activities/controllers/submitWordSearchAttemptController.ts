@@ -8,7 +8,7 @@ const paramsSchema = z.object({
 });
 
 const bodySchema = z.object({
-  wordsFound: z.array(z.string().trim().min(1).max(120)).max(100),
+  wordsFound: z.array(z.string().trim().max(120)).max(100),
   elapsedSeconds: z.number().int().min(0).max(86_400),
 });
 
@@ -70,7 +70,7 @@ export async function submitWordSearchAttemptController(
       });
     }
 
-    request.log.error({ err: error }, "Falha ao registrar tentativa do caça-palavras.");
+    request.log.error({ err: error }, "Falha ao registrar tentativa da atividade.");
     return reply.status(500).send({
       success: false,
       error: {
