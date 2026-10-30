@@ -6,8 +6,8 @@ const words = ["Água-viva", "Oceano", "Planeta"];
 
 const placements = [
   { word: { word: "AGUAVIVA" }, row: 2, col: 1, direction: "across" as const },
-  { word: { word: "OCEANO" }, row: 1, col: 3, direction: "down" as const },
-  { word: { word: "PLANETA" }, row: 5, col: 2, direction: "across" as const },
+  { word: { word: "OCEANO" }, row: 0, col: 9, direction: "down" as const },
+  { word: { word: "PLANETA" }, row: 7, col: 2, direction: "across" as const },
 ];
 
 describe("validateCrosswordGenerationResult", () => {
@@ -44,7 +44,37 @@ describe("validateCrosswordGenerationResult", () => {
         words,
         [
           ...placements.slice(0, 2),
-          { word: { word: "PLANETA" }, row: 5, col: 5, direction: "across" },
+          { word: { word: "PLANETA" }, row: 7, col: 5, direction: "across" },
+        ],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
+  it("rejeita cruzamentos com letras incompatíveis", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        words,
+        [
+          placements[0],
+          { word: { word: "OCEANO" }, row: 1, col: 2, direction: "down" },
+          placements[2],
+        ],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
+  it("rejeita sobreposição de palavras na mesma orientação", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        words,
+        [
+          placements[0],
+          { word: { word: "OCEANO" }, row: 2, col: 2, direction: "across" },
+          placements[2],
         ],
         10,
         10,
