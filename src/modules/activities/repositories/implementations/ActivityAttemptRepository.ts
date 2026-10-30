@@ -3,6 +3,7 @@ import { ActivityAttempt } from "../../entities/ActivityAttempt";
 import type {
   CreateActivityAttemptInput,
   IActivityAttemptRepository,
+  ListActivityAttemptsResult,
 } from "../interfaces/IActivityAttemptRepository";
 
 export class ActivityAttemptRepository implements IActivityAttemptRepository {
@@ -23,5 +24,20 @@ export class ActivityAttemptRepository implements IActivityAttemptRepository {
       },
       take: 5,
     });
+  }
+
+  async listByActivity(
+    activityId: string,
+    page: number,
+    limit: number,
+  ): Promise<ListActivityAttemptsResult> {
+    const [items, total] = await this.repository.findAndCount({
+      where: { activityId },
+      order: { createdAt: "DESC" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return { items, total };
   }
 }
