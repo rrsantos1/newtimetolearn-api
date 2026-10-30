@@ -62,7 +62,6 @@ export function sanitizeCrosswordForExecution(
 } {
   const rawWords = content.words;
   const safeContent: Record<string, unknown> = {
-    ...content,
     words: Array.isArray(rawWords)
       ? rawWords.map((item: unknown) => {
           if (!isRecord(item) || typeof item.clue !== "string") {
