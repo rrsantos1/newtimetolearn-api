@@ -1,4 +1,5 @@
 import { CrosswordBoard } from "./board/CrosswordBoard";
+import { CrosswordGenerationError } from "../../errors/CrosswordGenerationError";
 import { BoardWriter } from "./board/BoardWriter";
 import { CrosswordEvaluator } from "./evaluation/CrosswordEvaluator";
 import { CrosswordMoveGenerator } from "./search/CrosswordMoveGenerator";
@@ -227,7 +228,10 @@ export class CrosswordBuilder {
             );
 
         if (!best) {
-            break;
+            throw new CrosswordGenerationError(
+              `Não foi possível posicionar ${remainingWords.length} resposta(s) sem violar as regras da grade.`,
+              "INCOMPLETE_GENERATION"
+            );
         }
 
         this.writer.write(
@@ -267,21 +271,29 @@ export class CrosswordBuilder {
         1
       );
 
-    const row =
-      Math.floor(
-        this.board.rows / 2
+    if (!firstWord) {
+      throw new CrosswordGenerationError(
+        "Não foi possível selecionar a primeira resposta.",
+        "INCOMPLETE_GENERATION"
       );
+    }
 
-    const col =
-      Math.max(
-        0,
-        Math.floor(
-          (
-            this.board.cols -
-            firstWord.word.length
-          ) / 2
-        )
+    if (
+      firstWord.word.length > this.board.cols ||
+      this.board.rows < 1 ||
+      this.board.cols < 1
+    ) {
+      throw new CrosswordGenerationError(
+        `A resposta inicial "${firstWord.word}" não cabe na grade configurada.`,
+        "INVALID_BOARD"
       );
+    }
+
+    const row = Math.floor(this.board.rows / 2);
+    const col = Math.max(
+      0,
+      Math.floor((this.board.cols - firstWord.word.length) / 2)
+    );
 
     const move: CrosswordMove = {
       word: firstWord,
