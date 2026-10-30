@@ -22,12 +22,7 @@ describe("gerador de palavras cruzadas", () => {
     const board = new CrosswordBoard(10, 10);
     const builder = new CrosswordBuilder(board);
 
-    expect(() =>
-      builder.build([
-        { word: "ABC", clue: "Primeira resposta" },
-        { word: "XYZ", clue: "Segunda resposta sem letras em comum" },
-      ]),
-    ).toThrowError(CrosswordGenerationError);
+    let caughtError: unknown;
 
     try {
       builder.build([
@@ -35,8 +30,10 @@ describe("gerador de palavras cruzadas", () => {
         { word: "XYZ", clue: "Segunda resposta sem letras em comum" },
       ]);
     } catch (error: unknown) {
-      expect(error).toBeInstanceOf(CrosswordGenerationError);
-      expect((error as CrosswordGenerationError).code).toBe("INCOMPLETE_GENERATION");
+      caughtError = error;
     }
+
+    expect(caughtError).toBeInstanceOf(CrosswordGenerationError);
+    expect((caughtError as CrosswordGenerationError).code).toBe("INCOMPLETE_GENERATION");
   });
 });
