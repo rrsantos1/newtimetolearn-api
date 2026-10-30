@@ -30,13 +30,6 @@ export function validateCrosswordGenerationResult(
     );
   }
 
-  if (inputWords.length === 0) {
-    throw new CrosswordGenerationError(
-      "A cruzadinha precisa conter palavras.",
-      "INCOMPLETE_GENERATION",
-    );
-  }
-
   if (
     !Array.isArray(inputWords) ||
     !Array.isArray(placements) ||
@@ -47,6 +40,13 @@ export function validateCrosswordGenerationResult(
     throw new CrosswordGenerationError(
       "O resultado do gerador possui uma estrutura inválida.",
       "INVALID_PLACEMENT",
+    );
+  }
+
+  if (inputWords.length === 0) {
+    throw new CrosswordGenerationError(
+      "A cruzadinha precisa conter palavras.",
+      "INCOMPLETE_GENERATION",
     );
   }
 
