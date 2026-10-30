@@ -31,8 +31,14 @@ describe("crosswordContentSchema", () => {
   });
 
   it("rejeita mais de 20 palavras", () => {
-    const words = Array.from({ length: 21 }, (_, index) => ({
-      word: `Resposta${index}`,
+    const answers = [
+      "Abacate", "Banana", "Caju", "Damasco", "Embauba",
+      "Figo", "Goiaba", "Higo", "Inga", "Jabuticaba",
+      "Kiwi", "Laranja", "Manga", "Nectarina", "Oliva",
+      "Pera", "Quiabo", "Roma", "Sapoti", "Tangerina", "Uva",
+    ];
+    const words = answers.map((word, index) => ({
+      word,
       clue: `Pista ${index}`,
     }));
 
