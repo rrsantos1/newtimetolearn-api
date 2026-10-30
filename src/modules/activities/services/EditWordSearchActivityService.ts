@@ -140,21 +140,37 @@ export class EditWordSearchActivityService {
       wordPositions: generatedData.wordPositions,
     };
 
-    // Toda edição cria ou atualiza uma versão em rascunho.
-    // A versão publicada atual permanece ativa até a aprovação explícita.
-    version.status = ActivityVersionStatus.DRAFT;
-    version.publishedAt = null;
-    version.submittedAt = null;
-
     if (input.isAdmin) {
+      // Administradores podem publicar imediatamente a versão editada.
+      version.status = ActivityVersionStatus.PUBLISHED;
+      version.publishedAt = new Date();
       version.reviewFeedback = null;
       version.reviewedAt = null;
+    } else {
+      // Para professores sem perfil de administrador, a edição exige revisão.
+      version.status = ActivityVersionStatus.DRAFT;
+      version.publishedAt = null;
     }
+
+    version.submittedAt = null;
 
     const savedVersion = await this.activityVersionRepository.save(
       this.manager,
       version,
     );
+
+    if (input.isAdmin) {
+      // Atualiza somente os campos da atividade, evitando salvar a relação
+      // "versions" carregada antes da inserção e excluir a versão recém-criada.
+      await this.activityRepository.updatePublishedVersion(
+        this.manager,
+        activity.id,
+        savedVersion.id,
+      );
+
+      activity.status = ActivityStatus.PUBLISHED;
+      activity.currentPublishedVersionId = savedVersion.id;
+    }
 
     return {
       activity,
