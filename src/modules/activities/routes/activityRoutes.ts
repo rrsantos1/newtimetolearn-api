@@ -12,6 +12,7 @@ import { submitActivityVersionController } from "../controllers/submitActivityVe
 import { deleteActivityController } from "../controllers/deleteActivityController";
 import { submitWordSearchAttemptController } from "../controllers/submitWordSearchAttemptController";
 import { listActivityAttemptsController } from "../controllers/listActivityAttemptsController";
+import { getWordSearchRankingController } from "../controllers/getWordSearchRankingController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -36,6 +37,17 @@ export async function activityRoutes(
       ],
     },
     listActivitiesController,
+  );
+
+  app.get(
+    "/:slug/ranking",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT),
+      ],
+    },
+    getWordSearchRankingController,
   );
 
   app.post(
