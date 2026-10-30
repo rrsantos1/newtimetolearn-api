@@ -37,6 +37,19 @@ export function validateCrosswordGenerationResult(
     );
   }
 
+  if (
+    !Array.isArray(inputWords) ||
+    !Array.isArray(placements) ||
+    placements.some(
+      (placement) => typeof placement?.word?.word !== "string",
+    )
+  ) {
+    throw new CrosswordGenerationError(
+      "O resultado do gerador possui uma estrutura inválida.",
+      "INVALID_PLACEMENT",
+    );
+  }
+
   const expectedWords = inputWords.map(
     (word) => normalizeCrosswordAnswer(word).normalized,
   );
