@@ -198,21 +198,23 @@ export class CrosswordBoard {
   }
 
   public clone(): CrosswordBoard {
+    const clonedCellStore = this.cellStore.clone();
+    const clonedLetterStore = new LetterStore();
+
+    for (const cell of clonedCellStore.values()) {
+      clonedLetterStore.register(cell);
+    }
+
     return new CrosswordBoard(
       this.rows,
       this.cols,
-
-      this.cellStore.clone(),
-
-      this.letterStore.clone(),
-
+      clonedCellStore,
+      clonedLetterStore,
       this.placementStore.clone(),
-
       new CoordinateWalker({
         rows: this.rows,
         cols: this.cols
       }),
-
       this.nextPlacementId
     );
   }
