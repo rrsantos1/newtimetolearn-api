@@ -149,8 +149,6 @@ export function validateCrosswordGenerationResult(
 
   for (const [placementIndex, placement] of placements.entries()) {
     const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
-    const crossingDirections = new Set<number>();
-
     for (let index = 0; index < normalizedWord.length; index += 1) {
       const row = placement.row + (placement.direction === "down" ? index : 0);
       const col = placement.col + (placement.direction === "across" ? index : 0);
