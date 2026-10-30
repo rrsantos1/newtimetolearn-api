@@ -32,6 +32,7 @@ export function validateCrosswordGenerationResult(
 
   if (
     !Array.isArray(inputWords) ||
+    inputWords.some((word) => typeof word !== "string") ||
     !Array.isArray(placements) ||
     placements.some(
       (placement) => typeof placement?.word?.word !== "string",
