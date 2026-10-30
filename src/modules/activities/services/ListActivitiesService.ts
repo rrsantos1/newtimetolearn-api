@@ -11,7 +11,7 @@ export interface ListActivitiesInput {
   page: number;
   limit: number;
   teacherId?: string;
-  includeAll: boolean;
+  scope: "mine" | "explore" | "all";
 }
 
 export interface ListedActivity {
@@ -69,7 +69,7 @@ export class ListActivitiesService {
       );
     }
 
-    if (!input.includeAll && !input.teacherId) {
+    if (input.scope !== "all" && !input.teacherId) {
       throw new AppError(
         "TEACHER_ID_REQUIRED",
         400,
