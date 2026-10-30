@@ -38,4 +38,10 @@ export interface IActivityRepository {
     manager: EntityManager,
     activity: Activity,
   ): Promise<Activity>;
+
+  updatePublishedVersion(
+    manager: EntityManager,
+    activityId: string,
+    versionId: string,
+  ): Promise<void>;
 }
