@@ -97,6 +97,21 @@ describe("validateCrosswordGenerationResult", () => {
     ).toThrowError(CrosswordGenerationError);
   });
 
+  it("rejeita sequências paralelas adjacentes mesmo quando conectadas por outra palavra", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        ["AGUAVIVA", "VIVA", "LAV"],
+        [
+          { word: { word: "AGUAVIVA" }, row: 2, col: 1, direction: "across" },
+          { word: { word: "VIVA" }, row: 1, col: 6, direction: "down" },
+          { word: { word: "LAV" }, row: 1, col: 4, direction: "across" },
+        ],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
   it("rejeita dimensões acima do limite do produto", () => {
     expect(() =>
       validateCrosswordGenerationResult(words, placements, 26, 25),
