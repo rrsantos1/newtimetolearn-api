@@ -4,6 +4,8 @@ import type { IActivityRepository } from "../repositories/interfaces/IActivityRe
 import { AppError } from "../../../shared/errors/AppError";
 import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
+import { ActivityType } from "../types/ActivityType";
+import { sanitizeCrosswordForExecution } from "../utils/crossword/sanitizeCrosswordForExecution";
 
 export interface GetActivityBySlugInput {
   slug: string;
@@ -104,6 +106,17 @@ export class GetActivityBySlugService {
       );
     }
 
+    const executionData =
+      !canViewAllVersions && activity.type === ActivityType.CROSSWORD
+        ? sanitizeCrosswordForExecution(
+            selectedVersion.content,
+            selectedVersion.generatedData,
+          )
+        : {
+            content: selectedVersion.content,
+            generatedData: selectedVersion.generatedData,
+          };
+
     return {
       slug: activity.slug,
       type: activity.type,
@@ -121,8 +134,8 @@ export class GetActivityBySlugService {
         timeLimitSeconds: selectedVersion.timeLimitSeconds,
         status: selectedVersion.status,
         revision: selectedVersion.revision,
-        content: selectedVersion.content,
-        generatedData: selectedVersion.generatedData,
+        content: executionData.content,
+        generatedData: executionData.generatedData,
         submittedAt: selectedVersion.submittedAt,
         publishedAt: selectedVersion.publishedAt,
         reviewFeedback: selectedVersion.reviewFeedback,
