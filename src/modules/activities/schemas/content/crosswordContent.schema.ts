@@ -9,14 +9,11 @@ const crosswordWordSchema = z
       .min(1, "A resposta não pode estar vazia.")
       .max(100, "A resposta deve conter no máximo 100 caracteres.")
       .refine(
-        (word) => /^[\\p{L}\\s-]+$/u.test(word),
+        (word) => /^[\p{L}\s-]+$/u.test(word),
         "Utilize apenas letras, espaços e hífens na resposta.",
       )
       .refine(
-        (word) => {
-          const normalized = normalizeCrosswordAnswer(word).normalized;
-          return normalized.length >= 2;
-        },
+        (word) => normalizeCrosswordAnswer(word).normalized.length >= 2,
         "A resposta deve conter pelo menos 2 letras.",
       )
       .refine(
