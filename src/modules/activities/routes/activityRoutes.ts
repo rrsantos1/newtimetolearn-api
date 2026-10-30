@@ -10,6 +10,7 @@ import { approveActivityVersionController } from "../controllers/approveActivity
 import { reviewActivityVersionController } from "../controllers/reviewActivityVersionController";
 import { submitActivityVersionController } from "../controllers/submitActivityVersionController";
 import { deleteActivityController } from "../controllers/deleteActivityController";
+import { submitWordSearchAttemptController } from "../controllers/submitWordSearchAttemptController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -34,6 +35,17 @@ export async function activityRoutes(
       ],
     },
     listActivitiesController,
+  );
+
+  app.post(
+    "/:slug/attempts",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.STUDENT),
+      ],
+    },
+    submitWordSearchAttemptController,
   );
 
   app.get(
