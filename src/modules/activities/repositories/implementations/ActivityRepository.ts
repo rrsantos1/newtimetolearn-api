@@ -63,57 +63,68 @@ export class ActivityRepository implements IActivityRepository {
     return manager.getRepository(Activity).save(activity);
   }
 
+  async updatePublishedVersion(
+    manager: EntityManager,
+    activityId: string,
+    versionId: string,
+  ): Promise<void> {
+    await manager.getRepository(Activity).update(activityId, {
+      status: ActivityStatus.PUBLISHED,
+      currentPublishedVersionId: versionId,
+    });
+  }
+
   async list(
     filters: ListActivitiesFilters,
   ): Promise<ListActivitiesResult> {
     const { page, limit, teacherId, includeAll } = filters;
 
     const query = this.repository
-        .createQueryBuilder("activity")
-        .leftJoinAndSelect("activity.versions", "version")
-        .where("activity.deleted_at IS NULL");
+      .createQueryBuilder("activity")
+      .leftJoinAndSelect("activity.versions", "version")
+      .where("activity.deleted_at IS NULL");
 
     if (!includeAll) {
-        if (!teacherId) {
+      if (!teacherId) {
         throw new Error(
-            "O identificador do professor é obrigatório para listar atividades.",
+          "O identificador do professor é obrigatório para listar atividades.",
         );
-        }
+      }
 
-        query.andWhere(
+      query.andWhere(
         `(
-            activity.teacher_id = :teacherId
-            OR (
+          activity.teacher_id = :teacherId
+          OR (
             activity.status = :publishedStatus
             AND activity.current_published_version_id IS NOT NULL
             AND EXISTS (
-                SELECT 1
-                FROM activity_versions published_version
-                WHERE published_version.id =
+              SELECT 1
+              FROM activity_versions published_version
+              WHERE published_version.id =
                 activity.current_published_version_id
                 AND published_version.activity_id = activity.id
                 AND published_version.status = :versionPublishedStatus
             )
-            )
+          )
         )`,
         {
-            teacherId,
-            publishedStatus: ActivityStatus.PUBLISHED,
-            versionPublishedStatus: ActivityVersionStatus.PUBLISHED,
+          teacherId,
+          publishedStatus: ActivityStatus.PUBLISHED,
+          versionPublishedStatus: ActivityVersionStatus.PUBLISHED,
         },
-        );
+      );
     }
 
     const [items, total] = await query
-        .orderBy("activity.created_at", "DESC")
-        .addOrderBy("version.version_number", "DESC")
-        .skip((page - 1) * limit)
-        .take(limit)
-        .getManyAndCount();
+      .orderBy("activity.created_at", "DESC")
+      .addOrderBy("version.version_number", "DESC")
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     return {
-        items,
-        total,
+      items,
+      total,
     };
   }
 }
