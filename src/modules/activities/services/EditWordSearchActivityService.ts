@@ -121,7 +121,6 @@ export class EditWordSearchActivityService {
         ? latestVersion.versionNumber + 1
         : 1;
       version.revision = 1;
-      version.publishedAt = null;
     } else {
       version.revision += 1;
     }
@@ -140,29 +139,22 @@ export class EditWordSearchActivityService {
       grid: generatedData.grid,
       wordPositions: generatedData.wordPositions,
     };
-    version.status = input.isAdmin
-    ? ActivityVersionStatus.PUBLISHED
-    : ActivityVersionStatus.DRAFT;
 
-    version.publishedAt = input.isAdmin ? new Date() : null;
+    // Toda edição cria ou atualiza uma versão em rascunho.
+    // A versão publicada atual permanece ativa até a aprovação explícita.
+    version.status = ActivityVersionStatus.DRAFT;
+    version.publishedAt = null;
     version.submittedAt = null;
 
     if (input.isAdmin) {
-        version.reviewFeedback = null;
-        version.reviewedAt = null;
+      version.reviewFeedback = null;
+      version.reviewedAt = null;
     }
 
     const savedVersion = await this.activityVersionRepository.save(
       this.manager,
       version,
     );
-
-    if (input.isAdmin) {
-        activity.status = ActivityStatus.PUBLISHED;
-        activity.currentPublishedVersionId = savedVersion.id;
-
-        await this.activityRepository.save(this.manager, activity);
-    }
 
     return {
       activity,
