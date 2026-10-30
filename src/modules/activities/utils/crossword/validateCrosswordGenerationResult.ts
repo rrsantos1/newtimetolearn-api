@@ -44,11 +44,24 @@ export function validateCrosswordGenerationResult(
     (placement) => normalizeCrosswordAnswer(placement.word.word).normalized,
   );
 
-  if (
-    expectedWords.length !== placedWords.length ||
-    expectedWords.some((word) => !placedWords.includes(word)) ||
-    placedWords.some((word) => !expectedWords.includes(word))
-  ) {
+  const expectedCounts = new Map<string, number>();
+  const placedCounts = new Map<string, number>();
+
+  for (const word of expectedWords) {
+    expectedCounts.set(word, (expectedCounts.get(word) ?? 0) + 1);
+  }
+
+  for (const word of placedWords) {
+    placedCounts.set(word, (placedCounts.get(word) ?? 0) + 1);
+  }
+
+  const hasSameWordCounts =
+    expectedCounts.size === placedCounts.size &&
+    [...expectedCounts].every(
+      ([word, count]) => placedCounts.get(word) === count,
+    );
+
+  if (expectedWords.length !== placedWords.length || !hasSameWordCounts) {
     throw new CrosswordGenerationError(
       "O gerador não posicionou todas as respostas exatamente uma vez.",
       "INCOMPLETE_GENERATION",
@@ -59,8 +72,13 @@ export function validateCrosswordGenerationResult(
     const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
     const length = normalizedWord.length;
 
+    const hasValidCoordinates =
+      Number.isInteger(placement.row) &&
+      Number.isInteger(placement.col);
+
     const fits =
-      placement.direction === "across"
+      hasValidCoordinates &&
+      (placement.direction === "across"
         ? placement.row >= 0 &&
           placement.row < rows &&
           placement.col >= 0 &&
@@ -68,9 +86,9 @@ export function validateCrosswordGenerationResult(
         : placement.row >= 0 &&
           placement.row + length <= rows &&
           placement.col >= 0 &&
-          placement.col < cols;
+          placement.col < cols);
 
-    if (!fits) {
+    if (!fits || length < 1) {
       throw new CrosswordGenerationError(
         `A resposta "${placement.word.word}" possui um posicionamento fora da grade.`,
         "INVALID_PLACEMENT",
