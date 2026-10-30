@@ -57,4 +57,20 @@ describe("validateCrosswordGenerationResult", () => {
       validateCrosswordGenerationResult(words, placements, 26, 25),
     ).toThrowError(CrosswordGenerationError);
   });
+
+  it("rejeita uma orientação inválida em runtime", () => {
+    const invalidPlacement = {
+      ...placements[0],
+      direction: "diagonal",
+    };
+
+    expect(() =>
+      validateCrosswordGenerationResult(
+        words,
+        [invalidPlacement, placements[1], placements[2]],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
 });
