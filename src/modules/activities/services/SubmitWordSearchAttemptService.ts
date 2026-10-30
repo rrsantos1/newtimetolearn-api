@@ -1,12 +1,12 @@
 import { AppError } from "../../../shared/errors/AppError";
-import { AppDataSource } from "../../../shared/database/data-source";
 import { User } from "../../users/entities/User";
-import { ActivityAttempt } from "../entities/ActivityAttempt";
-import { Activity } from "../entities/Activity";
-import { ActivityVersion } from "../entities/ActivityVersion";
-import { ActivityStatus } from "../types/ActivityStatus";
-import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
+import type { IUserRepository } from "../../users/repositories/interfaces/IUserRepository";
+import type { ActivityAttempt } from "../entities/ActivityAttempt";
+import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
 import type { IActivityAttemptRepository } from "../repositories/interfaces/IActivityAttemptRepository";
+import { ActivityStatus } from "../types/ActivityStatus";
+import { ActivityType } from "../types/ActivityType";
+import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
 
 export interface SubmitWordSearchAttemptInput {
   slug: string;
@@ -32,31 +32,29 @@ function normalizeWord(value: string): string {
 export class SubmitWordSearchAttemptService {
   constructor(
     private readonly attemptRepository: IActivityAttemptRepository,
+    private readonly activityRepository: IActivityRepository,
+    private readonly userRepository: IUserRepository,
   ) {}
 
   async execute(
     input: SubmitWordSearchAttemptInput,
   ): Promise<SubmitWordSearchAttemptResult> {
-    const activity = await AppDataSource.getRepository(Activity).findOne({
-      where: { slug: input.slug, deletedAt: null },
-    });
+    const activity = await this.activityRepository.findBySlugWithVersions(input.slug);
 
     if (
       !activity ||
-      activity.type !== "WORD_SEARCH" ||
+      activity.type !== ActivityType.WORD_SEARCH ||
       activity.status !== ActivityStatus.PUBLISHED ||
       !activity.currentPublishedVersionId
     ) {
       throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade publicada não encontrada.");
     }
 
-    const version = await AppDataSource.getRepository(ActivityVersion).findOne({
-      where: {
-        id: activity.currentPublishedVersionId,
-        activityId: activity.id,
-        status: ActivityVersionStatus.PUBLISHED,
-      },
-    });
+    const version = activity.versions.find(
+      (item) =>
+        item.id === activity.currentPublishedVersionId &&
+        item.status === ActivityVersionStatus.PUBLISHED,
+    );
 
     if (!version) {
       throw new AppError("ACTIVITY_VERSION_NOT_FOUND", 404, "Versão publicada não encontrada.");
@@ -78,15 +76,13 @@ export class SubmitWordSearchAttemptService {
     );
 
     const elapsedSeconds = Math.max(0, Math.floor(input.elapsedSeconds));
-    const timeLimitSeconds = version.timeLimitSeconds ?? 900;
+    const timeLimitSeconds = Math.max(1, version.timeLimitSeconds ?? 900);
     const accuracyPoints = Math.round((validFoundWords.length / normalizedWords.length) * 80);
     const speedPoints = Math.round(
       Math.max(0, 1 - elapsedSeconds / timeLimitSeconds) * 20,
     );
     const score = Math.min(100, accuracyPoints + speedPoints);
-    const user = await AppDataSource.getRepository(User).findOne({
-      where: { id: input.userId },
-    });
+    const user = await this.userRepository.findById(input.userId);
 
     if (!user) {
       throw new AppError("USER_NOT_FOUND", 404, "Usuário não encontrado.");
