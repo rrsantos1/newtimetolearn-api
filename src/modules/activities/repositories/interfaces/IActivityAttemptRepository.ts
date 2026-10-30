@@ -13,7 +13,17 @@ export interface CreateActivityAttemptInput {
   speedPoints: number;
 }
 
+export interface ListActivityAttemptsResult {
+  items: ActivityAttempt[];
+  total: number;
+}
+
 export interface IActivityAttemptRepository {
   create(input: CreateActivityAttemptInput): Promise<ActivityAttempt>;
   getRanking(activityId: string): Promise<ActivityAttempt[]>;
+  listByActivity(
+    activityId: string,
+    page: number,
+    limit: number,
+  ): Promise<ListActivityAttemptsResult>;
 }
