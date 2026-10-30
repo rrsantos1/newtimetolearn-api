@@ -1,6 +1,5 @@
 import type { EntityManager } from "typeorm";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-
 import { Activity } from "../../../src/modules/activities/entities/Activity";
 import { ActivityVersion } from "../../../src/modules/activities/entities/ActivityVersion";
 import { SubmitActivityVersionService } from "../../../src/modules/activities/services/SubmitActivityVersionService";
@@ -59,6 +58,7 @@ describe("SubmitActivityVersionService", () => {
       findBySlugAndTeacherId: vi.fn(),
       list: vi.fn(),
       save: vi.fn(),
+      updatePublishedVersion: vi.fn().mockResolvedValue(undefined),
     };
 
     activityVersionRepository = {

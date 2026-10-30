@@ -46,6 +46,7 @@ describe("DeleteActivityService", () => {
           savedActivity: Activity,
         ) => savedActivity,
       ),
+      updatePublishedVersion: vi.fn().mockResolvedValue(undefined),
     };
 
     service = new DeleteActivityService(

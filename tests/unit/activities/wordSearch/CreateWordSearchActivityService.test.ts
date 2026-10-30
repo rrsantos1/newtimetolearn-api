@@ -45,6 +45,7 @@ describe("CreateWordSearchActivityService", () => {
                 async (_manager: EntityManager, activity: Activity) => activity,
             ),
             list: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            updatePublishedVersion: vi.fn().mockResolvedValue(undefined),
         };
 
         activityVersionRepository = {
