@@ -85,14 +85,11 @@ export class LetterStore {
       );
   }
 
-  public clone(): LetterStore {
-    const clone =
-      new LetterStore();
+  public clone(clonedCells: Iterable<Cell>): LetterStore {
+    const clone = new LetterStore();
 
-    for (const cells of this.letters.values()) {
-      for (const cell of cells) {
-        clone.register(cell);
-      }
+    for (const cell of clonedCells) {
+      clone.register(cell);
     }
 
     return clone;
