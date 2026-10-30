@@ -79,6 +79,7 @@ export function validateCrosswordGenerationResult(
     string,
     { letter: string; direction: "across" | "down"; placementIndex: number }
   >();
+  const cellPlacements = new Map<string, Set<number>>();
   const connectedPlacements = placements.map(() => new Set<number>());
 
   for (const [placementIndex, placement] of placements.entries()) {
@@ -118,6 +119,9 @@ export function validateCrosswordGenerationResult(
       const key = `${row}:${col}`;
       const existingCell = occupiedCells.get(key);
       const letter = normalizedWord[index];
+      const occupants = cellPlacements.get(key) ?? new Set<number>();
+      occupants.add(placementIndex);
+      cellPlacements.set(key, occupants);
 
       if (existingCell) {
         const isPerpendicularCrossing =
@@ -140,6 +144,56 @@ export function validateCrosswordGenerationResult(
           placementIndex,
         });
       }
+    }
+  }
+
+  for (const [placementIndex, placement] of placements.entries()) {
+    const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
+    const crossingDirections = new Set<number>();
+
+    for (let index = 0; index < normalizedWord.length; index += 1) {
+      const row = placement.row + (placement.direction === "down" ? index : 0);
+      const col = placement.col + (placement.direction === "across" ? index : 0);
+      const key = `${row}:${col}`;
+      const occupants = cellPlacements.get(key) ?? new Set<number>();
+      const crossingIndices = [...occupants].filter(
+        (otherIndex) =>
+          otherIndex !== placementIndex &&
+          placements[otherIndex].direction !== placement.direction,
+      );
+      const neighbors = placement.direction === "across"
+        ? [{ row: row - 1, col }, { row: row + 1, col }]
+        : [{ row, col: col - 1 }, { row, col: col + 1 }];
+
+      for (const neighbor of neighbors) {
+        const neighborOccupants = cellPlacements.get(`${neighbor.row}:${neighbor.col}`);
+        if (
+          neighborOccupants &&
+          [...neighborOccupants].some((otherIndex) => !crossingIndices.includes(otherIndex))
+        ) {
+          throw new CrosswordGenerationError(
+            `A resposta "${placement.word.word}" forma uma sequência adjacente não cruzada.`,
+            "INVALID_PLACEMENT",
+          );
+        }
+      }
+    }
+
+    const before = placement.direction === "across"
+      ? { row: placement.row, col: placement.col - 1 }
+      : { row: placement.row - 1, col: placement.col };
+    const after = placement.direction === "across"
+      ? { row: placement.row, col: placement.col + normalizedWord.length }
+      : { row: placement.row + normalizedWord.length, col: placement.col };
+
+    if (
+      cellPlacements.has(`${before.row}:${before.col}`) ||
+      cellPlacements.has(`${after.row}:${after.col}`)
+    ) {
+      throw new CrosswordGenerationError(
+        `A resposta "${placement.word.word}" está encostada a outra sequência na mesma orientação.`,
+        "INVALID_PLACEMENT",
+      );
     }
   }
 
