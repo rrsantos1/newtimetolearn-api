@@ -23,6 +23,21 @@ describe("validateCrosswordGenerationResult", () => {
     ).toThrowError(CrosswordGenerationError);
   });
 
+  it("rejeita respostas ausentes substituídas por duplicatas", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        words,
+        [
+          placements[0],
+          { word: { word: "AGUAVIVA" }, row: 1, col: 1, direction: "down" },
+          placements[2],
+        ],
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
   it("rejeita uma resposta posicionada fora da grade", () => {
     expect(() =>
       validateCrosswordGenerationResult(
