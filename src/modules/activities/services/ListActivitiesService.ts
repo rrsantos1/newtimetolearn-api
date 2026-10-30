@@ -83,14 +83,17 @@ export class ListActivitiesService {
     const items = result.items.map((activity) => {
       const versions = activity.versions ?? [];
 
-      const latestVersion = [...versions].sort(
-        (a, b) => b.versionNumber - a.versionNumber,
-      )[0];
-
       const publishedVersion = versions.find(
         (version) => version.id === activity.currentPublishedVersionId
           && version.status === ActivityVersionStatus.PUBLISHED,
       );
+
+      // No catálogo, nunca exponha rascunhos ou versões em análise de outros professores.
+      const latestVersion = input.scope === "explore"
+        ? publishedVersion
+        : [...versions].sort(
+            (a, b) => b.versionNumber - a.versionNumber,
+          )[0];
 
       return {
         slug: activity.slug,
