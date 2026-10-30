@@ -9,8 +9,8 @@ export function normalizeCrosswordAnswer(
   const original = input.trim();
   const normalized = original
     .normalize("NFD")
-    .replace(/[\\u0300-\\u036f]/g, "")
-    .replace(/[\\s-]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[\s-]/g, "")
     .toLocaleUpperCase("pt-BR");
 
   return { original, normalized };
