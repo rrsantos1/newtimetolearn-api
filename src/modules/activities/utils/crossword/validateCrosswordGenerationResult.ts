@@ -133,6 +133,14 @@ export function validateCrosswordGenerationResult(
       const key = `${row}:${col}`;
       const existingCell = occupiedCells.get(key);
       const letter = normalizedWord[index];
+
+      if (letter === undefined) {
+        throw new CrosswordGenerationError(
+          "O gerador retornou uma resposta inválida.",
+          "INVALID_PLACEMENT",
+        );
+      }
+
       const occupants = cellPlacements.get(key) ?? new Set<number>();
       occupants.add(placementIndex);
       cellPlacements.set(key, occupants);
@@ -156,8 +164,18 @@ export function validateCrosswordGenerationResult(
           );
         }
 
-        connectedPlacements[placementIndex].add(existingCell.placementIndex);
-        connectedPlacements[existingCell.placementIndex].add(placementIndex);
+        const currentConnections = connectedPlacements[placementIndex];
+        const existingConnections = connectedPlacements[existingCell.placementIndex];
+
+        if (!currentConnections || !existingConnections) {
+          throw new CrosswordGenerationError(
+            "O gerador retornou referências de cruzamento inválidas.",
+            "INVALID_PLACEMENT",
+          );
+        }
+
+        currentConnections.add(existingCell.placementIndex);
+        existingConnections.add(placementIndex);
       } else {
         occupiedCells.set(key, {
           letter,
@@ -229,7 +247,16 @@ export function validateCrosswordGenerationResult(
 
       visited.add(currentIndex);
 
-      for (const neighbor of connectedPlacements[currentIndex]) {
+      const currentConnections = connectedPlacements[currentIndex];
+
+      if (!currentConnections) {
+        throw new CrosswordGenerationError(
+          "O gerador retornou uma estrutura de conexões inválida.",
+          "INVALID_PLACEMENT",
+        );
+      }
+
+      for (const neighbor of currentConnections) {
         if (!visited.has(neighbor)) {
           pending.push(neighbor);
         }
