@@ -1,5 +1,4 @@
 import { CrosswordBoard } from "./CrosswordBoard";
-
 import {
   CrosswordMove,
   CrosswordPlacement
@@ -13,11 +12,7 @@ export class BoardWriter {
   public write(
     move: CrosswordMove
   ): CrosswordPlacement {
-    const placement =
-      this.board.createPlacement(
-        move
-      );
-
+    const placement = this.board.createPlacement(move);
     let wordIndex = 0;
 
     for (
@@ -32,12 +27,19 @@ export class BoardWriter {
           move.word.word.length
         )
     ) {
-      const cell =
-        this.board.getOrCreateCell(
-          coordinate.row,
-          coordinate.col,
-          move.word.word[wordIndex]
+      const letter = move.word.word[wordIndex];
+
+      if (letter === undefined) {
+        throw new Error(
+          `Invalid word index ${wordIndex} while writing crossword placement.`
         );
+      }
+
+      const cell = this.board.getOrCreateCell(
+        coordinate.row,
+        coordinate.col,
+        letter
+      );
 
       cell.addPlacement({
         placementId: placement.id,

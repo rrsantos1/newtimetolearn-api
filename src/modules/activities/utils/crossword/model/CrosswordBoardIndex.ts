@@ -1,4 +1,5 @@
-import { Direction } from "./types";
+import { Direction } from "../types";
+
 
 interface IndexedPlacement {
   id: number;

@@ -2,7 +2,7 @@ import { CrosswordBoard } from "../board/CrosswordBoard";
 import { Coordinate } from "../model/Coordinate";
 import { CrosswordCandidate, CrosswordMove } from "../types";
 import { EvaluationState } from "./EvaluationState";
-import { ConnectivityAnalyzer } from "./ConnectivityAnalyzer";
+import { ConnectivityAnalyzer } from "../analysis/ConnectivityAnalyzer";
 import { DEFAULT_HEURISTIC_WEIGHTS, HeuristicWeights } from "./HeuristicWeights";
 import { CrosswordMetrics } from "../model/CrosswordMetrics";
 
