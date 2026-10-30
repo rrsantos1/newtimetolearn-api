@@ -44,6 +44,13 @@ export function validateCrosswordGenerationResult(
     (placement) => normalizeCrosswordAnswer(placement.word.word).normalized,
   );
 
+  if (expectedWords.some((word) => word.length === 0)) {
+    throw new CrosswordGenerationError(
+      "A configuração contém uma resposta vazia após a normalização.",
+      "INCOMPLETE_GENERATION",
+    );
+  }
+
   const expectedCounts = new Map<string, number>();
   const placedCounts = new Map<string, number>();
 
@@ -71,13 +78,15 @@ export function validateCrosswordGenerationResult(
   for (const placement of placements) {
     const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
     const length = normalizedWord.length;
-
     const hasValidCoordinates =
       Number.isInteger(placement.row) &&
       Number.isInteger(placement.col);
+    const hasValidDirection =
+      placement.direction === "across" || placement.direction === "down";
 
     const fits =
       hasValidCoordinates &&
+      hasValidDirection &&
       (placement.direction === "across"
         ? placement.row >= 0 &&
           placement.row < rows &&
@@ -90,7 +99,7 @@ export function validateCrosswordGenerationResult(
 
     if (!fits || length < 1) {
       throw new CrosswordGenerationError(
-        `A resposta "${placement.word.word}" possui um posicionamento fora da grade.`,
+        `A resposta "${placement.word.word}" possui um posicionamento inválido ou fora da grade.`,
         "INVALID_PLACEMENT",
       );
     }
