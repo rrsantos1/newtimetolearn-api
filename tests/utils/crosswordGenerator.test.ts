@@ -36,4 +36,18 @@ describe("gerador de palavras cruzadas", () => {
     expect(caughtError).toBeInstanceOf(CrosswordGenerationError);
     expect((caughtError as CrosswordGenerationError).code).toBe("INCOMPLETE_GENERATION");
   });
+
+  
+  it("posiciona todas as palavras quando existem cruzamentos alternativos", () => {
+    const board = new CrosswordBoard(25, 25);
+    const builder = new CrosswordBuilder(board);
+
+    const result = builder.build([
+      { word: "CASA", clue: "Lugar onde se mora" },
+      { word: "SALA", clue: "Cômodo da casa" },
+      { word: "ASA", clue: "Parte usada para voar" },
+    ]);
+
+    expect(result.getPlacements()).toHaveLength(3);
+  });
 });
