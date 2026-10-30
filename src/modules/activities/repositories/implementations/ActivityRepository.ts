@@ -9,20 +9,14 @@ export class ActivityRepository implements IActivityRepository {
   private readonly repository = AppDataSource.getRepository(Activity);
 
   async findById(id: string): Promise<Activity | null> {
-    return this.repository.findOne({
-      where: { id },
-    });
+    return this.repository.findOne({ where: { id } });
   }
 
   async findBySlug(slug: string): Promise<Activity | null> {
-    return this.repository.findOne({
-      where: { slug },
-    });
+    return this.repository.findOne({ where: { slug } });
   }
 
-  async findBySlugWithVersions(
-    slug: string,
-  ): Promise<Activity | null> {
+  async findBySlugWithVersions(slug: string): Promise<Activity | null> {
     return this.repository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.versions", "version")
@@ -36,24 +30,14 @@ export class ActivityRepository implements IActivityRepository {
     id: string,
     teacherId: string,
   ): Promise<Activity | null> {
-    return this.repository.findOne({
-      where: {
-        id,
-        teacherId,
-      },
-    });
+    return this.repository.findOne({ where: { id, teacherId } });
   }
 
   async findBySlugAndTeacherId(
     slug: string,
     teacherId: string,
   ): Promise<Activity | null> {
-    return this.repository.findOne({
-      where: {
-        slug,
-        teacherId,
-      },
-    });
+    return this.repository.findOne({ where: { slug, teacherId } });
   }
 
   async save(
@@ -77,7 +61,7 @@ export class ActivityRepository implements IActivityRepository {
   async list(
     filters: ListActivitiesFilters,
   ): Promise<ListActivitiesResult> {
-    const { page, limit, teacherId, scope } = filters;
+    const { page, limit, teacherId, scope, search, type, difficulty } = filters;
 
     const query = this.repository
       .createQueryBuilder("activity")
@@ -119,6 +103,47 @@ export class ActivityRepository implements IActivityRepository {
         );
     }
 
+    if (type) {
+      query.andWhere("activity.type = :activityType", { activityType: type });
+    }
+
+    if (difficulty) {
+      const difficultyVersionCondition =
+        scope === "explore"
+          ? "filter_version.id = activity.current_published_version_id"
+          : "filter_version.activity_id = activity.id";
+
+      query.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM activity_versions filter_version
+          WHERE ${difficultyVersionCondition}
+            AND filter_version.difficulty = :activityDifficulty
+        )`,
+        { activityDifficulty: difficulty },
+      );
+    }
+
+    if (search) {
+      const searchVersionCondition =
+        scope === "explore"
+          ? "search_version.id = activity.current_published_version_id"
+          : "search_version.activity_id = activity.id";
+
+      query.andWhere(
+        `EXISTS (
+          SELECT 1
+          FROM activity_versions search_version
+          WHERE ${searchVersionCondition}
+            AND (
+              LOWER(search_version.name) LIKE :searchTerm
+              OR LOWER(COALESCE(search_version.description, '')) LIKE :searchTerm
+            )
+        )`,
+        { searchTerm: `%${search.toLocaleLowerCase("pt-BR")}%` },
+      );
+    }
+
     const [items, total] = await query
       .orderBy("activity.created_at", "DESC")
       .addOrderBy("version.version_number", "DESC")
@@ -126,9 +151,6 @@ export class ActivityRepository implements IActivityRepository {
       .take(limit)
       .getManyAndCount();
 
-    return {
-      items,
-      total,
-    };
+    return { items, total };
   }
 }
