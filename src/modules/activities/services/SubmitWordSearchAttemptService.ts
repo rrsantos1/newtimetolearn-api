@@ -1,5 +1,4 @@
 import { AppError } from "../../../shared/errors/AppError";
-import { User } from "../../users/entities/User";
 import type { IUserRepository } from "../../users/repositories/interfaces/IUserRepository";
 import type { ActivityAttempt } from "../entities/ActivityAttempt";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
