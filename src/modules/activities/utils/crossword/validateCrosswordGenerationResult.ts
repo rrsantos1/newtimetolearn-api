@@ -75,6 +75,11 @@ export function validateCrosswordGenerationResult(
     );
   }
 
+  const occupiedCells = new Map<
+    string,
+    { letter: string; direction: "across" | "down" }
+  >();
+
   for (const placement of placements) {
     const normalizedWord = normalizeCrosswordAnswer(placement.word.word).normalized;
     const length = normalizedWord.length;
@@ -102,6 +107,34 @@ export function validateCrosswordGenerationResult(
         `A resposta "${placement.word.word}" possui um posicionamento inválido ou fora da grade.`,
         "INVALID_PLACEMENT",
       );
+    }
+
+    for (let index = 0; index < length; index += 1) {
+      const row =
+        placement.row + (placement.direction === "down" ? index : 0);
+      const col =
+        placement.col + (placement.direction === "across" ? index : 0);
+      const key = `${row}:${col}`;
+      const existingCell = occupiedCells.get(key);
+      const letter = normalizedWord[index];
+
+      if (existingCell) {
+        const isPerpendicularCrossing =
+          existingCell.direction !== placement.direction;
+        const hasMatchingLetter = existingCell.letter === letter;
+
+        if (!isPerpendicularCrossing || !hasMatchingLetter) {
+          throw new CrosswordGenerationError(
+            `O posicionamento da resposta "${placement.word.word}" conflita com outra resposta na célula (${row}, ${col}).`,
+            "INVALID_PLACEMENT",
+          );
+        }
+      } else {
+        occupiedCells.set(key, {
+          letter,
+          direction: placement.direction,
+        });
+      }
     }
   }
 }
