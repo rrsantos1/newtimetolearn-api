@@ -12,6 +12,9 @@ export interface ListActivitiesInput {
   limit: number;
   teacherId?: string;
   scope: "mine" | "explore" | "all";
+  search?: string;
+  type?: Activity["type"];
+  difficulty?: "EASY" | "MEDIUM" | "HARD";
 }
 
 export interface ListedActivity {
@@ -82,18 +85,19 @@ export class ListActivitiesService {
 
     const items = result.items.map((activity) => {
       const versions = activity.versions ?? [];
-
       const publishedVersion = versions.find(
-        (version) => version.id === activity.currentPublishedVersionId
-          && version.status === ActivityVersionStatus.PUBLISHED,
+        (version) =>
+          version.id === activity.currentPublishedVersionId &&
+          version.status === ActivityVersionStatus.PUBLISHED,
       );
 
-      // No catálogo, nunca exponha rascunhos ou versões em análise de outros professores.
-      const latestVersion = input.scope === "explore"
-        ? publishedVersion
-        : [...versions].sort(
-            (a, b) => b.versionNumber - a.versionNumber,
-          )[0];
+      // O catálogo expõe somente a versão publicada, nunca rascunhos ou revisões em análise.
+      const latestVersion =
+        input.scope === "explore"
+          ? publishedVersion
+          : [...versions].sort(
+              (a, b) => b.versionNumber - a.versionNumber,
+            )[0];
 
       return {
         slug: activity.slug,
@@ -101,7 +105,9 @@ export class ListActivitiesService {
         status: activity.status,
         visibility: activity.visibility,
         executionCount: activity.executionCount,
-        requiresApproval: activity.status !== "ARCHIVED" && latestVersion?.status === ActivityVersionStatus.DRAFT,
+        requiresApproval:
+          activity.status !== "ARCHIVED" &&
+          latestVersion?.status === ActivityVersionStatus.DRAFT,
         createdAt: activity.createdAt,
         latestVersion: latestVersion
           ? {
