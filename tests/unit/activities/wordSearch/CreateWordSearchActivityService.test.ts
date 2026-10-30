@@ -19,8 +19,9 @@ describe("CreateWordSearchActivityService", () => {
     let activityVersionRepository: IActivityVersionRepository;
     let manager: EntityManager;
 
-    const input = {
+    const input = {        
         teacherId: "teacher-123",
+        isAdmin: false,
         name: "Animais brasileiros",
         description: "Encontre os animais",
         difficulty: ActivityDifficulty.EASY,
@@ -37,6 +38,7 @@ describe("CreateWordSearchActivityService", () => {
         activityRepository = {
             findById: vi.fn(),
             findBySlug: vi.fn().mockResolvedValue(null),
+            findBySlugWithVersions: vi.fn(),
             findByIdAndTeacherId: vi.fn(),
             findBySlugAndTeacherId: vi.fn(),
             save: vi.fn().mockImplementation(

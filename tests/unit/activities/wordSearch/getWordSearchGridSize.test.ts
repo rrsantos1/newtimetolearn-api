@@ -3,31 +3,31 @@ import { ActivityDifficulty } from "../../../../src/modules/activities/types/Act
 import { getWordSearchGridSizes } from "../../../../src/modules/activities/utils/wordSearch/getWordSearchGridSize";
 
 describe("getWordSearchGridSizes", () => {
-  it("deve começar com uma grade 8x8 para dificuldade fácil", () => {
+  it("deve começar com uma grade 12x12 para dificuldade fácil", () => {
     const result = getWordSearchGridSizes(
       ActivityDifficulty.EASY,
       ["CASA", "BOLA", "GATO"],
     );
 
-    expect(result[0]).toBe(8);
+    expect(result[0]).toBe(12);
   });
 
-  it("deve começar com uma grade 10x10 para dificuldade média", () => {
+  it("deve começar com uma grade 14x14 para dificuldade média", () => {
     const result = getWordSearchGridSizes(
       ActivityDifficulty.MEDIUM,
       ["CASA", "BOLA", "GATO"],
     );
 
-    expect(result[0]).toBe(10);
+    expect(result[0]).toBe(14);
   });
 
-  it("deve começar com uma grade 12x12 para dificuldade difícil", () => {
+  it("deve começar com uma grade 16x16 para dificuldade difícil", () => {
     const result = getWordSearchGridSizes(
       ActivityDifficulty.HARD,
       ["CASA", "BOLA", "GATO"],
     );
 
-    expect(result[0]).toBe(12);
+    expect(result[0]).toBe(16);
   });
 
   it("deve aumentar a grade em intervalos de duas unidades", () => {
@@ -37,7 +37,7 @@ describe("getWordSearchGridSizes", () => {
     );
 
     expect(result).toEqual([
-      8, 10, 12, 14, 16, 18, 20,
+      12, 14, 16, 18, 20,
     ]);
   });
 
@@ -56,7 +56,7 @@ describe("getWordSearchGridSizes", () => {
       ["GUARDA-CHUVA", "PÔR DO SOL", "BEM-ESTAR"],
     );
 
-    expect(result[0]).toBe(12);
+    expect(result[0]).toBe(14);
   });
 
   it("deve permitir uma palavra com exatamente 20 letras", () => {

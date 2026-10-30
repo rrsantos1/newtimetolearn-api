@@ -1,14 +1,14 @@
 import { ActivityDifficulty } from "../../types/ActivityDifficulty";
 import { normalizeWordSearchWord } from "./normalizeWordSearchWord";
 
-const MIN_GRID_SIZE = 8;
+const MIN_GRID_SIZE = 12;
 const MAX_GRID_SIZE = 20;
 const GRID_SIZE_STEP = 2;
 
 const INITIAL_GRID_SIZE: Record<ActivityDifficulty, number> = {
-  [ActivityDifficulty.EASY]: 8,
-  [ActivityDifficulty.MEDIUM]: 10,
-  [ActivityDifficulty.HARD]: 12,
+  [ActivityDifficulty.EASY]: 12,
+  [ActivityDifficulty.MEDIUM]: 14,
+  [ActivityDifficulty.HARD]: 16,
 };
 
 export function getWordSearchGridSizes(
