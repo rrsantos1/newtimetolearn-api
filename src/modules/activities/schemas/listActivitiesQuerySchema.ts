@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 export const listActivitiesQuerySchema = z.object({
+  scope: z.enum(["mine", "explore", "all"]).optional(),
   page: z.coerce
     .number()
     .int("A página deve ser um número inteiro.")
