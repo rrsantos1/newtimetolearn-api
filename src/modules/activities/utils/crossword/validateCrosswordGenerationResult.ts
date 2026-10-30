@@ -123,6 +123,13 @@ export function validateCrosswordGenerationResult(
       occupants.add(placementIndex);
       cellPlacements.set(key, occupants);
 
+      if (occupants.size > 2) {
+        throw new CrosswordGenerationError(
+          `Mais de duas respostas cruzam a mesma célula (${row}, ${col}).`,
+          "INVALID_PLACEMENT",
+        );
+      }
+
       if (existingCell) {
         const isPerpendicularCrossing =
           existingCell.direction !== placement.direction;
