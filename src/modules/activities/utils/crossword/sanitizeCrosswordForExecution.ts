@@ -85,6 +85,7 @@ export function sanitizeCrosswordForExecution(
   if (
     rows < 1 ||
     rows > 25 ||
+    generatedData.clues.length === 0 ||
     cols < 1 ||
     cols > 25 ||
     rawGrid.some(
