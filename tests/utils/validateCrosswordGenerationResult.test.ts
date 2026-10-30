@@ -112,6 +112,29 @@ describe("validateCrosswordGenerationResult", () => {
     ).toThrowError(CrosswordGenerationError);
   });
 
+  it("retorna erro controlado para entradas que não são arrays", () => {
+    expect(() =>
+      validateCrosswordGenerationResult(
+        null as unknown as readonly string[],
+        placements,
+        10,
+        10,
+      ),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
+  it("retorna erro controlado para posicionamentos sem palavra", () => {
+    const malformedPlacements = [
+      placements[0],
+      null,
+      placements[2],
+    ] as unknown as typeof placements;
+
+    expect(() =>
+      validateCrosswordGenerationResult(words, malformedPlacements, 10, 10),
+    ).toThrowError(CrosswordGenerationError);
+  });
+
   it("rejeita dimensões acima do limite do produto", () => {
     expect(() =>
       validateCrosswordGenerationResult(words, placements, 26, 25),
