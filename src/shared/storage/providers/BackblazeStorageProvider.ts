@@ -26,6 +26,17 @@ export class BackblazeStorageProvider implements IStorageProvider {
   private readonly client: S3Client;
 
   constructor() {
+    if (
+      !env.B2_S3_ENDPOINT ||
+      !env.B2_REGION ||
+      !env.B2_BUCKET_NAME ||
+      !env.B2_APPLICATION_KEY_ID ||
+      !env.B2_APPLICATION_KEY ||
+      !env.B2_PUBLIC_BASE_URL
+    ) {
+      throw new Error("A configuração do Backblaze B2 não foi definida.");
+    }
+
     this.client = new S3Client({
       endpoint: env.B2_S3_ENDPOINT,
       region: env.B2_REGION,
