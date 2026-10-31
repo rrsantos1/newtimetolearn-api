@@ -18,6 +18,8 @@ import { submitWordSearchAttemptController } from "../controllers/submitWordSear
 import { listActivityAttemptsController } from "../controllers/listActivityAttemptsController";
 import { getWordSearchRankingController } from "../controllers/getWordSearchRankingController";
 import { createQuizImageUploadUrlController } from "../controllers/createQuizImageUploadUrlController";
+import { createMediaAssetController } from "../controllers/createMediaAssetController";
+import { listMediaAssetsController } from "../controllers/listMediaAssetsController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -31,6 +33,18 @@ export async function activityRoutes(
       ],
     },
     createWordSearchActivityController,
+  );
+
+  app.get(
+    "/media-library",
+    { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] },
+    listMediaAssetsController,
+  );
+
+  app.post(
+    "/media-library",
+    { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] },
+    createMediaAssetController,
   );
 
   app.post(
