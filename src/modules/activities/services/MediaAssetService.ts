@@ -48,8 +48,8 @@ export class CreateMediaAssetService {
   async execute(input: CreateMediaAssetInput) {
     if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
     if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
-    if (!/^quiz\\/\\d{4}-\\d{2}-\\d{2}\\/[0-9a-f-]+\\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
-    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\\/$/, "");
+    if (!/^quiz\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
+    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\/$/, "");
     if (!configuredBaseUrl || !input.publicUrl.startsWith(`${configuredBaseUrl}/`)) throw new Error("INVALID_PUBLIC_URL");
 
     const status = await moderateImage(input.publicUrl);
