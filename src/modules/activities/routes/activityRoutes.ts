@@ -48,6 +48,14 @@ export async function activityRoutes(
   );
 
   app.post(
+    "/media-library/upload-url",
+    {
+      preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)],
+    },
+    createQuizImageUploadUrlController,
+  );
+
+  app.post(
     "/quiz/images/upload-url",
     {
       preHandler: [
