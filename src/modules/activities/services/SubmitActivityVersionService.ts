@@ -75,10 +75,28 @@ export class SubmitActivityVersionService {
     if (activity.type === ActivityType.QUIZ) {
       const validatedQuiz = quizContentSchema.safeParse(latestVersion.content);
       if (!validatedQuiz.success) {
+        const validationDetails = validatedQuiz.error.issues.map((issue) => ({
+          path: issue.path.join("."),
+          message: issue.message,
+          code: issue.code,
+        }));
+
+        console.warn("Quiz inválido ao enviar para revisão.", {
+          activitySlug: activity.slug,
+          versionId: latestVersion.id,
+          validationDetails,
+        });
+
+        const detailMessage = validationDetails
+          .map((issue) => `${issue.path || "content"}: ${issue.message}`)
+          .join("; ");
+
         throw new AppError(
           "QUIZ_NOT_READY_FOR_REVIEW",
           422,
-          "O Quiz precisa ter pelo menos uma questão válida, com enunciado, de 3 a 6 alternativas e exatamente uma resposta correta.",
+          detailMessage
+            ? `O Quiz não atende aos requisitos para aprovação: ${detailMessage}`
+            : "O Quiz precisa ter pelo menos uma questão válida, com enunciado, de 3 a 6 alternativas e exatamente uma resposta correta.",
         );
       }
     }
