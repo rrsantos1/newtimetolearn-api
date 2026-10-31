@@ -8,6 +8,7 @@ export interface CreateMediaAssetInput {
   contentType: string;
   sizeBytes: number;
   altText: string;
+  status?: "PENDING_REVIEW" | "APPROVED" | "REJECTED";
 }
 export interface ListMediaAssetsFilters { page: number; limit: number; search?: string; }
 export interface ListMediaAssetsResult { items: MediaAsset[]; total: number; }
