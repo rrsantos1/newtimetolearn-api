@@ -17,7 +17,7 @@ import { deleteActivityController } from "../controllers/deleteActivityControlle
 import { submitWordSearchAttemptController } from "../controllers/submitWordSearchAttemptController";
 import { listActivityAttemptsController } from "../controllers/listActivityAttemptsController";
 import { getWordSearchRankingController } from "../controllers/getWordSearchRankingController";
-import { createQuizImageUploadUrlController } from "../controllers/createQuizImageUploadUrlController";
+import { createMediaImageUploadUrlController } from "../controllers/createMediaImageUploadUrlController";
 import { createMediaAssetController } from "../controllers/createMediaAssetController";
 import { listMediaAssetsController } from "../controllers/listMediaAssetsController";
 
@@ -52,18 +52,7 @@ export async function activityRoutes(
     {
       preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)],
     },
-    createQuizImageUploadUrlController,
-  );
-
-  app.post(
-    "/quiz/images/upload-url",
-    {
-      preHandler: [
-        authMiddleware,
-        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
-      ],
-    },
-    createQuizImageUploadUrlController,
+    createMediaImageUploadUrlController,
   );
 
   app.post(
