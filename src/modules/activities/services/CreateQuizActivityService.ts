@@ -2,7 +2,7 @@ import type { EntityManager } from "typeorm";
 import { AppError } from "../../../shared/errors/AppError";
 import { Activity } from "../entities/Activity";
 import { ActivityVersion } from "../entities/ActivityVersion";
-import { quizContentSchema } from "../schemas/content/quizContentSchema";
+import { quizDraftContentSchema } from "../schemas/content/quizContentSchema";
 import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityType } from "../types/ActivityType";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
@@ -21,7 +21,7 @@ export class CreateQuizActivityService {
   ) {}
 
   async execute(input: CreateQuizActivityInput) {
-    const content = quizContentSchema.parse(input.content);
+    const content = quizDraftContentSchema.parse(input.content);
     const slug = await this.generateUniqueSlug(input.name);
     const activity = new Activity();
 
