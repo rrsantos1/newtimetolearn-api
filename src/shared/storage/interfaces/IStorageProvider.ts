@@ -13,4 +13,5 @@ export interface CreateUploadUrlResult {
 
 export interface IStorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult>;
+  deleteObject(storageKey: string): Promise<void>;
 }
