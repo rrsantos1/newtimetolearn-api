@@ -4,6 +4,7 @@ import { authMiddleware } from "../../../shared/http/middlewares/authMiddleware"
 import { RoleCode } from "../../users/types/RoleCode";
 import { createWordSearchActivityController } from "../controllers/createWordSearchActivityController";
 import { createCrosswordActivityController } from "../controllers/createCrosswordActivityController";
+import { createQuizActivityController } from "../controllers/createQuizActivityController";
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
 import { listActivitiesController } from "../controllers/listActivitiesController";
@@ -28,6 +29,17 @@ export async function activityRoutes(
       ],
     },
     createWordSearchActivityController,
+  );
+
+  app.post(
+    "/quiz",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    createQuizActivityController,
   );
 
   app.get(
