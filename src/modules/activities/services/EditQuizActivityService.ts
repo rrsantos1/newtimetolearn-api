@@ -5,7 +5,7 @@ import { Activity } from "../entities/Activity";
 import { ActivityVersion } from "../entities/ActivityVersion";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
 import type { IActivityVersionRepository } from "../repositories/interfaces/IActivityVersionRepository";
-import { quizContentSchema } from "../schemas/content/quizContentSchema";
+import { quizDraftContentSchema } from "../schemas/content/quizContentSchema";
 import type { CreateQuizActivityBody } from "../schemas/createQuizActivitySchema";
 import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityType } from "../types/ActivityType";
@@ -53,7 +53,7 @@ export class EditQuizActivityService {
       );
     }
 
-    const validatedContent = quizContentSchema.safeParse(input.content);
+    const validatedContent = quizDraftContentSchema.safeParse(input.content);
     if (!validatedContent.success) {
       throw new AppError(
         "VALIDATION_ERROR",
