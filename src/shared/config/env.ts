@@ -4,6 +4,13 @@ import { z } from "zod";
 const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
 
+  B2_S3_ENDPOINT: z.url().optional(),
+  B2_REGION: z.string().min(1).optional(),
+  B2_BUCKET_NAME: z.string().min(1).optional(),
+  B2_APPLICATION_KEY_ID: z.string().min(1).optional(),
+  B2_APPLICATION_KEY: z.string().min(1).optional(),
+  B2_PUBLIC_BASE_URL: z.url().optional(),
+
   EMAIL_FROM: z.string().min(1).default("onboarding@resend.dev"),
 
   NODE_ENV: z
@@ -29,4 +36,20 @@ const envSchema = z.object({
     .default("1h"),
   });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+const storageEnvKeys = [
+  parsedEnv.B2_S3_ENDPOINT,
+  parsedEnv.B2_REGION,
+  parsedEnv.B2_BUCKET_NAME,
+  parsedEnv.B2_APPLICATION_KEY_ID,
+  parsedEnv.B2_APPLICATION_KEY,
+  parsedEnv.B2_PUBLIC_BASE_URL,
+];
+const configuredStorageValues = storageEnvKeys.filter((value) => value !== undefined);
+
+if (configuredStorageValues.length > 0 && configuredStorageValues.length !== storageEnvKeys.length) {
+  throw new Error("As variáveis do Backblaze B2 devem ser configuradas em conjunto.");
+}
+
+export const env = parsedEnv;
