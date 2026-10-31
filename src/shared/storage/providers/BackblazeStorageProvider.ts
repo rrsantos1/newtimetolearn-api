@@ -136,4 +136,45 @@ export class BackblazeStorageProvider implements IStorageProvider {
       expiresInSeconds: UPLOAD_URL_EXPIRES_IN_SECONDS,
     };
   }
+
+  async deleteObject(storageKey: string): Promise<void> {
+    const endpoint = new URL(env.B2_S3_ENDPOINT!);
+    const canonicalUri = `/${encodePath(env.B2_BUCKET_NAME!)}/${encodePath(storageKey)}`;
+    const now = new Date();
+    const amzDate = now.toISOString().replace(/[:-]|\\.\\d{3}/g, "");
+    const dateStamp = amzDate.slice(0, 8);
+    const credentialScope = `${dateStamp}/${env.B2_REGION}/${S3_SERVICE}/aws4_request`;
+    const signedHeaders = "host";
+    const queryParameters: Record<string, string> = {
+      "X-Amz-Algorithm": AWS_ALGORITHM,
+      "X-Amz-Credential": `${env.B2_APPLICATION_KEY_ID}/${credentialScope}`,
+      "X-Amz-Date": amzDate,
+      "X-Amz-Expires": String(UPLOAD_URL_EXPIRES_IN_SECONDS),
+      "X-Amz-SignedHeaders": signedHeaders,
+    };
+    const canonicalQueryString = Object.entries(queryParameters)
+      .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
+      .sort(([keyA, valueA], [keyB, valueB]) => keyA.localeCompare(keyB) || valueA.localeCompare(valueB))
+      .map(([key, value]) => `${key}=${value}`)
+      .join("&");
+    const canonicalRequest = [
+      "DELETE",
+      canonicalUri,
+      canonicalQueryString,
+      `host:${endpoint.host}\\n`,
+      signedHeaders,
+      "UNSIGNED-PAYLOAD",
+    ].join("\\n");
+    const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\\n");
+    const signature = hmac(
+      getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!),
+      stringToSign,
+    ).toString("hex");
+    const deleteUrl = `${endpoint.origin}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
+    const response = await fetch(deleteUrl, { method: "DELETE" });
+    if (!response.ok && response.status !== 404) {
+      throw new Error("STORAGE_DELETE_FAILED");
+    }
+  }
+
 }
