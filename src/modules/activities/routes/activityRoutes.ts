@@ -5,6 +5,7 @@ import { RoleCode } from "../../users/types/RoleCode";
 import { createWordSearchActivityController } from "../controllers/createWordSearchActivityController";
 import { createCrosswordActivityController } from "../controllers/createCrosswordActivityController";
 import { createQuizActivityController } from "../controllers/createQuizActivityController";
+import { editQuizActivityController } from "../controllers/editQuizActivityController";
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
 import { listActivitiesController } from "../controllers/listActivitiesController";
@@ -106,6 +107,17 @@ export async function activityRoutes(
       ],
     },
     getActivityBySlugController,
+  );
+
+  app.patch(
+    "/:slug/quiz",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    editQuizActivityController,
   );
 
   app.patch(
