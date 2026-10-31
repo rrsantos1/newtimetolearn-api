@@ -10,6 +10,7 @@ import { EmailChangeRequest } from "../../modules/auth/entities/EmailChangeReque
 import { Activity } from "../../modules/activities/entities/Activity";
 import { ActivityVersion } from "../../modules/activities/entities/ActivityVersion";
 import { ActivityAttempt } from "../../modules/activities/entities/ActivityAttempt";
+import { MediaAsset } from "../../modules/activities/entities/MediaAsset";
 
 if (!env.DATABASE_URL) {
   throw new Error("DATABASE_URL não foi configurada.");
@@ -31,6 +32,7 @@ export const AppDataSource = new DataSource({
     Activity,
     ActivityVersion,
     ActivityAttempt,
+    MediaAsset,
   ],
   synchronize: false,
   migrationsRun: false,
