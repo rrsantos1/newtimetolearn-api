@@ -5,6 +5,51 @@ const quizImageSchema = z.object({
   altText: z.string().trim().max(250).default(""),
 });
 
+const draftOptionSchema = z.object({
+  id: z.string().trim().min(1).max(50),
+  text: z.string().trim().max(1000).optional().default(""),
+  images: z.array(quizImageSchema).max(5).default([]),
+});
+
+const draftQuestionSchema = z.object({
+  id: z.string().trim().min(1).max(50),
+  statement: z.string().trim().max(2000).optional().default(""),
+  images: z.array(quizImageSchema).max(5).default([]),
+  options: z.array(draftOptionSchema).max(6).default([]),
+  correctOptionId: z.string().trim().max(50).optional().default(""),
+  explanation: z.string().trim().max(2000).optional().default(""),
+});
+
+export const quizDraftContentSchema = z.object({
+  questions: z.array(draftQuestionSchema).max(1000).default([]),
+}).superRefine((content, context) => {
+  const questionIds = new Set<string>();
+  content.questions.forEach((question, index) => {
+    if (questionIds.has(question.id)) {
+      context.addIssue({
+        code: "custom",
+        path: ["questions", index, "id"],
+        message: "O identificador da questão deve ser único.",
+      });
+    }
+    questionIds.add(question.id);
+
+    const optionIds = new Set<string>();
+    question.options.forEach((option, optionIndex) => {
+      if (optionIds.has(option.id)) {
+        context.addIssue({
+          code: "custom",
+          path: ["questions", index, "options", optionIndex, "id"],
+          message: "O identificador da alternativa deve ser único na questão.",
+        });
+      }
+      optionIds.add(option.id);
+    });
+  });
+});
+
+export type QuizDraftContent = z.infer<typeof quizDraftContentSchema>;
+
 const quizOptionSchema = z.object({
   id: z.string().trim().min(1).max(50),
   text: z.string().trim().max(1000).optional().default(""),
@@ -59,7 +104,6 @@ export const quizContentSchema = z.object({
         message: "O identificador da questão deve ser único.",
       });
     }
-
     questionIds.add(question.id);
   });
 });
