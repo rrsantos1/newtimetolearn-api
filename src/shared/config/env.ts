@@ -3,6 +3,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
+  GOOGLE_VISION_API_KEY: z.string().min(1).optional(),
 
   B2_S3_ENDPOINT: z.url().optional(),
   B2_REGION: z.string().min(1).optional(),
