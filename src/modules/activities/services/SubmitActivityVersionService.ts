@@ -6,6 +6,8 @@ import type { IActivityRepository } from "../repositories/interfaces/IActivityRe
 import type { IActivityVersionRepository } from "../repositories/interfaces/IActivityVersionRepository";
 import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
+import { ActivityType } from "../types/ActivityType";
+import { quizContentSchema } from "../schemas/content/quizContentSchema";
 
 interface SubmitActivityVersionInput {
   slug: string;
@@ -68,6 +70,17 @@ export class SubmitActivityVersionService {
         409,
         "Somente a versão mais recente em rascunho pode ser enviada para revisão.",
       );
+    }
+
+    if (activity.type === ActivityType.QUIZ) {
+      const validatedQuiz = quizContentSchema.safeParse(latestVersion.content);
+      if (!validatedQuiz.success) {
+        throw new AppError(
+          "QUIZ_NOT_READY_FOR_REVIEW",
+          422,
+          "O Quiz precisa ter pelo menos uma questão válida, com enunciado, de 3 a 6 alternativas e exatamente uma resposta correta.",
+        );
+      }
     }
 
     latestVersion.status = ActivityVersionStatus.PENDING_REVIEW;
