@@ -1,4 +1,5 @@
 import { env } from "../../../shared/config/env";
+import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { CreateMediaAssetInput, IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -53,12 +54,18 @@ export class CreateMediaAssetService {
     if (!configuredBaseUrl || !input.publicUrl.startsWith(`${configuredBaseUrl}/`)) throw new Error("INVALID_PUBLIC_URL");
 
     const status = await moderateImage(input.publicUrl);
-    return this.repository.create({
+    const asset = await this.repository.create({
       ...input,
       status,
       fileName: input.fileName.trim().slice(0, 255),
       altText: input.altText.trim().slice(0, 250),
     });
+
+    if (status === "REJECTED") {
+      await makeStorageProvider().deleteObject(input.storageKey);
+    }
+
+    return asset;
   }
 }
 export class ListMediaAssetsService {
