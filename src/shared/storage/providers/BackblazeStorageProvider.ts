@@ -80,7 +80,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
       throw new Error("INVALID_STORAGE_ENDPOINT");
     }
 
-    const storageKey = `quiz/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
+    const storageKey = `media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
     const canonicalUri = `/${encodePath(env.B2_BUCKET_NAME!)}/${encodePath(storageKey)}`;
     const now = new Date();
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
