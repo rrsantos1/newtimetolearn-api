@@ -6,7 +6,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
   private readonly repository = AppDataSource.getRepository(MediaAsset);
 
   async create(input: CreateMediaAssetInput): Promise<MediaAsset> {
-    return this.repository.save(this.repository.create({ ...input, status: "PENDING_REVIEW" }));
+    return this.repository.save(this.repository.create({ ...input, status: input.status ?? "PENDING_REVIEW" }));
   }
 
   async list(filters: ListMediaAssetsFilters): Promise<ListMediaAssetsResult> {
