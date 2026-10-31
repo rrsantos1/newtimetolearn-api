@@ -9,14 +9,27 @@ interface SafeSearchAnnotation {
   violence?: Likelihood;
   racy?: Likelihood;
 }
+interface VisionApiError {
+  code?: number;
+  message?: string;
+  status?: string;
+}
+interface VisionImageResponse {
+  safeSearchAnnotation?: SafeSearchAnnotation;
+  error?: VisionApiError;
+}
 interface VisionResponse {
-  responses?: Array<{ safeSearchAnnotation?: SafeSearchAnnotation; error?: { message?: string } }>;
+  responses?: VisionImageResponse[];
+  error?: VisionApiError;
 }
 const blockedLikelihoods = new Set<Likelihood>(["LIKELY", "VERY_LIKELY"]);
 const riskCategories: Array<keyof SafeSearchAnnotation> = ["adult", "violence", "racy"];
 
 async function moderateImage(publicUrl: string): Promise<"APPROVED" | "REJECTED" | "PENDING_REVIEW"> {
-  if (!env.GOOGLE_VISION_API_KEY) return "PENDING_REVIEW";
+  if (!env.GOOGLE_VISION_API_KEY) {
+    console.warn("Google Vision não configurado: GOOGLE_VISION_API_KEY ausente. Imagem encaminhada para revisão administrativa.");
+    return "PENDING_REVIEW";
+  }
 
   try {
     const response = await fetch(
@@ -34,18 +47,45 @@ async function moderateImage(publicUrl: string): Promise<"APPROVED" | "REJECTED"
       },
     );
 
-    if (!response.ok) {
-      console.warn("Google Vision indisponível; imagem encaminhada para revisão administrativa.", {
-        status: response.status,
+    let result: VisionResponse;
+    try {
+      result = await response.json() as VisionResponse;
+    } catch {
+      console.warn("Google Vision retornou uma resposta que não pôde ser interpretada como JSON.", {
+        httpStatus: response.status,
+        ok: response.ok,
       });
       return "PENDING_REVIEW";
     }
 
-    const result = await response.json() as VisionResponse;
-    const annotation = result.responses?.[0]?.safeSearchAnnotation;
+    if (!response.ok) {
+      console.warn("Google Vision rejeitou a solicitação; imagem encaminhada para revisão administrativa.", {
+        httpStatus: response.status,
+        apiErrorCode: result.error?.code,
+        apiErrorStatus: result.error?.status,
+        apiErrorMessage: result.error?.message ?? "A API não retornou uma mensagem de erro.",
+      });
+      return "PENDING_REVIEW";
+    }
+
+    const imageResponse = result.responses?.[0];
+
+    if (imageResponse?.error) {
+      console.warn("Google Vision retornou erro ao analisar a imagem; imagem encaminhada para revisão administrativa.", {
+        apiErrorCode: imageResponse.error.code,
+        apiErrorStatus: imageResponse.error.status,
+        apiErrorMessage: imageResponse.error.message ?? "A API não retornou uma mensagem de erro.",
+      });
+      return "PENDING_REVIEW";
+    }
+
+    const annotation = imageResponse?.safeSearchAnnotation;
 
     if (!annotation) {
-      console.warn("Google Vision não retornou SafeSearch; imagem encaminhada para revisão administrativa.");
+      console.warn("Google Vision não retornou SafeSearch; imagem encaminhada para revisão administrativa.", {
+        responseCount: result.responses?.length ?? 0,
+        responseHasError: Boolean(imageResponse?.error),
+      });
       return "PENDING_REVIEW";
     }
 
@@ -68,8 +108,8 @@ export class CreateMediaAssetService {
   async execute(input: CreateMediaAssetInput) {
     if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
     if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
-    if (!/^media\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
-    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+    if (!/^media\\/\\d{4}-\\d{2}-\\d{2}\\/[0-9a-f-]+\\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
+    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\\/$/, "");
     if (!configuredBaseUrl || !input.publicUrl.startsWith(`${configuredBaseUrl}/`)) throw new Error("INVALID_PUBLIC_URL");
 
     const status = await moderateImage(input.publicUrl);
@@ -80,7 +120,7 @@ export class CreateMediaAssetService {
       altText: input.altText.trim().slice(0, 250),
     });
 
-    if (status === "REJECTED") {  
+    if (status === "REJECTED") {
       await makeStorageProvider().deleteObject(input.storageKey);
     }
 
