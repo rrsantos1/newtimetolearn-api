@@ -28,7 +28,7 @@ const envSchema = z.object({
     .enum(["true", "false"])
     .default("false"),
 
-  FRONTEND_URL: z.url().default("http://localhost:3001"),
+  FRONTEND_URL: z.url().default("http://localhost:3000"),
 
   JWT_SECRET: z.string().min(32),
   
