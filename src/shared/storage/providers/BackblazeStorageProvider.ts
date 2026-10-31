@@ -98,9 +98,13 @@ export class BackblazeStorageProvider implements IStorageProvider {
 
     const canonicalQueryString = Object.entries(queryParameters)
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
-      .sort(([keyA, valueA], [keyB, valueB]) =>
-        keyA.localeCompare(keyB) || valueA.localeCompare(valueB),
-      )
+      .sort(([keyA, valueA], [keyB, valueB]) => {
+        if (keyA !== keyB) {
+          return keyA < keyB ? -1 : 1;
+        }
+
+        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+      })
       .map(([key, value]) => `${key}=${value}`)
       .join("&");
 
@@ -131,7 +135,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
     return {
       storageKey,
       uploadUrl,
-      publicUrl: `${env.B2_PUBLIC_BASE_URL!.replace(/\/$/, "")}/${storageKey}`,
+      publicUrl: `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${storageKey}`,
       contentType: input.contentType,
       expiresInSeconds: UPLOAD_URL_EXPIRES_IN_SECONDS,
     };
@@ -154,7 +158,13 @@ export class BackblazeStorageProvider implements IStorageProvider {
     };
     const canonicalQueryString = Object.entries(queryParameters)
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
-      .sort(([keyA, valueA], [keyB, valueB]) => keyA.localeCompare(keyB) || valueA.localeCompare(valueB))
+      .sort(([keyA, valueA], [keyB, valueB]) => {
+        if (keyA !== keyB) {
+          return keyA < keyB ? -1 : 1;
+        }
+
+        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
+      })
       .map(([key, value]) => key + "=" + value)
       .join("&");
     const canonicalHeaders = "host:" + endpoint.host + "\n";
@@ -177,5 +187,4 @@ export class BackblazeStorageProvider implements IStorageProvider {
       throw new Error("STORAGE_DELETE_FAILED");
     }
   }
-
 }
