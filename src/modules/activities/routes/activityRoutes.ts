@@ -17,6 +17,7 @@ import { deleteActivityController } from "../controllers/deleteActivityControlle
 import { submitWordSearchAttemptController } from "../controllers/submitWordSearchAttemptController";
 import { listActivityAttemptsController } from "../controllers/listActivityAttemptsController";
 import { getWordSearchRankingController } from "../controllers/getWordSearchRankingController";
+import { createQuizImageUploadUrlController } from "../controllers/createQuizImageUploadUrlController";
 
 export async function activityRoutes(
   app: FastifyInstance,
@@ -30,6 +31,17 @@ export async function activityRoutes(
       ],
     },
     createWordSearchActivityController,
+  );
+
+  app.post(
+    "/quiz/images/upload-url",
+    {
+      preHandler: [
+        authMiddleware,
+        authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN),
+      ],
+    },
+    createQuizImageUploadUrlController,
   );
 
   app.post(
