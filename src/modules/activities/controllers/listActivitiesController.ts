@@ -30,7 +30,16 @@ export async function listActivitiesController(
 
   try {
     const isAdmin = request.user.roles.includes(RoleCode.ADMIN);
-    const scope = parsedQuery.data.scope ?? (isAdmin ? "all" : "mine");
+    const isStudent = request.user.roles.includes(RoleCode.STUDENT);
+    const scope = parsedQuery.data.scope ?? (isAdmin ? "all" : isStudent ? "explore" : "mine");
+
+    if (isStudent && scope !== "explore") {
+      throw new AppError(
+        "FORBIDDEN",
+        403,
+        "Alunos só podem consultar atividades publicadas disponíveis para execução.",
+      );
+    }
 
     if (scope === "all" && !isAdmin) {
       throw new AppError(
