@@ -22,8 +22,10 @@ import { listMediaAssetsController } from "../controllers/listMediaAssetsControl
 import { listPendingMediaAssetsController } from "../controllers/listPendingMediaAssetsController";
 import { reviewMediaAssetController } from "../controllers/reviewMediaAssetController";
 import { getQuarantinedMediaAssetController } from "../controllers/getQuarantinedMediaAssetController";
+import { generateAiActivitySuggestionsController } from "../controllers/generateAiActivitySuggestionsController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
+  app.post("/ai/suggestions", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateAiActivitySuggestionsController);
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
