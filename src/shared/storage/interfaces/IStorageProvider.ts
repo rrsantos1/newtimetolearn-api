@@ -11,7 +11,15 @@ export interface CreateUploadUrlResult {
   expiresInSeconds: number;
 }
 
+export interface UploadObjectInput {
+  bucketName: string;
+  storageKey: string;
+  contentType: string;
+  body: Buffer;
+}
+
 export interface IStorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult>;
-  deleteObject(storageKey: string): Promise<void>;
+  uploadObject(input: UploadObjectInput): Promise<void>;
+  deleteObject(storageKey: string, bucketName?: string): Promise<void>;
 }
