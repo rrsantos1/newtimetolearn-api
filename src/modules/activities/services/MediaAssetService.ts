@@ -2,7 +2,7 @@ import vision from "@google-cloud/vision";
 import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
-import type { CreateMediaAssetInput, IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
+import type { IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const extensionByType: Record<string, string> = {
