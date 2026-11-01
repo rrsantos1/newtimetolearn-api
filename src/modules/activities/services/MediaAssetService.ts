@@ -173,8 +173,8 @@ export class GetQuarantinedMediaAssetService {
     if (asset.status !== "PENDING_REVIEW") throw new Error("MEDIA_ASSET_NOT_PENDING");
 
     const client = new S3Client({
-      endpoint: env.B2_S3_ENDPOINT,
-      region: env.B2_REGION,
+      endpoint: env.B2_S3_ENDPOINT!,
+      region: env.B2_REGION!,
       forcePathStyle: true,
       credentials: {
         accessKeyId: env.B2_APPLICATION_KEY_ID!,
