@@ -124,8 +124,8 @@ export class ReviewMediaAssetService {
     }
 
     const s3Client = new S3Client({
-      endpoint: env.B2_S3_ENDPOINT,
-      region: env.B2_REGION,
+      endpoint: env.B2_S3_ENDPOINT!,
+      region: env.B2_REGION!,
       forcePathStyle: true,
       credentials: {
         accessKeyId: env.B2_APPLICATION_KEY_ID!,
