@@ -1,97 +1,35 @@
+import vision from "@google-cloud/vision";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { CreateMediaAssetInput, IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-type Likelihood = "UNKNOWN" | "VERY_UNLIKELY" | "UNLIKELY" | "POSSIBLE" | "LIKELY" | "VERY_LIKELY";
-interface SafeSearchAnnotation {
-  adult?: Likelihood;
-  violence?: Likelihood;
-  racy?: Likelihood;
-}
-interface VisionApiError {
-  code?: number;
-  message?: string;
-  status?: string;
-}
-interface VisionImageResponse {
-  safeSearchAnnotation?: SafeSearchAnnotation;
-  error?: VisionApiError;
-}
-interface VisionResponse {
-  responses?: VisionImageResponse[];
-  error?: VisionApiError;
-}
-const blockedLikelihoods = new Set<Likelihood>(["LIKELY", "VERY_LIKELY"]);
-const riskCategories: Array<keyof SafeSearchAnnotation> = ["adult", "violence", "racy"];
+const blockedLikelihoods = new Set<number>([4, 5]);
+const riskCategories = ["adult", "violence", "racy"] as const;
+type RiskCategory = (typeof riskCategories)[number];
+
+const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
+  ? new vision.ImageAnnotatorClient({ keyFilename: env.GOOGLE_APPLICATION_CREDENTIALS })
+  : null;
 
 async function moderateImage(publicUrl: string): Promise<"APPROVED" | "REJECTED" | "PENDING_REVIEW"> {
-  if (!env.GOOGLE_VISION_API_KEY) {
-    console.warn("Google Vision não configurado: GOOGLE_VISION_API_KEY ausente. Imagem encaminhada para revisão administrativa.");
+  if (!visionClient) {
+    console.warn("Google Vision não configurado: GOOGLE_APPLICATION_CREDENTIALS ausente. Imagem encaminhada para revisão administrativa.");
     return "PENDING_REVIEW";
   }
 
   try {
-    const response = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${encodeURIComponent(env.GOOGLE_VISION_API_KEY)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          requests: [{
-            image: { source: { imageUri: publicUrl } },
-            features: [{ type: "SAFE_SEARCH_DETECTION" }],
-          }],
-        }),
-        signal: AbortSignal.timeout(8000),
-      },
-    );
-
-    let result: VisionResponse;
-    try {
-      result = await response.json() as VisionResponse;
-    } catch {
-      console.warn("Google Vision retornou uma resposta que não pôde ser interpretada como JSON.", {
-        httpStatus: response.status,
-        ok: response.ok,
-      });
-      return "PENDING_REVIEW";
-    }
-
-    if (!response.ok) {
-      console.warn("Google Vision rejeitou a solicitação; imagem encaminhada para revisão administrativa.", {
-        httpStatus: response.status,
-        apiErrorCode: result.error?.code,
-        apiErrorStatus: result.error?.status,
-        apiErrorMessage: result.error?.message ?? "A API não retornou uma mensagem de erro.",
-      });
-      return "PENDING_REVIEW";
-    }
-
-    const imageResponse = result.responses?.[0];
-
-    if (imageResponse?.error) {
-      console.warn("Google Vision retornou erro ao analisar a imagem; imagem encaminhada para revisão administrativa.", {
-        apiErrorCode: imageResponse.error.code,
-        apiErrorStatus: imageResponse.error.status,
-        apiErrorMessage: imageResponse.error.message ?? "A API não retornou uma mensagem de erro.",
-      });
-      return "PENDING_REVIEW";
-    }
-
-    const annotation = imageResponse?.safeSearchAnnotation;
+    const [result] = await visionClient.safeSearchDetection(publicUrl);
+    const annotation = result.safeSearchAnnotation;
 
     if (!annotation) {
-      console.warn("Google Vision não retornou SafeSearch; imagem encaminhada para revisão administrativa.", {
-        responseCount: result.responses?.length ?? 0,
-        responseHasError: Boolean(imageResponse?.error),
-      });
+      console.warn("Google Vision não retornou SafeSearch; imagem encaminhada para revisão administrativa.");
       return "PENDING_REVIEW";
     }
 
-    const rejected = riskCategories.some((category) => {
+    const rejected = riskCategories.some((category: RiskCategory) => {
       const likelihood = annotation[category];
-      return likelihood !== undefined && blockedLikelihoods.has(likelihood);
+      return typeof likelihood === "number" && blockedLikelihoods.has(likelihood);
     });
 
     return rejected ? "REJECTED" : "APPROVED";
@@ -108,8 +46,8 @@ export class CreateMediaAssetService {
   async execute(input: CreateMediaAssetInput) {
     if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
     if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
-    if (!/^media\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
-    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\/$/, "");
+    if (!/^media\\/\\d{4}-\\d{2}-\\d{2}\\/[0-9a-f-]+\\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
+    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\\/$/, "");
     if (!configuredBaseUrl || !input.publicUrl.startsWith(`${configuredBaseUrl}/`)) throw new Error("INVALID_PUBLIC_URL");
 
     const status = await moderateImage(input.publicUrl);
