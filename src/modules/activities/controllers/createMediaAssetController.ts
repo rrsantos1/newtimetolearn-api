@@ -25,8 +25,18 @@ export async function createMediaAssetController(request: FastifyRequest, reply:
     return reply.status(400).send({ success: false, error: { code: "INVALID_IMAGE_SIZE", message: "A imagem deve ter no máximo 5 MB." }, requestId: request.id });
   }
 
-  const fileName = decodeHeader(request.headers["x-file-name"], "imagem");
-  const altText = decodeHeader(request.headers["x-alt-text"], "");
+  const fileNameHeader = request.headers["x-file-name"];
+  const altTextHeader = request.headers["x-alt-text"];
+
+  const fileName = decodeHeader(
+    Array.isArray(fileNameHeader) ? fileNameHeader[0] : fileNameHeader,
+    "imagem",
+  );
+
+  const altText = decodeHeader(
+    Array.isArray(altTextHeader) ? altTextHeader[0] : altTextHeader,
+    "",
+  );
   try {
     const asset = await makeCreateMediaAssetService().execute({
       uploadedBy: request.user.sub,

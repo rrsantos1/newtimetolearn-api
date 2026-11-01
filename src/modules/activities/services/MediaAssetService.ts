@@ -148,7 +148,7 @@ export class ReviewMediaAssetService {
       body: imageBuffer,
     });
 
-    const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "")}/${publicStorageKey}`;
+    const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${publicStorageKey}`;
     try {
       const updated = await this.repository.updateReview(id, "APPROVED", publicStorageKey, publicUrl);
       try {

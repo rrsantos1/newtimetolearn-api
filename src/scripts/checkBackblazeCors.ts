@@ -6,7 +6,7 @@ import {
 
 const endpoint = process.env.B2_S3_ENDPOINT;
 const region = process.env.B2_REGION;
-const bucket = process.env.B2_BUCKET_NAME;
+const bucket = process.env.B2_QUARANTINE_BUCKET_NAME;
 const accessKeyId = process.env.B2_APPLICATION_KEY_ID;
 const secretAccessKey = process.env.B2_APPLICATION_KEY;
 
