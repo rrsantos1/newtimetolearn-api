@@ -40,7 +40,7 @@ export class SubmitWordSearchAttemptService {
 
     if (
       !activity ||
-      (activity.type !== ActivityType.WORD_SEARCH && activity.type !== ActivityType.CROSSWORD) ||
+      (activity.type !== ActivityType.WORD_SEARCH && activity.type !== ActivityType.CROSSWORD && activity.type !== ActivityType.QUIZ) ||
       activity.status !== ActivityStatus.PUBLISHED ||
       !activity.currentPublishedVersionId
     ) {
@@ -55,13 +55,15 @@ export class SubmitWordSearchAttemptService {
     }
 
     let expectedWords: string[];
+    let isQuiz = false;
+
     if (activity.type === ActivityType.WORD_SEARCH) {
       const contentWords = version.content.words;
       if (!Array.isArray(contentWords) || !contentWords.every((word): word is string => typeof word === "string") || contentWords.length === 0) {
         throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "A lista de palavras desta atividade é inválida.");
       }
       expectedWords = contentWords.map(normalizeWord);
-    } else {
+    } else if (activity.type === ActivityType.CROSSWORD) {
       const generatedData = version.generatedData;
       const rawClues = isRecord(generatedData) ? generatedData.clues : null;
       if (!Array.isArray(rawClues) || rawClues.length === 0) {
@@ -75,12 +77,28 @@ export class SubmitWordSearchAttemptService {
         throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O gabarito desta cruzadinha é inválido.");
       }
       expectedWords = clueWords;
+    } else {
+      isQuiz = true;
+      const rawQuestions = version.content.questions;
+      if (!Array.isArray(rawQuestions) || rawQuestions.length === 0) {
+        throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "As questões deste Quiz são inválidas.");
+      }
+      const correctOptionIds = rawQuestions.flatMap((question): string[] => {
+        if (!isRecord(question) || typeof question.correctOptionId !== "string") return [];
+        return [question.correctOptionId.trim().toUpperCase()];
+      });
+      if (correctOptionIds.length !== rawQuestions.length) {
+        throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O gabarito deste Quiz é inválido.");
+      }
+      expectedWords = correctOptionIds;
     }
 
     const normalizedExpectedWords = activity.type === ActivityType.WORD_SEARCH
       ? [...new Set(expectedWords)]
       : expectedWords;
-    const normalizedFoundWords = input.wordsFound.map(normalizeWord).filter(Boolean);
+    const normalizedFoundWords = input.wordsFound
+      .map((value) => isQuiz ? value.trim().toUpperCase() : normalizeWord(value))
+      .filter(Boolean);
     const answersToMatch = activity.type === ActivityType.WORD_SEARCH
       ? [...new Set(normalizedFoundWords)]
       : normalizedFoundWords;
