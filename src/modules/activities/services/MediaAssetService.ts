@@ -1,70 +1,101 @@
 import vision from "@google-cloud/vision";
+import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { CreateMediaAssetInput, IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const extensionByType: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/gif": "gif",
+};
 const blockedLikelihoods = new Set<number>([4, 5]);
 const riskCategories = ["adult", "violence", "racy"] as const;
 type RiskCategory = (typeof riskCategories)[number];
+type ModerationStatus = "APPROVED" | "REJECTED" | "PENDING_REVIEW";
 
 const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
   ? new vision.ImageAnnotatorClient({ keyFilename: env.GOOGLE_APPLICATION_CREDENTIALS })
   : null;
 
-async function moderateImage(publicUrl: string): Promise<"APPROVED" | "REJECTED" | "PENDING_REVIEW"> {
-  if (!visionClient) {
-    console.warn("Google Vision não configurado: GOOGLE_APPLICATION_CREDENTIALS ausente. Imagem encaminhada para revisão administrativa.");
-    return "PENDING_REVIEW";
-  }
-
+async function moderateImage(imageBuffer: Buffer): Promise<ModerationStatus> {
+  if (!visionClient) return "PENDING_REVIEW";
   try {
-    const [result] = await visionClient.safeSearchDetection(publicUrl);
+    const [result] = await visionClient.safeSearchDetection({ image: { content: imageBuffer } });
     const annotation = result.safeSearchAnnotation;
-
-    if (!annotation) {
-      console.warn("Google Vision não retornou SafeSearch; imagem encaminhada para revisão administrativa.");
-      return "PENDING_REVIEW";
-    }
-
+    if (!annotation) return "PENDING_REVIEW";
     const rejected = riskCategories.some((category: RiskCategory) => {
       const likelihood = annotation[category];
       return typeof likelihood === "number" && blockedLikelihoods.has(likelihood);
     });
-
     return rejected ? "REJECTED" : "APPROVED";
   } catch (error: unknown) {
-    console.warn("Falha na verificação automática Google Vision; imagem encaminhada para revisão administrativa.", {
+    console.warn("Falha na verificação automática Google Vision; imagem encaminhada para quarentena privada.", {
       message: error instanceof Error ? error.message : "Erro desconhecido",
     });
     return "PENDING_REVIEW";
   }
 }
 
+export interface UploadMediaAssetInput {
+  uploadedBy: string;
+  fileName: string;
+  contentType: string;
+  sizeBytes: number;
+  altText: string;
+  imageBuffer: Buffer;
+}
+
 export class CreateMediaAssetService {
   constructor(private readonly repository: IMediaAssetRepository) {}
-  async execute(input: CreateMediaAssetInput) {
-    if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
-    if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
-    if (!/^media\/\d{4}-\d{2}-\d{2}\/[0-9a-f-]+\.(jpg|png|webp|gif)$/i.test(input.storageKey)) throw new Error("INVALID_STORAGE_KEY");
-    const configuredBaseUrl = env.B2_PUBLIC_BASE_URL?.replace(/\/$/, "");
-    if (!configuredBaseUrl || !input.publicUrl.startsWith(`${configuredBaseUrl}/`)) throw new Error("INVALID_PUBLIC_URL");
 
-    const status = await moderateImage(input.publicUrl);
-    const asset = await this.repository.create({
-      ...input,
-      status,
-      fileName: input.fileName.trim().slice(0, 255),
-      altText: input.altText.trim().slice(0, 250),
+  async execute(input: UploadMediaAssetInput) {
+    if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
+    if (!Number.isInteger(input.sizeBytes) || input.sizeBytes <= 0 || input.sizeBytes > 5 * 1024 * 1024) {
+      throw new Error("INVALID_IMAGE_SIZE");
+    }
+    if (input.imageBuffer.byteLength !== input.sizeBytes) throw new Error("INVALID_IMAGE_SIZE");
+
+    const status = await moderateImage(input.imageBuffer);
+    if (status === "REJECTED") throw new Error("IMAGE_REJECTED_BY_MODERATION");
+
+    const extension = extensionByType[input.contentType];
+    const date = new Date().toISOString().slice(0, 10);
+    const id = randomUUID();
+    const storage = makeStorageProvider();
+    const isPending = status === "PENDING_REVIEW";
+    const storageKey = isPending
+      ? `quarantine/${date}/${id}.${extension}`
+      : `media/${date}/${id}.${extension}`;
+    const bucketName = isPending ? env.B2_QUARANTINE_BUCKET_NAME! : env.B2_BUCKET_NAME!;
+
+    await storage.uploadObject({
+      bucketName,
+      storageKey,
+      contentType: input.contentType,
+      body: input.imageBuffer,
     });
 
-    if (status === "REJECTED") {
-      await makeStorageProvider().deleteObject(input.storageKey);
+    try {
+      return await this.repository.create({
+        uploadedBy: input.uploadedBy,
+        storageKey,
+        publicUrl: isPending ? "" : `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${storageKey}`,
+        fileName: input.fileName.trim().slice(0, 255),
+        contentType: input.contentType,
+        sizeBytes: input.sizeBytes,
+        altText: input.altText.trim().slice(0, 250),
+        status,
+      });
+    } catch (error: unknown) {
+      await storage.deleteObject(storageKey, bucketName);
+      throw error;
     }
-
-    return asset;
   }
 }
+
 export class ListMediaAssetsService {
   constructor(private readonly repository: IMediaAssetRepository) {}
   execute(filters: ListMediaAssetsFilters) { return this.repository.list(filters); }
