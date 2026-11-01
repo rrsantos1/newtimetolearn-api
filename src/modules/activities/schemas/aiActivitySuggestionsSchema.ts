@@ -33,12 +33,12 @@ export type AiActivitySuggestionsInput = z.infer<typeof aiActivitySuggestionsSch
 export const aiActivitySuggestionsOutputSchema = z.discriminatedUnion("activityType", [
   z.object({
     activityType: z.literal("word_search"),
-    words: z.array(z.string().trim().min(1).max(25)).min(1).max(25),
+    words: z.array(z.string().trim().min(2).max(50).refine((word) => word.replace(/[\\s-]/g, "").length <= 20, "A palavra deve ter até 20 letras, desconsiderando espaços e hífens.")).min(1).max(25),
   }).strict(),
   z.object({
     activityType: z.literal("crossword"),
     entries: z.array(z.object({
-      answer: z.string().trim().min(1).max(25),
+      answer: z.string().trim().min(2).max(100).refine((answer) => answer.replace(/[\\s-]/g, "").length <= 25, "A resposta deve ter até 25 letras, desconsiderando espaços e hífens."),
       clue: z.string().trim().min(3).max(240),
     }).strict()).min(1).max(20),
   }).strict(),
