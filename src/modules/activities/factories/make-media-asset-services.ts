@@ -1,5 +1,5 @@
 import { MediaAssetRepository } from "../repositories/implementations/MediaAssetRepository";
-import { CreateMediaAssetService, ListMediaAssetsService, ReviewMediaAssetService, ListPendingMediaAssetsService } from "../services/MediaAssetService";
+import { CreateMediaAssetService, ListMediaAssetsService, ReviewMediaAssetService, ListPendingMediaAssetsService, GetQuarantinedMediaAssetService } from "../services/MediaAssetService";
 
 export function makeCreateMediaAssetService(): CreateMediaAssetService {
   return new CreateMediaAssetService(new MediaAssetRepository());
@@ -12,4 +12,8 @@ export function makeListPendingMediaAssetsService(): ListPendingMediaAssetsServi
 }
 export function makeReviewMediaAssetService(): ReviewMediaAssetService {
   return new ReviewMediaAssetService(new MediaAssetRepository());
+}
+
+export function makeGetQuarantinedMediaAssetService(): GetQuarantinedMediaAssetService {
+  return new GetQuarantinedMediaAssetService(new MediaAssetRepository());
 }
