@@ -1,25 +1,20 @@
 import { createHash, createHmac, randomUUID } from "node:crypto";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "../../config/env";
 import type {
   CreateUploadUrlInput,
   CreateUploadUrlResult,
   IStorageProvider,
+  UploadObjectInput,
 } from "../interfaces/IStorageProvider";
 
-const ALLOWED_IMAGE_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-]);
-
+const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const EXTENSIONS_BY_CONTENT_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
   "image/gif": "gif",
 };
-
 const UPLOAD_URL_EXPIRES_IN_SECONDS = 300;
 const S3_SERVICE = "s3";
 const AWS_ALGORITHM = "AWS4-HMAC-SHA256";
@@ -50,35 +45,33 @@ function getSigningKey(secretKey: string, dateStamp: string, region: string): Bu
 }
 
 export class BackblazeStorageProvider implements IStorageProvider {
+  private readonly s3Client: S3Client;
+
   constructor() {
-    if (
-      !env.B2_S3_ENDPOINT ||
-      !env.B2_REGION ||
-      !env.B2_BUCKET_NAME ||
-      !env.B2_APPLICATION_KEY_ID ||
-      !env.B2_APPLICATION_KEY ||
-      !env.B2_PUBLIC_BASE_URL
-    ) {
+    if (!env.B2_S3_ENDPOINT || !env.B2_REGION || !env.B2_BUCKET_NAME ||
+        !env.B2_QUARANTINE_BUCKET_NAME || !env.B2_APPLICATION_KEY_ID ||
+        !env.B2_APPLICATION_KEY || !env.B2_PUBLIC_BASE_URL) {
       throw new Error("A configuração do Backblaze B2 não foi definida.");
     }
+
+    this.s3Client = new S3Client({
+      endpoint: env.B2_S3_ENDPOINT,
+      region: env.B2_REGION,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.B2_APPLICATION_KEY_ID,
+        secretAccessKey: env.B2_APPLICATION_KEY,
+      },
+    });
   }
 
-  async createUploadUrl(
-    input: CreateUploadUrlInput,
-  ): Promise<CreateUploadUrlResult> {
-    if (!ALLOWED_IMAGE_TYPES.has(input.contentType)) {
-      throw new Error("UNSUPPORTED_IMAGE_TYPE");
-    }
-
+  async createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult> {
+    if (!ALLOWED_IMAGE_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
     const extension = EXTENSIONS_BY_CONTENT_TYPE[input.contentType];
-    if (input.extension !== extension) {
-      throw new Error("INVALID_IMAGE_EXTENSION");
-    }
+    if (input.extension !== extension) throw new Error("INVALID_IMAGE_EXTENSION");
 
     const endpoint = new URL(env.B2_S3_ENDPOINT!);
-    if (endpoint.protocol !== "https:" || endpoint.pathname !== "/") {
-      throw new Error("INVALID_STORAGE_ENDPOINT");
-    }
+    if (endpoint.protocol !== "https:" || endpoint.pathname !== "/") throw new Error("INVALID_STORAGE_ENDPOINT");
 
     const storageKey = `media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
     const canonicalUri = `/${encodePath(env.B2_BUCKET_NAME!)}/${encodePath(storageKey)}`;
@@ -87,7 +80,6 @@ export class BackblazeStorageProvider implements IStorageProvider {
     const dateStamp = amzDate.slice(0, 8);
     const credentialScope = `${dateStamp}/${env.B2_REGION}/${S3_SERVICE}/aws4_request`;
     const signedHeaders = "content-type;host";
-
     const queryParameters: Record<string, string> = {
       "X-Amz-Algorithm": AWS_ALGORITHM,
       "X-Amz-Credential": `${env.B2_APPLICATION_KEY_ID}/${credentialScope}`,
@@ -95,41 +87,14 @@ export class BackblazeStorageProvider implements IStorageProvider {
       "X-Amz-Expires": String(UPLOAD_URL_EXPIRES_IN_SECONDS),
       "X-Amz-SignedHeaders": signedHeaders,
     };
-
     const canonicalQueryString = Object.entries(queryParameters)
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
-      .sort(([keyA, valueA], [keyB, valueB]) => {
-        if (keyA !== keyB) {
-          return keyA < keyB ? -1 : 1;
-        }
-
-        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-      })
-      .map(([key, value]) => `${key}=${value}`)
-      .join("&");
-
+      .sort(([keyA, valueA], [keyB, valueB]) => keyA === keyB ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) : (keyA < keyB ? -1 : 1))
+      .map(([key, value]) => `${key}=${value}`).join("&");
     const canonicalHeaders = `content-type:${input.contentType}\nhost:${endpoint.host}\n`;
-    const canonicalRequest = [
-      "PUT",
-      canonicalUri,
-      canonicalQueryString,
-      canonicalHeaders,
-      signedHeaders,
-      "UNSIGNED-PAYLOAD",
-    ].join("\n");
-
-    const stringToSign = [
-      AWS_ALGORITHM,
-      amzDate,
-      credentialScope,
-      sha256(canonicalRequest),
-    ].join("\n");
-
-    const signature = hmac(
-      getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!),
-      stringToSign,
-    ).toString("hex");
-
+    const canonicalRequest = ["PUT", canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"].join("\n");
+    const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\n");
+    const signature = hmac(getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!), stringToSign).toString("hex");
     const uploadUrl = `${endpoint.origin}${canonicalUri}?${canonicalQueryString}&X-Amz-Signature=${signature}`;
 
     return {
@@ -141,9 +106,21 @@ export class BackblazeStorageProvider implements IStorageProvider {
     };
   }
 
-  async deleteObject(storageKey: string): Promise<void> {
+  async uploadObject(input: UploadObjectInput): Promise<void> {
+    if (!ALLOWED_IMAGE_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
+    if (input.body.byteLength <= 0 || input.body.byteLength > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
+
+    await this.s3Client.send(new PutObjectCommand({
+      Bucket: input.bucketName,
+      Key: input.storageKey,
+      Body: input.body,
+      ContentType: input.contentType,
+    }));
+  }
+
+  async deleteObject(storageKey: string, bucketName = env.B2_BUCKET_NAME): Promise<void> {
     const endpoint = new URL(env.B2_S3_ENDPOINT!);
-    const canonicalUri = "/" + encodePath(env.B2_BUCKET_NAME!) + "/" + encodePath(storageKey);
+    const canonicalUri = "/" + encodePath(bucketName!) + "/" + encodePath(storageKey);
     const now = new Date();
     const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
@@ -158,33 +135,14 @@ export class BackblazeStorageProvider implements IStorageProvider {
     };
     const canonicalQueryString = Object.entries(queryParameters)
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
-      .sort(([keyA, valueA], [keyB, valueB]) => {
-        if (keyA !== keyB) {
-          return keyA < keyB ? -1 : 1;
-        }
-
-        return valueA < valueB ? -1 : valueA > valueB ? 1 : 0;
-      })
-      .map(([key, value]) => key + "=" + value)
-      .join("&");
+      .sort(([keyA, valueA], [keyB, valueB]) => keyA === keyB ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) : (keyA < keyB ? -1 : 1))
+      .map(([key, value]) => key + "=" + value).join("&");
     const canonicalHeaders = "host:" + endpoint.host + "\n";
-    const canonicalRequest = [
-      "DELETE",
-      canonicalUri,
-      canonicalQueryString,
-      canonicalHeaders,
-      signedHeaders,
-      "UNSIGNED-PAYLOAD",
-    ].join("\n");
+    const canonicalRequest = ["DELETE", canonicalUri, canonicalQueryString, canonicalHeaders, signedHeaders, "UNSIGNED-PAYLOAD"].join("\n");
     const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\n");
-    const signature = hmac(
-      getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!),
-      stringToSign,
-    ).toString("hex");
+    const signature = hmac(getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!), stringToSign).toString("hex");
     const deleteUrl = endpoint.origin + canonicalUri + "?" + canonicalQueryString + "&X-Amz-Signature=" + signature;
     const response = await fetch(deleteUrl, { method: "DELETE" });
-    if (!response.ok && response.status !== 404) {
-      throw new Error("STORAGE_DELETE_FAILED");
-    }
+    if (!response.ok && response.status !== 404) throw new Error("STORAGE_DELETE_FAILED");
   }
 }
