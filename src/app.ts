@@ -7,41 +7,31 @@ import { authRoutes } from "./modules/auth/routes/authRoutes";
 import { userRoutes } from "./modules/users/routes/userRoutes";
 import { activityRoutes } from "./modules/activities/routes/activityRoutes";
 
+const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+
 export function buildApp(): FastifyInstance {
-  const app = Fastify({ logger: true });
+  const app = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
 
-  app.register(rateLimit, { global: false });
-
-  app.register(jwt, {
-    secret: env.JWT_SECRET,
-    sign: {
-      algorithm: "HS256",
-      iss: "timetolearn-api",
-      aud: "timetolearn-app",
-    },
-    verify: {
-      algorithms: ["HS256"],
-      allowedIss: "timetolearn-api",
-      allowedAud: "timetolearn-app",
-    },
+  app.addContentTypeParser(imageContentTypes, { parseAs: "buffer", bodyLimit: 5 * 1024 * 1024 }, (_request, body, done) => {
+    done(null, body);
   });
 
+  app.register(rateLimit, { global: false });
+  app.register(jwt, {
+    secret: env.JWT_SECRET,
+    sign: { algorithm: "HS256", iss: "timetolearn-api", aud: "timetolearn-app" },
+    verify: { algorithms: ["HS256"], allowedIss: "timetolearn-api", allowedAud: "timetolearn-app" },
+  });
   app.register(cors, {
-    origin: [
-      "http://localhost:3000"
-    ],
+    origin: ["http://localhost:3000"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type"],
     credentials: true,
   });
 
-  app.get("/api/v1/health", async () => ({
-    success: true,
-    data: { status: "ok", service: "timetolearn-api" },
-  }));
-
+  app.get("/api/v1/health", async () => ({ success: true, data: { status: "ok", service: "timetolearn-api" } }));
   app.register(authRoutes, { prefix: "/api/v1/auth" });
   app.register(userRoutes, { prefix: "/api/v1/users" });
   app.register(activityRoutes, { prefix: "/api/v1/activities" });
-
   return app;
 }
