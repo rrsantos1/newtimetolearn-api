@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { env } from "../../../shared/config/env";
 import {
   aiActivitySuggestionsOutputSchema,
@@ -55,9 +56,9 @@ export class GenerateAiActivitySuggestionsService {
     }
 
     const payload: unknown = await response.json();
-    const responseSchema = (await import("zod")).z.object({
-      choices: (await import("zod")).z.array((await import("zod")).z.object({
-        message: (await import("zod")).z.object({ content: (await import("zod")).z.string().nullable() }),
+    const responseSchema = z.object({
+      choices: z.array(z.object({
+        message: z.object({ content: z.string().nullable() }),
       })).min(1),
     });
     const parsedResponse = responseSchema.safeParse(payload);
