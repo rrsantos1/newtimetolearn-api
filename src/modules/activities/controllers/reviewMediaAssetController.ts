@@ -5,10 +5,6 @@ import { makeReviewMediaAssetService } from "../factories/make-media-asset-servi
 const paramsSchema = z.object({ id: z.string().uuid() });
 const bodySchema = z.object({ decision: z.enum(["APPROVE", "REJECT"]) });
 
-interface ReviewMediaAssetRequest extends FastifyRequest {
-  params: { id: string };
-  body: { decision: "APPROVE" | "REJECT" };
-}
 
 export async function reviewMediaAssetController(request: FastifyRequest, reply: FastifyReply) {
   const params = paramsSchema.safeParse(request.params);
