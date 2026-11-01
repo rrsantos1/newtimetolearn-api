@@ -100,3 +100,62 @@ export class ListMediaAssetsService {
   constructor(private readonly repository: IMediaAssetRepository) {}
   execute(filters: ListMediaAssetsFilters) { return this.repository.list(filters); }
 }
+
+export class ListPendingMediaAssetsService {
+  constructor(private readonly repository: IMediaAssetRepository) {}
+  execute(filters: ListMediaAssetsFilters) {
+    return this.repository.listPending(filters);
+  }
+}
+
+export class ReviewMediaAssetService {
+  constructor(private readonly repository: IMediaAssetRepository) {}
+
+  async execute(id: string, decision: "APPROVE" | "REJECT") {
+    const asset = await this.repository.findById(id);
+    if (!asset) throw new Error("MEDIA_ASSET_NOT_FOUND");
+    if (asset.status !== "PENDING_REVIEW") throw new Error("MEDIA_ASSET_ALREADY_REVIEWED");
+
+    const storage = makeStorageProvider();
+    if (decision === "REJECT") {
+      await storage.deleteObject(asset.storageKey, env.B2_QUARANTINE_BUCKET_NAME);
+      return this.repository.updateReview(id, "REJECTED", asset.storageKey, "");
+    }
+
+    const { GetObjectCommand, S3Client } = await import("@aws-sdk/client-s3");
+    const s3Client = new S3Client({
+      endpoint: env.B2_S3_ENDPOINT,
+      region: env.B2_REGION,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.B2_APPLICATION_KEY_ID!,
+        secretAccessKey: env.B2_APPLICATION_KEY!,
+      },
+    });
+    const response = await s3Client.send(new GetObjectCommand({
+      Bucket: env.B2_QUARANTINE_BUCKET_NAME!,
+      Key: asset.storageKey,
+    }));
+    if (!response.Body) throw new Error("QUARANTINE_OBJECT_NOT_FOUND");
+
+    const imageBuffer = Buffer.from(await response.Body.transformToByteArray());
+    const extension = extensionByType[asset.contentType];
+    const publicStorageKey = `media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
+    await storage.uploadObject({
+      bucketName: env.B2_BUCKET_NAME!,
+      storageKey: publicStorageKey,
+      contentType: asset.contentType,
+      body: imageBuffer,
+    });
+
+    const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "")}/${publicStorageKey}`;
+    try {
+      const updated = await this.repository.updateReview(id, "APPROVED", publicStorageKey, publicUrl);
+      await storage.deleteObject(asset.storageKey, env.B2_QUARANTINE_BUCKET_NAME);
+      return updated;
+    } catch (error: unknown) {
+      await storage.deleteObject(publicStorageKey, env.B2_BUCKET_NAME);
+      throw error;
+    }
+  }
+}
