@@ -21,12 +21,14 @@ import { createMediaAssetController } from "../controllers/createMediaAssetContr
 import { listMediaAssetsController } from "../controllers/listMediaAssetsController";
 import { listPendingMediaAssetsController } from "../controllers/listPendingMediaAssetsController";
 import { reviewMediaAssetController } from "../controllers/reviewMediaAssetController";
+import { getQuarantinedMediaAssetController } from "../controllers/getQuarantinedMediaAssetController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
+  app.get("/media-library/:id/preview", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, getQuarantinedMediaAssetController);
   app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
   app.post("/media-library/upload", {
     bodyLimit: 5 * 1024 * 1024,
