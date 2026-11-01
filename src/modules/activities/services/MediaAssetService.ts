@@ -1,4 +1,5 @@
 import vision from "@google-cloud/vision";
+import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
@@ -122,7 +123,6 @@ export class ReviewMediaAssetService {
       return this.repository.updateReview(id, "REJECTED", asset.storageKey, "");
     }
 
-    const { GetObjectCommand, S3Client } = await import("@aws-sdk/client-s3");
     const s3Client = new S3Client({
       endpoint: env.B2_S3_ENDPOINT,
       region: env.B2_REGION,
@@ -151,11 +151,41 @@ export class ReviewMediaAssetService {
     const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "")}/${publicStorageKey}`;
     try {
       const updated = await this.repository.updateReview(id, "APPROVED", publicStorageKey, publicUrl);
-      await storage.deleteObject(asset.storageKey, env.B2_QUARANTINE_BUCKET_NAME);
+      try {
+        await storage.deleteObject(asset.storageKey, env.B2_QUARANTINE_BUCKET_NAME);
+      } catch (error: unknown) {
+        console.warn("Imagem aprovada, mas não foi possível remover a cópia da quarentena.", error);
+      }
       return updated;
     } catch (error: unknown) {
       await storage.deleteObject(publicStorageKey, env.B2_BUCKET_NAME);
       throw error;
     }
+  }
+}
+
+export class GetQuarantinedMediaAssetService {
+  constructor(private readonly repository: IMediaAssetRepository) {}
+
+  async execute(id: string): Promise<{ contentType: string; body: Buffer }> {
+    const asset = await this.repository.findById(id);
+    if (!asset) throw new Error("MEDIA_ASSET_NOT_FOUND");
+    if (asset.status !== "PENDING_REVIEW") throw new Error("MEDIA_ASSET_NOT_PENDING");
+
+    const client = new S3Client({
+      endpoint: env.B2_S3_ENDPOINT,
+      region: env.B2_REGION,
+      forcePathStyle: true,
+      credentials: {
+        accessKeyId: env.B2_APPLICATION_KEY_ID!,
+        secretAccessKey: env.B2_APPLICATION_KEY!,
+      },
+    });
+    const response = await client.send(new GetObjectCommand({
+      Bucket: env.B2_QUARANTINE_BUCKET_NAME!,
+      Key: asset.storageKey,
+    }));
+    if (!response.Body) throw new Error("QUARANTINE_OBJECT_NOT_FOUND");
+    return { contentType: asset.contentType, body: Buffer.from(await response.Body.transformToByteArray()) };
   }
 }
