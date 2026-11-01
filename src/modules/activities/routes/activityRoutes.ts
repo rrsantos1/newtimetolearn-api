@@ -19,11 +19,15 @@ import { listActivityAttemptsController } from "../controllers/listActivityAttem
 import { getWordSearchRankingController } from "../controllers/getWordSearchRankingController";
 import { createMediaAssetController } from "../controllers/createMediaAssetController";
 import { listMediaAssetsController } from "../controllers/listMediaAssetsController";
+import { listPendingMediaAssetsController } from "../controllers/listPendingMediaAssetsController";
+import { reviewMediaAssetController } from "../controllers/reviewMediaAssetController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
+  app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
+  app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
   app.post("/media-library/upload", {
     bodyLimit: 5 * 1024 * 1024,
     preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)],
