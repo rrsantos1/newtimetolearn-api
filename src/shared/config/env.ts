@@ -3,6 +3,8 @@ import { z } from "zod";
 
 const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
+  OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_MODEL: z.string().min(1).default("gpt-4o-mini"),
   GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1).optional(),
 
   B2_S3_ENDPOINT: z.url().optional(),
