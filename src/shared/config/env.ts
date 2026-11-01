@@ -3,7 +3,7 @@ import { z } from "zod";
 
 const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
-  GOOGLE_VISION_API_KEY: z.string().min(1).optional(),
+  GOOGLE_APPLICATION_CREDENTIALS: z.string().min(1).optional(),
 
   B2_S3_ENDPOINT: z.url().optional(),
   B2_REGION: z.string().min(1).optional(),
@@ -53,8 +53,8 @@ if (configuredStorageValues.length > 0 && configuredStorageValues.length !== sto
   throw new Error("As variáveis do Backblaze B2 devem ser configuradas em conjunto.");
 }
 
-if (configuredStorageValues.length === storageEnvKeys.length && !parsedEnv.GOOGLE_VISION_API_KEY) {
-  throw new Error("GOOGLE_VISION_API_KEY é obrigatória quando o armazenamento de imagens está configurado.");
+if (configuredStorageValues.length === storageEnvKeys.length && !parsedEnv.GOOGLE_APPLICATION_CREDENTIALS) {
+  throw new Error("GOOGLE_APPLICATION_CREDENTIALS é obrigatória quando o armazenamento de imagens está configurado.");
 }
 
 export const env = parsedEnv;
