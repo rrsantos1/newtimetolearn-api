@@ -80,6 +80,30 @@ export class GenerateAiActivitySuggestionsService {
       throw new Error("A IA não retornou sugestões no formato esperado. Tente novamente.");
     }
 
+    const resultCount = validated.data.activityType === "word_search"
+      ? validated.data.words.length
+      : validated.data.activityType === "crossword"
+        ? validated.data.entries.length
+        : validated.data.questions.length;
+
+    if (resultCount !== input.quantity) {
+      throw new Error("A IA retornou uma quantidade diferente da solicitada. Tente novamente.");
+    }
+
+    if (validated.data.activityType === "word_search") {
+      const normalizedWords = validated.data.words.map((word) => word.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").trim().toLocaleUpperCase("pt-BR"));
+      if (new Set(normalizedWords).size !== normalizedWords.length) {
+        throw new Error("A IA retornou palavras repetidas. Tente novamente.");
+      }
+    }
+
+    if (validated.data.activityType === "crossword") {
+      const normalizedAnswers = validated.data.entries.map((entry) => entry.answer.normalize("NFD").replace(/[\\u0300-\\u036f]/g, "").replace(/[\\s-]/g, "").toLocaleUpperCase("pt-BR"));
+      if (new Set(normalizedAnswers).size !== normalizedAnswers.length) {
+        throw new Error("A IA retornou respostas repetidas. Tente novamente.");
+      }
+    }
+
     if (validated.data.activityType === "quiz" && validated.data.questions.some((question) => question.options.length !== input.optionCount)) {
       throw new Error("A IA retornou questões com quantidade de alternativas diferente da solicitada. Tente novamente.");
     }
