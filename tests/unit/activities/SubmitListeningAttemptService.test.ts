@@ -173,7 +173,7 @@ describe("SubmitListeningAttemptService", () => {
   });
 
   it("rejeita a execução quando o áudio ainda não está pronto", async () => {
-    const content = version.content as {
+    const content = version.content as unknown as {
       passages: Array<{ audio: { status: string } }>;
     };
     content.passages[0]!.audio.status = "PENDING";
