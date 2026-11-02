@@ -12,7 +12,13 @@ export interface CreateListeningAttemptInput {
   score: number;
 }
 
+export interface ListListeningAttemptsResult {
+  items: ListeningAttempt[];
+  total: number;
+}
+
 export interface IListeningAttemptRepository {
   create(input: CreateListeningAttemptInput): Promise<ListeningAttempt>;
   getRanking(activityId: string): Promise<ListeningAttempt[]>;
+  listByActivity(activityId: string, page: number, limit: number): Promise<ListListeningAttemptsResult>;
 }
