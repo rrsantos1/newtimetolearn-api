@@ -50,7 +50,11 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/quiz", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createQuizActivityController);
   app.post("/listening", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createListeningActivityController);
   app.patch("/:slug/listening", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, editListeningActivityController);
-  app.post("/:slug/listening/passages/:passageId/audio", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateListeningAudioController);
+  app.post("/:slug/listening/passages/:passageId/audio", {
+    bodyLimit: 30 * 1024 * 1024,
+    config: { rateLimit: { max: 5, timeWindow: "1 minute" } },
+    preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)],
+  }, generateListeningAudioController);
   app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
   app.post("/:slug/memory/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMemoryAttemptController);
   app.post("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitListeningAttemptController);
