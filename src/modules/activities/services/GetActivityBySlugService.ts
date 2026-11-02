@@ -7,6 +7,27 @@ import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
 import { ActivityType } from "../types/ActivityType";
 import { sanitizeCrosswordForExecution } from "../utils/crossword/sanitizeCrosswordForExecution";
 
+function sanitizeListeningForExecution(content: Record<string, unknown>): Record<string, unknown> {
+  const passages = Array.isArray(content.passages) ? content.passages : [];
+  return {
+    ...content,
+    passages: passages.map((passage) => {
+      if (typeof passage !== "object" || passage === null || Array.isArray(passage)) return passage;
+      const passageRecord = passage as Record<string, unknown>;
+      const blanks = Array.isArray(passageRecord.blanks) ? passageRecord.blanks : [];
+      return {
+        ...passageRecord,
+        blanks: blanks.map((blank) => {
+          if (typeof blank !== "object" || blank === null || Array.isArray(blank)) return blank;
+          return Object.fromEntries(
+            Object.entries(blank as Record<string, unknown>).filter(([key]) => key !== "expectedAnswer" && key !== "alternatives"),
+          );
+        }),
+      };
+    }),
+  };
+}
+
 export interface GetActivityBySlugInput {
   slug: string;
   userId: string;
@@ -108,14 +129,10 @@ export class GetActivityBySlugService {
 
     const executionData =
       !canViewAllVersions && activity.type === ActivityType.CROSSWORD
-        ? sanitizeCrosswordForExecution(
-            selectedVersion.content,
-            selectedVersion.generatedData,
-          )
-        : {
-            content: selectedVersion.content,
-            generatedData: selectedVersion.generatedData,
-          };
+        ? sanitizeCrosswordForExecution(selectedVersion.content, selectedVersion.generatedData)
+        : !canViewAllVersions && activity.type === ActivityType.LISTENING
+          ? { content: sanitizeListeningForExecution(selectedVersion.content), generatedData: selectedVersion.generatedData }
+          : { content: selectedVersion.content, generatedData: selectedVersion.generatedData };
 
     return {
       slug: activity.slug,
