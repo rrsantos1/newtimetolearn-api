@@ -24,4 +24,15 @@ export class ListeningAttemptRepository implements IListeningAttemptRepository {
       take: 5,
     });
   }
+
+  async listByActivity(activityId: string, page: number, limit: number) {
+    const [items, total] = await this.repository.findAndCount({
+      where: { activityId },
+      order: { createdAt: "DESC" },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    return { items, total };
+  }
 }
