@@ -30,6 +30,7 @@ export const sentenceCompletionContentSchema = z.object({
 
   const sentenceIds = new Set<string>();
   const blankIds = new Set<string>();
+  const expectedWordIds = new Set<string>();
   content.sentences.forEach((sentence, sentenceIndex) => {
     if (sentenceIds.has(sentence.id)) {
       context.addIssue({ code: "custom", path: ["sentences", sentenceIndex, "id"], message: "Cada frase deve ter um identificador único." });
@@ -45,6 +46,11 @@ export const sentenceCompletionContentSchema = z.object({
       if (!wordIds.has(blank.expectedWordId) && !content.words.some((word) => word.id === blank.expectedWordId)) {
         context.addIssue({ code: "custom", path: ["sentences", sentenceIndex, "blanks", blankIndex, "expectedWordId"], message: "A resposta da lacuna deve existir no banco de palavras." });
       }
+
+      if (expectedWordIds.has(blank.expectedWordId)) {
+        context.addIssue({ code: "custom", path: ["sentences", sentenceIndex, "blanks", blankIndex, "expectedWordId"], message: "Cada palavra correta só pode ser utilizada uma vez na atividade." });
+      }
+      expectedWordIds.add(blank.expectedWordId);
 
       const marker = `{{${blank.id}}}`;
       if (sentence.text.split(marker).length !== 2) {
