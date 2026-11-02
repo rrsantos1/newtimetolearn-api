@@ -52,6 +52,7 @@ export const aiActivitySuggestionsOutputSchema = z.discriminatedUnion("activityT
     activityType: z.literal("listening"),
     title: z.string().trim().min(3).max(160),
     text: z.string().trim().min(100).max(4096),
+    suggestedBlanks: z.array(z.string().trim().min(1).max(100)).min(1).max(20),
   }).strict(),
   z.object({
     activityType: z.literal("word_search"),
