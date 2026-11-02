@@ -151,8 +151,11 @@ export class GenerateAiActivitySuggestionsService {
     }
 
     if (validated.data.activityType === "word_matching") {
-      const normalizedPairs = validated.data.pairs.map((pair) => pair.sourceText.trim().toLocaleUpperCase("pt-BR") + "::" + pair.targetText.trim().toLocaleUpperCase("pt-BR"));
-      if (new Set(normalizedPairs).size !== normalizedPairs.length) throw new Error("A IA retornou associações repetidas. Tente novamente.");
+      const normalizedSources = validated.data.pairs.map((pair) => pair.sourceText.trim().toLocaleUpperCase("pt-BR"));
+      const normalizedTargets = validated.data.pairs.map((pair) => pair.targetText.trim().toLocaleUpperCase("pt-BR"));
+      if (new Set(normalizedSources).size !== normalizedSources.length || new Set(normalizedTargets).size !== normalizedTargets.length) {
+        throw new Error("A IA retornou itens de origem ou correspondências repetidos. Tente novamente.");
+      }
     }
 
     if (validated.data.activityType === "sentence_completion") {
