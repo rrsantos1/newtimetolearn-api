@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - feature/crossword-generator-hardening
+      - feature/drag-drop-activities
   pull_request:
     branches:
       - main
