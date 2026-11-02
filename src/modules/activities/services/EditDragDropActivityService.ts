@@ -29,7 +29,7 @@ export class EditDragDropActivityService {
 
   async execute(input: Input) {
     const activity = await this.activityRepository.findBySlugWithVersions(input.slug);
-    if (!activity || activity.deletedAt !== null || (!input.isAdmin && activity.teacherId !== input.teacherId)) {
+    if (!activity || activity.deletedAt !== null || activity.teacherId !== input.teacherId) {
       throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade não encontrada.");
     }
     if (activity.type !== this.activityType) {
