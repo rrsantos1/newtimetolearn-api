@@ -10,6 +10,7 @@ import { EmailChangeRequest } from "../../modules/auth/entities/EmailChangeReque
 import { Activity } from "../../modules/activities/entities/Activity";
 import { ActivityVersion } from "../../modules/activities/entities/ActivityVersion";
 import { ActivityAttempt } from "../../modules/activities/entities/ActivityAttempt";
+import { ListeningAttempt } from "../../modules/activities/entities/ListeningAttempt";
 import { MediaAsset } from "../../modules/activities/entities/MediaAsset";
 
 if (!env.DATABASE_URL) {
@@ -32,6 +33,7 @@ export const AppDataSource = new DataSource({
     Activity,
     ActivityVersion,
     ActivityAttempt,
+    ListeningAttempt,
     MediaAsset,
   ],
   synchronize: false,
