@@ -37,6 +37,7 @@ export function makeSubmitDragDropActivityAttemptController(activityType: DragDr
             speedPoints: result.attempt.speedPoints,
             totalItems: result.totalItems,
             correctCount: result.correctCount,
+            corrections: result.corrections,
             elapsedSeconds: result.attempt.elapsedSeconds,
             createdAt: result.attempt.createdAt,
           },
