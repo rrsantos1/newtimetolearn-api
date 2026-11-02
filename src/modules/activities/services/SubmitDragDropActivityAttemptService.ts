@@ -8,6 +8,7 @@ import { wordMatchingContentSchema } from "../schemas/content/wordMatchingConten
 import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityType } from "../types/ActivityType";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
+import { createDragDropExecutionToken } from "../utils/createDragDropExecutionToken";
 import type { DragDropActivityType } from "./CreateDragDropActivityService";
 
 export interface DragDropAnswer {
@@ -54,7 +55,10 @@ export class SubmitDragDropActivityAttemptService {
 
     const expected = new Map<string, string>();
     if (this.activityType === ActivityType.WORD_MATCHING && "pairs" in content.data) {
-      content.data.pairs.forEach((pair) => expected.set(pair.id, pair.id));
+      content.data.pairs.forEach((pair) => expected.set(
+        createDragDropExecutionToken(pair.id, "source"),
+        createDragDropExecutionToken(pair.id, "target"),
+      ));
     } else if ("sentences" in content.data) {
       content.data.sentences.forEach((sentence) => sentence.blanks.forEach((blank) => expected.set(blank.id, blank.expectedWordId)));
     }
