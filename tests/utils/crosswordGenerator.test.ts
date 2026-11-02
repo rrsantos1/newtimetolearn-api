@@ -36,8 +36,34 @@ describe("gerador de palavras cruzadas", () => {
     expect(caughtError).toBeInstanceOf(CrosswordGenerationError);
     expect((caughtError as CrosswordGenerationError).code).toBe("INCOMPLETE_GENERATION");
   });
+  it("posiciona palavras curtas em uma cruzadinha sobre o sistema solar", () => {
+    const board = new CrosswordBoard(25, 25);
+    const builder = new CrosswordBuilder(board);
 
-  
+    const words = [
+      { word: "SISTEMASOLAR", clue: "Conjunto formado pelo Sol e corpos celestes" },
+      { word: "MERCURIO", clue: "Planeta mais próximo do Sol" },
+      { word: "VENUS", clue: "Segundo planeta do sistema solar" },
+      { word: "TERRA", clue: "Planeta onde vivemos" },
+      { word: "MARTE", clue: "Planeta vermelho" },
+      { word: "JUPITER", clue: "Maior planeta do sistema solar" },
+      { word: "SATURNO", clue: "Planeta conhecido por seus anéis" },
+      { word: "URANO", clue: "Planeta gigante gelado" },
+      { word: "NETUNO", clue: "Planeta mais distante do Sol" },
+      { word: "LUA", clue: "Satélite natural da Terra" },
+      { word: "SOL", clue: "Estrela do sistema solar" },
+      { word: "ASTRO", clue: "Corpo celeste" },
+    ];
+
+    const result = builder.build(words);
+
+    expect(result.getPlacements()).toHaveLength(words.length);
+    expect(result.getPlacements().map((placement) => placement.word.word))
+      .toContain("LUA");
+    expect(result.getPlacements().map((placement) => placement.word.word))
+      .toContain("SOL");
+  });
+
   it("posiciona todas as palavras quando existem cruzamentos alternativos", () => {
     const board = new CrosswordBoard(25, 25);
     const builder = new CrosswordBuilder(board);
