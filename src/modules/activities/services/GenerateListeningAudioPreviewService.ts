@@ -59,7 +59,7 @@ export class GenerateListeningAudioPreviewService {
 
     return {
       audioDataUrl: `data:audio/mpeg;base64,${audioBuffer.toString("base64")}`,
-      disclosure: "Prévia de áudio gerada por inteligência artificial; a voz não é humana. O áudio será gerado novamente e salvo ao gerar a narração da atividade.",
+      disclosure: "Áudio gerado por inteligência artificial; a voz não é humana. Ao salvar a atividade, este mesmo arquivo poderá ser armazenado como narração definitiva.",
     };
   }
 }
