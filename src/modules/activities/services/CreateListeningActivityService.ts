@@ -21,7 +21,22 @@ export class CreateListeningActivityService {
   ) {}
 
   async execute(input: CreateListeningActivityInput) {
-    const content = listeningDraftContentSchema.parse(input.content);
+    const parsedContent = listeningDraftContentSchema.parse(input.content);
+    const content = {
+      ...parsedContent,
+      passages: parsedContent.passages.map((passage) => ({
+        ...passage,
+        audio: {
+          storageKey: null,
+          publicUrl: null,
+          status: "PENDING" as const,
+          model: null,
+          voice: null,
+          textHash: null,
+          durationSeconds: null,
+        },
+      })),
+    };
     const slug = await this.generateUniqueSlug(input.name);
     const activity = new Activity();
 
