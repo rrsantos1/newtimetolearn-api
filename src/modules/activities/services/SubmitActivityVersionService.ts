@@ -8,6 +8,7 @@ import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
 import { ActivityType } from "../types/ActivityType";
 import { quizContentSchema } from "../schemas/content/quizContentSchema";
+import { listeningDraftContentSchema } from "../schemas/content/listeningContentSchema";
 
 interface SubmitActivityVersionInput {
   slug: string;
@@ -70,6 +71,39 @@ export class SubmitActivityVersionService {
         409,
         "Somente a versão mais recente em rascunho pode ser enviada para revisão.",
       );
+    }
+
+    if (activity.type === ActivityType.LISTENING) {
+      const validatedListening = listeningDraftContentSchema.safeParse(latestVersion.content);
+      if (!validatedListening.success) {
+        throw new AppError(
+          "LISTENING_NOT_READY_FOR_REVIEW",
+          422,
+          "O conteúdo do Listening contém textos ou lacunas inválidos.",
+        );
+      }
+
+      const hasReadyPassage = validatedListening.data.passages.some(
+        (passage) => passage.text.trim().length > 0
+          && passage.blanks.length > 0
+          && passage.audio.status === "READY"
+          && Boolean(passage.audio.storageKey),
+      );
+      const allPassagesReady = validatedListening.data.passages.length > 0
+        && validatedListening.data.passages.every(
+          (passage) => passage.text.trim().length > 0
+            && passage.blanks.length > 0
+            && passage.audio.status === "READY"
+            && Boolean(passage.audio.storageKey),
+        );
+
+      if (!hasReadyPassage || !allPassagesReady) {
+        throw new AppError(
+          "LISTENING_NOT_READY_FOR_REVIEW",
+          422,
+          "Cada texto precisa ter conteúdo, ao menos uma lacuna e um áudio gerado antes do envio para revisão.",
+        );
+      }
     }
 
     if (activity.type === ActivityType.QUIZ) {
