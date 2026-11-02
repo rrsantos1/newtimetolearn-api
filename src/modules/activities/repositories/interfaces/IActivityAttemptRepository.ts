@@ -11,6 +11,8 @@ export interface CreateActivityAttemptInput {
   score: number;
   accuracyPoints: number;
   speedPoints: number;
+  attemptToken?: string | null;
+  answers?: Array<{ itemId: string; selectedId: string }> | null;
 }
 
 export interface ListActivityAttemptsResult {
@@ -21,6 +23,7 @@ export interface ListActivityAttemptsResult {
 export interface IActivityAttemptRepository {
   create(input: CreateActivityAttemptInput): Promise<ActivityAttempt>;
   getRanking(activityId: string): Promise<ActivityAttempt[]>;
+  findByAttemptToken(activityId: string, userId: string, attemptToken: string): Promise<ActivityAttempt | null>;
   listByActivity(
     activityId: string,
     page: number,
