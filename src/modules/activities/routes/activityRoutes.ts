@@ -11,6 +11,7 @@ import { generateListeningAudioController } from "../controllers/generateListeni
 import { createMemoryActivityController } from "../controllers/createMemoryActivityController";
 import { editMemoryActivityController } from "../controllers/editMemoryActivityController";
 import { submitMemoryAttemptController } from "../controllers/submitMemoryAttemptController";
+import { submitListeningAttemptController } from "../controllers/submitListeningAttemptController";
 import { editQuizActivityController } from "../controllers/editQuizActivityController";
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
@@ -49,6 +50,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/:slug/listening/passages/:passageId/audio", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateListeningAudioController);
   app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
   app.post("/:slug/memory/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMemoryAttemptController);
+  app.post("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitListeningAttemptController);
   app.patch("/:slug/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, editMemoryActivityController);
   app.get("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, listActivitiesController);
   app.post("/crossword", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createCrosswordActivityController);
