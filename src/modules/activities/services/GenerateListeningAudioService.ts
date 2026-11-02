@@ -152,7 +152,7 @@ export class GenerateListeningAudioService {
 
         const passageIndex = currentContent.data.passages.findIndex((item) => item.id === input.passageId);
         const currentPassage = currentContent.data.passages[passageIndex];
-        if (!currentPassage || createHash("sha256").update(currentPassage.text.trim(), "utf8").digest("hex") !== textHash) {
+        if (!currentPassage || createHash("sha256").update(currentPassage.text, "utf8").digest("hex") !== textHash) {
           throw new AppError("LISTENING_TEXT_CHANGED", 409, "O texto mudou durante a geração do áudio. Gere novamente para a versão atual.");
         }
 
@@ -162,6 +162,7 @@ export class GenerateListeningAudioService {
           audio: {
             storageKey,
             publicUrl,
+            disclosure: "Áudio gerado por inteligência artificial; a voz não é humana.",
             status: "READY",
             model: env.OPENAI_TTS_MODEL,
             voice: input.voice,
@@ -180,7 +181,7 @@ export class GenerateListeningAudioService {
     }
 
     const previousStorageKey = passage.audio.storageKey;
-    if (previousStorageKey && previousStorageKey !== storageKey) {
+    if (previousStorageKey && previousStorageKey.startsWith("audio/listening/") && previousStorageKey !== storageKey) {
       await storage.deleteObject(previousStorageKey, env.B2_BUCKET_NAME).catch((error: unknown) => {
         console.warn("Áudio anterior não pôde ser removido do armazenamento.", error);
       });
