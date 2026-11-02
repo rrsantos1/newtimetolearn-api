@@ -11,6 +11,7 @@ export enum ActivityType {
   ROULETTE = "roulette",
   HANGMAN = "hangman",
   MEMORY = "memory",
+  LISTENING = "listening",
   FILL_IN_BLANKS = "fill_in_blanks",
   MOLE_HIT = "mole_hit",
 }
