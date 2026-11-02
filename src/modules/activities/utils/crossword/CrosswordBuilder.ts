@@ -12,9 +12,11 @@ interface WordCandidateGroup {
 
 interface SearchBudget {
   exploredCandidates: number;
+  readonly maxCandidates: number;
 }
 
 const MAX_SEARCH_CANDIDATES = 10000;
+const MAX_CANDIDATES_PER_SEED = 1000;
 const MAX_CANDIDATES_PER_BOARD = 100;
 
 export class CrosswordBuilder {
@@ -34,7 +36,7 @@ export class CrosswordBuilder {
     }
 
     const initialPlacementCount = this.board.getPlacements().length;
-    const budget: SearchBudget = { exploredCandidates: 0 };
+    let totalExploredCandidates = 0;
     const seedWords = [...words].sort(
       (first, second) => second.word.length - first.word.length,
     );
@@ -52,7 +54,7 @@ export class CrosswordBuilder {
       const orientations: readonly ("across" | "down")[] = ["across", "down"];
 
       for (const direction of orientations) {
-        if (budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+        if (totalExploredCandidates >= MAX_SEARCH_CANDIDATES) {
           break;
         }
 
@@ -72,14 +74,23 @@ export class CrosswordBuilder {
           throw error;
         }
 
+        const budget: SearchBudget = {
+          exploredCandidates: 0,
+          maxCandidates: Math.min(
+            MAX_CANDIDATES_PER_SEED,
+            MAX_SEARCH_CANDIDATES - totalExploredCandidates,
+          ),
+        };
+
         result = workingBuilder.searchRemaining(remainingWords, budget);
+        totalExploredCandidates += budget.exploredCandidates;
 
         if (result) {
           break;
         }
       }
 
-      if (result || budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+      if (result || totalExploredCandidates >= MAX_SEARCH_CANDIDATES) {
         break;
       }
     }
@@ -111,7 +122,7 @@ export class CrosswordBuilder {
       return this.board;
     }
 
-    if (budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+    if (budget.exploredCandidates >= budget.maxCandidates) {
       return undefined;
     }
 
@@ -128,7 +139,7 @@ export class CrosswordBuilder {
 
     for (const group of groups) {
       for (const candidate of group.candidates) {
-        if (budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+        if (budget.exploredCandidates >= budget.maxCandidates) {
           return undefined;
         }
 
