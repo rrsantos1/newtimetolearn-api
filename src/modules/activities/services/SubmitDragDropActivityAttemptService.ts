@@ -29,6 +29,7 @@ export interface SubmitDragDropAttemptResult {
   isInRanking: boolean;
   correctCount: number;
   totalItems: number;
+  corrections: Array<{ itemId: string; selectedId: string | null; expectedId: string; isCorrect: boolean }>;
 }
 
 export class SubmitDragDropActivityAttemptService {
@@ -99,6 +100,10 @@ export class SubmitDragDropActivityAttemptService {
       speedPoints,
     });
     const ranking = await this.attemptRepository.getRanking(activity.id);
-    return { attempt, ranking, isInRanking: ranking.some((entry) => entry.id === attempt.id), correctCount, totalItems };
+    const corrections = [...expected.entries()].map(([itemId, expectedId]) => {
+      const selectedId = uniqueItemAnswers.get(itemId) ?? null;
+      return { itemId, selectedId, expectedId, isCorrect: selectedId === expectedId };
+    });
+    return { attempt, ranking, isInRanking: ranking.some((entry) => entry.id === attempt.id), correctCount, totalItems, corrections };
   }
 }
