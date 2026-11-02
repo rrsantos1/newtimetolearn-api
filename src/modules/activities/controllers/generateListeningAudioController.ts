@@ -11,6 +11,7 @@ const paramsSchema = z.object({
 const bodySchema = z.object({
   voice: z.enum(["alloy", "ash", "ballad", "coral", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse", "marin", "cedar"]).default("coral"),
   instructions: z.string().trim().max(900).optional(),
+  audioBase64: z.string().max(28_000_000).optional(),
 });
 
 export async function generateListeningAudioController(request: FastifyRequest, reply: FastifyReply) {
