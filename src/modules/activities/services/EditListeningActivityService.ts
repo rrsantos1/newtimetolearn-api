@@ -60,6 +60,32 @@ export class EditListeningActivityService {
       ].includes(version.status))
       .sort((a, b) => b.versionNumber - a.versionNumber)[0];
 
+    const previousContent = editableVersion
+      ? listeningDraftContentSchema.safeParse(editableVersion.content)
+      : null;
+    const previousPassages = previousContent?.success ? previousContent.data.passages : [];
+    const sanitizedContent = {
+      ...validatedContent.data,
+      passages: validatedContent.data.passages.map((passage) => {
+        const previousPassage = previousPassages.find((item) => item.id === passage.id);
+        if (previousPassage && previousPassage.text === passage.text) {
+          return { ...passage, audio: previousPassage.audio };
+        }
+        return {
+          ...passage,
+          audio: {
+            storageKey: null,
+            publicUrl: null,
+            status: previousPassage?.audio.storageKey ? "STALE" as const : "PENDING" as const,
+            model: null,
+            voice: null,
+            textHash: null,
+            durationSeconds: null,
+          },
+        };
+      }),
+    };
+
     const version = editableVersion ?? new ActivityVersion();
     if (!editableVersion) {
       version.activityId = activity.id;
@@ -76,7 +102,7 @@ export class EditListeningActivityService {
     version.timeLimitSeconds = input.timeLimitSeconds === undefined
       ? DEFAULT_ACTIVITY_TIME_LIMIT_SECONDS
       : input.timeLimitSeconds;
-    version.content = validatedContent.data;
+    version.content = sanitizedContent;
     version.generatedData = null;
     version.submittedAt = null;
     version.reviewFeedback = null;
