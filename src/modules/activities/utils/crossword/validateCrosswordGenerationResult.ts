@@ -196,7 +196,7 @@ export function validateCrosswordGenerationResult(
       const crossingIndices = [...occupants].filter(
         (otherIndex) =>
           otherIndex !== placementIndex &&
-          placements[otherIndex].direction !== placement.direction,
+          placements[otherIndex]?.direction !== placement.direction,
       );
       const neighbors = placement.direction === "across"
         ? [{ row: row - 1, col }, { row: row + 1, col }]
@@ -204,12 +204,15 @@ export function validateCrosswordGenerationResult(
 
       for (const neighbor of neighbors) {
         const neighborOccupants = cellPlacements.get(`${neighbor.row}:${neighbor.col}`);
-        if (
-          neighborOccupants &&
-          [...neighborOccupants].some((otherIndex) => !crossingIndices.includes(otherIndex))
-        ) {
+        const invalidNeighborIndex = neighborOccupants
+          ? [...neighborOccupants].find((otherIndex) => !crossingIndices.includes(otherIndex))
+          : undefined;
+
+        if (invalidNeighborIndex !== undefined) {
+          const adjacentPlacement = placements[invalidNeighborIndex];
+          const adjacentWord = adjacentPlacement?.word.word ?? "desconhecida";
           throw new CrosswordGenerationError(
-            `A resposta "${placement.word.word}" forma uma sequência adjacente não cruzada.`,
+            `A resposta "${placement.word.word}" forma uma sequência adjacente não cruzada na célula (${row}, ${col}); "${adjacentWord}" ocupa a célula vizinha (${neighbor.row}, ${neighbor.col}).`,
             "INVALID_PLACEMENT",
           );
         }
