@@ -15,7 +15,7 @@ export class GetWordSearchRankingService {
 
     if (
       !activity ||
-      (activity.type !== ActivityType.WORD_SEARCH && activity.type !== ActivityType.CROSSWORD && activity.type !== ActivityType.QUIZ && activity.type !== ActivityType.MEMORY) ||
+      activity.type !== ActivityType.WORD_SEARCH ||
       activity.status !== ActivityStatus.PUBLISHED
     ) {
       throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade publicada não encontrada.");
