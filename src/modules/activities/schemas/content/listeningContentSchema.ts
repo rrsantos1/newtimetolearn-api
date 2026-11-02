@@ -12,6 +12,7 @@ const listeningBlankSchema = z.object({
 const listeningAudioSchema = z.object({
   storageKey: z.string().trim().max(500).nullable().default(null),
   publicUrl: z.url().nullable().optional().default(null),
+  disclosure: z.string().trim().max(200).nullable().optional().default(null),
   status: z.enum(["PENDING", "READY", "STALE", "FAILED"]).default("PENDING"),
   model: z.string().trim().max(100).nullable().optional().default(null),
   voice: z.string().trim().max(100).nullable().optional().default(null),
@@ -27,6 +28,7 @@ const listeningPassageSchema = z.object({
   audio: listeningAudioSchema.default({
     storageKey: null,
     publicUrl: null,
+    disclosure: null,
     status: "PENDING",
     model: null,
     voice: null,
