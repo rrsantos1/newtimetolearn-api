@@ -133,7 +133,8 @@ export class GenerateListeningAudioService {
       body: audioBuffer,
     });
 
-    const publicUrl = `${env.B2_PUBLIC_BASE_URL.replace(/\/+$/, "")}/${storageKey}`;
+    const publicBaseUrl = env.B2_PUBLIC_BASE_URL.endsWith("/") ? env.B2_PUBLIC_BASE_URL.slice(0, -1) : env.B2_PUBLIC_BASE_URL;
+    const publicUrl = `${publicBaseUrl}/${storageKey}`;
     let savedVersion: ActivityVersion;
 
     try {
