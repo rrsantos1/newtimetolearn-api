@@ -6,6 +6,7 @@ import type { IActivityRepository } from "../../../src/modules/activities/reposi
 import { ActivityStatus } from "../../../src/modules/activities/types/ActivityStatus";
 import { ActivityType } from "../../../src/modules/activities/types/ActivityType";
 import { ActivityVersionStatus } from "../../../src/modules/activities/types/ActivityVersionStatus";
+import { ActivityDifficulty } from "../../../src/modules/activities/types/ActivityDifficulty";
 import { ActivityVisibility } from "../../../src/modules/activities/types/ActivityVisibility";
 
 describe("GetActivityBySlugService — Listening execution", () => {
@@ -31,7 +32,7 @@ describe("GetActivityBySlugService — Listening execution", () => {
     version.versionNumber = 1;
     version.name = "Animais";
     version.description = "Complete o texto.";
-    version.difficulty = "EASY";
+    version.difficulty = ActivityDifficulty.EASY;
     version.timeLimitSeconds = 900;
     version.status = ActivityVersionStatus.PUBLISHED;
     version.revision = 1;
