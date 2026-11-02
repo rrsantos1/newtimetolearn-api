@@ -30,7 +30,10 @@ export class CrosswordBuilder {
     this.evaluator = new CrosswordEvaluator(board);
   }
 
-  public build(words: readonly CrosswordWord[]): CrosswordBoard {
+  public build(
+    words: readonly CrosswordWord[],
+    isValidCompleteBoard?: (board: CrosswordBoard) => boolean,
+  ): CrosswordBoard {
     if (words.length === 0) {
       return this.board;
     }
@@ -82,7 +85,11 @@ export class CrosswordBuilder {
           ),
         };
 
-        result = workingBuilder.searchRemaining(remainingWords, budget);
+        result = workingBuilder.searchRemaining(
+          remainingWords,
+          budget,
+          isValidCompleteBoard,
+        );
         totalExploredCandidates += budget.exploredCandidates;
 
         if (result) {
@@ -117,9 +124,12 @@ export class CrosswordBuilder {
   private searchRemaining(
     remainingWords: readonly CrosswordWord[],
     budget: SearchBudget,
+    isValidCompleteBoard?: (board: CrosswordBoard) => boolean,
   ): CrosswordBoard | undefined {
     if (remainingWords.length === 0) {
-      return this.board;
+      return !isValidCompleteBoard || isValidCompleteBoard(this.board)
+        ? this.board
+        : undefined;
     }
 
     if (budget.exploredCandidates >= budget.maxCandidates) {
@@ -160,6 +170,7 @@ export class CrosswordBuilder {
         const result = new CrosswordBuilder(nextBoard).searchRemaining(
           nextWords,
           budget,
+          isValidCompleteBoard,
         );
 
         if (result) {
