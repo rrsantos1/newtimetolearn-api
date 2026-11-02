@@ -76,6 +76,7 @@ export class EditListeningActivityService {
           audio: {
             storageKey: null,
             publicUrl: null,
+            disclosure: null,
             status: previousPassage?.audio.storageKey ? "STALE" as const : "PENDING" as const,
             model: null,
             voice: null,
