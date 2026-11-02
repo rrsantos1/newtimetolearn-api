@@ -104,7 +104,7 @@ export class GenerateAiActivitySuggestionsService {
       }
     }
 
-    if (validated.data.activityType === "quiz" && validated.data.questions.some((question) => question.options.length !== input.optionCount)) {
+    if (validated.data.activityType === "quiz" && input.activityType === "quiz" && validated.data.questions.some((question) => question.options.length !== input.optionCount)) {
       throw new Error("A IA retornou questões com quantidade de alternativas diferente da solicitada. Tente novamente.");
     }
 
