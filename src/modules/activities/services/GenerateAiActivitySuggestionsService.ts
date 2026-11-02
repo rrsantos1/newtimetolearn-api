@@ -90,15 +90,16 @@ export class GenerateAiActivitySuggestionsService {
       throw new Error("A IA não retornou sugestões no formato esperado. Tente novamente.");
     }
 
-    const resultCount = validated.data.activityType === "word_search"
-      ? validated.data.words.length
-      : validated.data.activityType === "crossword"
-        ? validated.data.entries.length
-        : validated.data.activityType === "memory"
-          ? validated.data.pairs.length
-          : validated.data.questions.length;
+    const resultCount = validated.data.activityType === "listening" ? 1
+      : validated.data.activityType === "word_search"
+        ? validated.data.words.length
+        : validated.data.activityType === "crossword"
+          ? validated.data.entries.length
+          : validated.data.activityType === "memory"
+            ? validated.data.pairs.length
+            : validated.data.questions.length;
 
-    if (validated.data.activityType !== "listening" && resultCount !== input.quantity) {
+    if (input.activityType !== "listening" && resultCount !== input.quantity) {
       throw new Error("A IA retornou uma quantidade diferente da solicitada. Tente novamente.");
     }
 
