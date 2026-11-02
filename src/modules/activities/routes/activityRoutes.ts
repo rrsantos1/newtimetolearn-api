@@ -8,6 +8,7 @@ import { createQuizActivityController } from "../controllers/createQuizActivityC
 import { createListeningActivityController } from "../controllers/createListeningActivityController";
 import { editListeningActivityController } from "../controllers/editListeningActivityController";
 import { generateListeningAudioController } from "../controllers/generateListeningAudioController";
+import { generateListeningAudioPreviewController } from "../controllers/generateListeningAudioPreviewController";
 import { createMemoryActivityController } from "../controllers/createMemoryActivityController";
 import { editMemoryActivityController } from "../controllers/editMemoryActivityController";
 import { submitMemoryAttemptController } from "../controllers/submitMemoryAttemptController";
@@ -34,6 +35,7 @@ import { generateAiActivitySuggestionsController } from "../controllers/generate
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/ai/suggestions", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateAiActivitySuggestionsController);
+  app.post("/ai/listening-audio", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateListeningAudioPreviewController);
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
