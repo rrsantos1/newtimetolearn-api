@@ -83,12 +83,6 @@ export class SubmitActivityVersionService {
         );
       }
 
-      const hasReadyPassage = validatedListening.data.passages.some(
-        (passage) => passage.text.trim().length > 0
-          && passage.blanks.length > 0
-          && passage.audio.status === "READY"
-          && Boolean(passage.audio.storageKey),
-      );
       const allPassagesReady = validatedListening.data.passages.length > 0
         && validatedListening.data.passages.every(
           (passage) => passage.text.trim().length > 0
@@ -97,7 +91,7 @@ export class SubmitActivityVersionService {
             && Boolean(passage.audio.storageKey),
         );
 
-      if (!hasReadyPassage || !allPassagesReady) {
+      if (!allPassagesReady) {
         throw new AppError(
           "LISTENING_NOT_READY_FOR_REVIEW",
           422,
