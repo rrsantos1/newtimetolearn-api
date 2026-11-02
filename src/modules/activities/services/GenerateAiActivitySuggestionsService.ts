@@ -110,6 +110,14 @@ export class GenerateAiActivitySuggestionsService {
       if (generatedWordCount < minWords || generatedWordCount > maxWords) {
         throw new Error("A IA gerou um texto muito diferente do tamanho solicitado. Tente novamente.");
       }
+      const normalizedText = validated.data.text.toLocaleLowerCase("pt-BR");
+      const normalizedBlanks = validated.data.suggestedBlanks.map((blank) => blank.toLocaleLowerCase("pt-BR"));
+      if (
+        new Set(normalizedBlanks).size !== normalizedBlanks.length
+        || normalizedBlanks.some((blank) => !normalizedText.includes(blank))
+      ) {
+        throw new Error("A IA sugeriu lacunas que não correspondem ao texto. Tente novamente.");
+      }
     }
 
     if (validated.data.activityType === "word_search") {
