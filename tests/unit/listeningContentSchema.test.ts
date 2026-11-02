@@ -38,8 +38,8 @@ describe("listeningDraftContentSchema", () => {
         id: "passage-1",
         text: "Olá mundo",
         blanks: [
-          { id: "blank-1", startOffset: 0, endOffset: 4, expectedAnswer: "Olá " },
-          { id: "blank-2", startOffset: 3, endOffset: 9, expectedAnswer: " mundo" },
+          { id: "blank-1", startOffset: 0, endOffset: 5, expectedAnswer: "Olá m" },
+          { id: "blank-2", startOffset: 4, endOffset: 9, expectedAnswer: "mundo" },
         ],
       }],
     });
