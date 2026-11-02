@@ -65,8 +65,8 @@ export class GenerateListeningAudioService {
       throw new AppError("LISTENING_PASSAGE_NOT_FOUND", 404, "Texto do Listening não encontrado.");
     }
 
-    const text = passage.text.trim();
-    if (!text) {
+    const text = passage.text;
+    if (!text.trim()) {
       throw new AppError("LISTENING_TEXT_REQUIRED", 422, "Informe o texto antes de gerar o áudio.");
     }
     if (text.length > 4096) {
