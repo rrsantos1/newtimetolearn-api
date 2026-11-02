@@ -29,6 +29,7 @@ export class CreateListeningActivityService {
         audio: {
           storageKey: null,
           publicUrl: null,
+          disclosure: null,
           status: "PENDING" as const,
           model: null,
           voice: null,
