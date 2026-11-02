@@ -91,7 +91,7 @@ describe("GetActivityBySlugService — Listening execution", () => {
       userId: studentId,
       isAdmin: false,
     });
-    const content = result.version.content as {
+    const content = result.version.content as unknown as {
       passages: Array<{ blanks: Array<Record<string, unknown>> }>;
     };
 
@@ -111,7 +111,7 @@ describe("GetActivityBySlugService — Listening execution", () => {
       userId: teacherId,
       isAdmin: false,
     });
-    const content = result.version.content as {
+    const content = result.version.content as unknown as {
       passages: Array<{ blanks: Array<Record<string, unknown>> }>;
     };
 
