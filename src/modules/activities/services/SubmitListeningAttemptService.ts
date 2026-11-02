@@ -90,11 +90,11 @@ export class SubmitListeningAttemptService {
         alternatives: blank.alternatives,
       })),
     );
-    const expectedKeys = new Set(expectedBlanks.map((blank) => `${blank.passageId}:${blank.blankId}`));
+    const expectedKeys = new Set(expectedBlanks.map((blank) => JSON.stringify([blank.passageId, blank.blankId])));
     const suppliedAnswers = new Map<string, string>();
 
     for (const answer of input.answers) {
-      const key = `${answer.passageId}:${answer.blankId}`;
+      const key = JSON.stringify([answer.passageId, answer.blankId]);
       if (!expectedKeys.has(key)) {
         throw new AppError("INVALID_LISTENING_ANSWER", 400, "A tentativa contém uma lacuna inválida.");
       }
@@ -105,7 +105,7 @@ export class SubmitListeningAttemptService {
     }
 
     const review: ListeningAttemptReview[] = expectedBlanks.map((blank) => {
-      const key = `${blank.passageId}:${blank.blankId}`;
+      const key = JSON.stringify([blank.passageId, blank.blankId]);
       const answer = suppliedAnswers.get(key) ?? "";
       const acceptableAnswers = [blank.expectedAnswer, ...blank.alternatives];
       const isCorrect = acceptableAnswers.some((candidate) => normalizeAnswer(candidate) === normalizeAnswer(answer));
