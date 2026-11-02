@@ -26,6 +26,13 @@ function buildInstructions(input: AiActivitySuggestionsInput): string {
     return `${common}Retorne JSON no formato {"activityType":"memory","pairs":[{"firstText":"...","secondText":"..."}]}. Gere exatamente ${input.quantity} pares educacionais distintos. ${format} Os dois lados devem formar uma associação inequívoca. Não repita pares e mantenha textos curtos. Não inclua imagens nem URLs; o professor escolherá as imagens na biblioteca.`;
   }
 
+  if (input.activityType === "word_matching") {
+    return common + "Retorne JSON com activityType=word_matching e pairs, cada par contendo sourceText e targetText. Gere exatamente " + input.quantity + " associações educacionais inequívocas e distintas sobre o tema. Os dois lados devem ter relação direta e única; evite respostas ambíguas, duplicatas e textos longos."; 
+  }
+
+  if (input.activityType === "sentence_completion") {
+    return common + "Retorne JSON com activityType=sentence_completion, sentences e distractors. Gere exatamente " + input.quantity + " frases originais. Cada item de sentences deve conter beforeText (trecho antes da lacuna), answer (resposta única) e afterText (trecho depois da lacuna). A frase completa deve ser gramaticalmente correta e ensinar um conceito correto. Não inclua a resposta nos trechos. Sugira até 5 palavras distratoras plausíveis, mas incorretas."; 
+  }
   if (input.activityType === "crossword") {
     return `${common}Retorne JSON no formato {"activityType":"crossword","entries":[{"answer":"...","clue":"..."}]}. Gere exatamente ${input.quantity} pares. Cada resposta deve ter até 25 caracteres, ser adequada a uma cruzadinha e corresponder a uma pista clara, objetiva e não ambígua. Não coloque a própria resposta na pista.`;
   }
@@ -97,7 +104,11 @@ export class GenerateAiActivitySuggestionsService {
           ? validated.data.entries.length
           : validated.data.activityType === "memory"
             ? validated.data.pairs.length
-            : validated.data.questions.length;
+            : validated.data.activityType === "word_matching"
+              ? validated.data.pairs.length
+              : validated.data.activityType === "sentence_completion"
+                ? validated.data.sentences.length
+                : validated.data.questions.length;
 
     if (input.activityType !== "listening" && resultCount !== input.quantity) {
       throw new Error("A IA retornou uma quantidade diferente da solicitada. Tente novamente.");
@@ -139,6 +150,18 @@ export class GenerateAiActivitySuggestionsService {
       if (new Set(normalizedPairs).size !== normalizedPairs.length) throw new Error("A IA retornou pares repetidos. Tente novamente.");
     }
 
+    if (validated.data.activityType === "word_matching") {
+      const normalizedSources = validated.data.pairs.map((pair) => pair.sourceText.trim().toLocaleUpperCase("pt-BR"));
+      const normalizedTargets = validated.data.pairs.map((pair) => pair.targetText.trim().toLocaleUpperCase("pt-BR"));
+      if (new Set(normalizedSources).size !== normalizedSources.length || new Set(normalizedTargets).size !== normalizedTargets.length) {
+        throw new Error("A IA retornou itens de origem ou correspondências repetidos. Tente novamente.");
+      }
+    }
+
+    if (validated.data.activityType === "sentence_completion") {
+      const normalizedAnswers = validated.data.sentences.map((sentence) => sentence.answer.trim().toLocaleUpperCase("pt-BR"));
+      if (new Set(normalizedAnswers).size !== normalizedAnswers.length) throw new Error("A IA retornou respostas repetidas para as lacunas. Tente novamente.");
+    }
     if (validated.data.activityType === "quiz" && input.activityType === "quiz" && validated.data.questions.some((question) => question.options.length !== input.optionCount)) {
       throw new Error("A IA retornou questões com quantidade de alternativas diferente da solicitada. Tente novamente.");
     }

@@ -14,4 +14,6 @@ export enum ActivityType {
   LISTENING = "listening",
   FILL_IN_BLANKS = "fill_in_blanks",
   MOLE_HIT = "mole_hit",
+  WORD_MATCHING = "word_matching",
+  SENTENCE_COMPLETION = "sentence_completion",
 }

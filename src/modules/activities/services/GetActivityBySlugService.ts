@@ -6,6 +6,7 @@ import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
 import { ActivityType } from "../types/ActivityType";
 import { sanitizeCrosswordForExecution } from "../utils/crossword/sanitizeCrosswordForExecution";
+import { createDragDropExecutionToken } from "../utils/createDragDropExecutionToken";
 
 function sanitizeListeningForExecution(content: Record<string, unknown>): Record<string, unknown> {
   const passages = Array.isArray(content.passages) ? content.passages : [];
@@ -22,6 +23,47 @@ function sanitizeListeningForExecution(content: Record<string, unknown>): Record
           return Object.fromEntries(
             Object.entries(blank as Record<string, unknown>).filter(([key]) => key !== "expectedAnswer" && key !== "alternatives"),
           );
+        }),
+      };
+    }),
+  };
+}
+
+function sanitizeDragDropForExecution(
+  activityType: ActivityType.WORD_MATCHING | ActivityType.SENTENCE_COMPLETION,
+  content: Record<string, unknown>,
+): Record<string, unknown> {
+  if (activityType === ActivityType.WORD_MATCHING) {
+    const pairs = Array.isArray(content.pairs) ? content.pairs : [];
+    return {
+      pairs: pairs.map((value) => {
+        if (typeof value !== "object" || value === null || Array.isArray(value)) return value;
+        const pair = value as Record<string, unknown>;
+        const pairId = typeof pair.id === "string" ? pair.id : "";
+        const source = typeof pair.source === "object" && pair.source !== null ? pair.source as Record<string, unknown> : {};
+        const target = typeof pair.target === "object" && pair.target !== null ? pair.target as Record<string, unknown> : {};
+        return {
+          source: { ...source, id: createDragDropExecutionToken(pairId, "source") },
+          target: { ...target, id: createDragDropExecutionToken(pairId, "target") },
+        };
+      }),
+    };
+  }
+
+  const words = Array.isArray(content.words) ? content.words : [];
+  const sentences = Array.isArray(content.sentences) ? content.sentences : [];
+  return {
+    words,
+    sentences: sentences.map((value) => {
+      if (typeof value !== "object" || value === null || Array.isArray(value)) return value;
+      const sentence = value as Record<string, unknown>;
+      const blanks = Array.isArray(sentence.blanks) ? sentence.blanks : [];
+      return {
+        ...sentence,
+        blanks: blanks.map((blank) => {
+          if (typeof blank !== "object" || blank === null || Array.isArray(blank)) return blank;
+          const record = blank as Record<string, unknown>;
+          return { id: record.id };
         }),
       };
     }),
@@ -132,7 +174,9 @@ export class GetActivityBySlugService {
         ? sanitizeCrosswordForExecution(selectedVersion.content, selectedVersion.generatedData)
         : !canViewAllVersions && activity.type === ActivityType.LISTENING
           ? { content: sanitizeListeningForExecution(selectedVersion.content), generatedData: selectedVersion.generatedData }
-          : { content: selectedVersion.content, generatedData: selectedVersion.generatedData };
+          : !canViewAllVersions && (activity.type === ActivityType.WORD_MATCHING || activity.type === ActivityType.SENTENCE_COMPLETION)
+            ? { content: sanitizeDragDropForExecution(activity.type, selectedVersion.content), generatedData: selectedVersion.generatedData }
+            : { content: selectedVersion.content, generatedData: selectedVersion.generatedData };
 
     return {
       slug: activity.slug,

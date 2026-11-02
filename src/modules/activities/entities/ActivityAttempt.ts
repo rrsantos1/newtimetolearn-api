@@ -34,4 +34,10 @@ export class ActivityAttempt extends BaseEntity {
 
   @Column({ name: "speed_points", type: "integer" })
   speedPoints!: number;
+
+  @Column({ name: "attempt_token", type: "uuid", nullable: true })
+  attemptToken!: string | null;
+
+  @Column({ type: "jsonb", nullable: true })
+  answers!: Array<{ itemId: string; selectedId: string }> | null;
 }

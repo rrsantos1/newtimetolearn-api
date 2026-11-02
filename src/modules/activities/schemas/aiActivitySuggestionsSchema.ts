@@ -35,6 +35,22 @@ export const aiActivitySuggestionsSchema = z.discriminatedUnion("activityType", 
     pairFormat: z.enum(["text_text", "image_image", "text_image", "mixed"]).default("mixed"),
   }).strict(),
   z.object({
+    activityType: z.literal("word_matching"),
+    topic: z.string().trim().min(2).max(160),
+    quantity: z.coerce.number().int().min(3).max(50),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+    gradeLevel: z.string().trim().max(80).optional(),
+    instructions: z.string().trim().max(500).optional(),
+  }).strict(),
+  z.object({
+    activityType: z.literal("sentence_completion"),
+    topic: z.string().trim().min(2).max(160),
+    quantity: z.coerce.number().int().min(1).max(20),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+    gradeLevel: z.string().trim().max(80).optional(),
+    instructions: z.string().trim().max(500).optional(),
+  }).strict(),
+  z.object({
     activityType: z.literal("quiz"),
     topic: z.string().trim().min(2).max(160),
     quantity: z.coerce.number().int().min(1).max(10),
@@ -68,6 +84,22 @@ export const aiActivitySuggestionsOutputSchema = z.discriminatedUnion("activityT
   z.object({
     activityType: z.literal("memory"),
     pairs: z.array(z.object({ firstText: z.string().trim().min(1).max(300), secondText: z.string().trim().min(1).max(300) }).strict()).min(3).max(50),
+  }).strict(),
+  z.object({
+    activityType: z.literal("word_matching"),
+    pairs: z.array(z.object({
+      sourceText: z.string().trim().min(1).max(500),
+      targetText: z.string().trim().min(1).max(500),
+    }).strict()).min(3).max(50),
+  }).strict(),
+  z.object({
+    activityType: z.literal("sentence_completion"),
+    sentences: z.array(z.object({
+      beforeText: z.string().max(1800),
+      answer: z.string().trim().min(1).max(150),
+      afterText: z.string().max(1800),
+    }).strict()).min(1).max(20),
+    distractors: z.array(z.string().trim().min(1).max(150)).max(50).default([]),
   }).strict(),
   z.object({
     activityType: z.literal("quiz"),

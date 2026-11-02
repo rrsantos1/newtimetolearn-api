@@ -9,6 +9,8 @@ import { ActivityVersionStatus } from "../types/ActivityVersionStatus";
 import { ActivityType } from "../types/ActivityType";
 import { quizContentSchema } from "../schemas/content/quizContentSchema";
 import { listeningDraftContentSchema } from "../schemas/content/listeningContentSchema";
+import { wordMatchingContentSchema } from "../schemas/content/wordMatchingContentSchema";
+import { sentenceCompletionContentSchema } from "../schemas/content/sentenceCompletionContentSchema";
 
 interface SubmitActivityVersionInput {
   slug: string;
@@ -125,6 +127,28 @@ export class SubmitActivityVersionService {
           detailMessage
             ? `O Quiz não atende aos requisitos para aprovação: ${detailMessage}`
             : "O Quiz precisa ter pelo menos uma questão válida, com enunciado, de 3 a 6 alternativas e exatamente uma resposta correta.",
+        );
+      }
+    }
+
+    if (activity.type === ActivityType.WORD_MATCHING) {
+      const validated = wordMatchingContentSchema.safeParse(latestVersion.content);
+      if (!validated.success) {
+        throw new AppError(
+          "WORD_MATCHING_NOT_READY_FOR_REVIEW",
+          422,
+          "A atividade precisa ter pelo menos 3 associações válidas antes do envio para revisão.",
+        );
+      }
+    }
+
+    if (activity.type === ActivityType.SENTENCE_COMPLETION) {
+      const validated = sentenceCompletionContentSchema.safeParse(latestVersion.content);
+      if (!validated.success) {
+        throw new AppError(
+          "SENTENCE_COMPLETION_NOT_READY_FOR_REVIEW",
+          422,
+          "A atividade precisa ter frases, lacunas e palavras válidas antes do envio para revisão.",
         );
       }
     }
