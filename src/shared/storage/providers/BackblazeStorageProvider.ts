@@ -9,6 +9,7 @@ import type {
 } from "../interfaces/IStorageProvider";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_OBJECT_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "audio/mpeg"]);
 const EXTENSIONS_BY_CONTENT_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -107,8 +108,9 @@ export class BackblazeStorageProvider implements IStorageProvider {
   }
 
   async uploadObject(input: UploadObjectInput): Promise<void> {
-    if (!ALLOWED_IMAGE_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
-    if (input.body.byteLength <= 0 || input.body.byteLength > 5 * 1024 * 1024) throw new Error("INVALID_IMAGE_SIZE");
+    if (!ALLOWED_OBJECT_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_STORAGE_CONTENT_TYPE");
+    const maxSizeBytes = input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+    if (input.body.byteLength <= 0 || input.body.byteLength > maxSizeBytes) throw new Error("INVALID_STORAGE_OBJECT_SIZE");
 
     await this.s3Client.send(new PutObjectCommand({
       Bucket: input.bucketName,
