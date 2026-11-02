@@ -130,10 +130,10 @@ describe("CreateQuizActivityService", () => {
             statement: "Pergunta",
             options: [
               { id: "option-1", text: "A", images: [] },
-              { id: "option-2", text: "B", images: [] },
+              { id: "option-1", text: "B", images: [] },
               { id: "option-3", text: "C", images: [] },
             ],
-            correctOptionId: "option-inexistente",
+            correctOptionId: "option-1",
           },
         ],
       },
