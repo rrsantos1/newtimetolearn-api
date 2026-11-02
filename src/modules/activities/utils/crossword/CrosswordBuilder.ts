@@ -14,8 +14,8 @@ interface SearchBudget {
   exploredCandidates: number;
 }
 
-const MAX_SEARCH_CANDIDATES = 2000;
-const MAX_CANDIDATES_PER_BOARD = 40;
+const MAX_SEARCH_CANDIDATES = 10000;
+const MAX_CANDIDATES_PER_BOARD = 100;
 
 export class CrosswordBuilder {
   private readonly writer: BoardWriter;
@@ -89,11 +89,12 @@ export class CrosswordBuilder {
 
     for (const group of groups) {
       for (const candidate of group.candidates) {
-        if (
-          budget.exploredCandidates >= MAX_SEARCH_CANDIDATES ||
-          exploredOnBoard >= MAX_CANDIDATES_PER_BOARD
-        ) {
+        if (budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
           return undefined;
+        }
+
+        if (exploredOnBoard >= MAX_CANDIDATES_PER_BOARD) {
+          break;
         }
 
         budget.exploredCandidates += 1;
