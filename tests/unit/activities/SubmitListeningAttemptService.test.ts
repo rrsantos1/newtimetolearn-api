@@ -5,7 +5,7 @@ import { ActivityVersion } from "../../../src/modules/activities/entities/Activi
 import { ListeningAttempt } from "../../../src/modules/activities/entities/ListeningAttempt";
 import { SubmitListeningAttemptService } from "../../../src/modules/activities/services/SubmitListeningAttemptService";
 import type { IActivityRepository } from "../../../src/modules/activities/repositories/interfaces/IActivityRepository";
-import type { IListeningAttemptRepository } from "../../../src/modules/activities/repositories/interfaces/IListeningAttemptRepository";
+import type { CreateListeningAttemptInput, IListeningAttemptRepository } from "../../../src/modules/activities/repositories/interfaces/IListeningAttemptRepository";
 import type { IUserRepository } from "../../../src/modules/users/repositories/interfaces/IUserRepository";
 import { ActivityStatus } from "../../../src/modules/activities/types/ActivityStatus";
 import { ActivityType } from "../../../src/modules/activities/types/ActivityType";
@@ -26,7 +26,7 @@ describe("SubmitListeningAttemptService", () => {
     elapsedSeconds: 42,
     answers: [
       { passageId: "passage-1", blankId: "blank-1", answer: " GATO " },
-      { passageId: "passage-1", blankId: "blank-2", answer: "felino" },
+      { passageId: "passage-1", blankId: "blank-2", answer: "caminha" },
     ],
   };
 
@@ -97,7 +97,7 @@ describe("SubmitListeningAttemptService", () => {
     };
 
     attemptRepository = {
-      create: vi.fn().mockImplementation(async (attemptInput) => {
+      create: vi.fn().mockImplementation(async (attemptInput: CreateListeningAttemptInput) => {
         const attempt = new ListeningAttempt();
         attempt.id = "attempt-123";
         attempt.activityId = attemptInput.activityId;
