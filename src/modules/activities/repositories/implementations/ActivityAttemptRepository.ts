@@ -14,6 +14,10 @@ export class ActivityAttemptRepository implements IActivityAttemptRepository {
     return this.repository.save(attempt);
   }
 
+  async findByAttemptToken(activityId: string, userId: string, attemptToken: string): Promise<ActivityAttempt | null> {
+    return this.repository.findOne({ where: { activityId, userId, attemptToken } });
+  }
+
   async getRanking(activityId: string): Promise<ActivityAttempt[]> {
     return this.repository.find({
       where: { activityId },
