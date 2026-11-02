@@ -23,6 +23,7 @@ export interface GenerateListeningAudioInput {
   teacherId: string;
   voice: ListeningVoice;
   instructions?: string;
+  audioBase64?: string;
 }
 
 export class GenerateListeningAudioService {
@@ -32,7 +33,7 @@ export class GenerateListeningAudioService {
   ) {}
 
   async execute(input: GenerateListeningAudioInput) {
-    if (!env.OPENAI_API_KEY) {
+    if (!input.audioBase64 && !env.OPENAI_API_KEY) {
       throw new AppError("OPENAI_NOT_CONFIGURED", 503, "A integração de áudio com a OpenAI não está configurada.");
     }
     if (!env.B2_BUCKET_NAME || !env.B2_PUBLIC_BASE_URL) {
@@ -75,7 +76,8 @@ export class GenerateListeningAudioService {
 
     const textHash = createHash("sha256").update(text, "utf8").digest("hex");
     if (
-      passage.audio.status === "READY"
+      !input.audioBase64
+      && passage.audio.status === "READY"
       && passage.audio.storageKey
       && passage.audio.textHash === textHash
       && passage.audio.voice === input.voice
@@ -88,40 +90,57 @@ export class GenerateListeningAudioService {
       };
     }
 
-    const instructions = [
-      `Leia o texto naturalmente no idioma ${parsedContent.data.language}.`,
-      input.instructions?.trim(),
-    ].filter(Boolean).join(" ").slice(0, 1000);
+    let audioBuffer: Buffer;
 
-    const speechResponse = await fetch("https://api.openai.com/v1/audio/speech", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: env.OPENAI_TTS_MODEL,
-        voice: input.voice,
-        input: text,
-        instructions,
-        response_format: "mp3",
-      }),
-      signal: AbortSignal.timeout(90_000),
-    });
-
-    if (!speechResponse.ok) {
-      if (speechResponse.status === 429) {
-        throw new AppError("OPENAI_RATE_LIMIT", 429, "O serviço de áudio está ocupado. Aguarde e tente novamente.");
+    if (input.audioBase64) {
+      if (!/^[A-Za-z0-9+/]+={0,2}$/.test(input.audioBase64) || input.audioBase64.length > 28_000_000) {
+        throw new AppError("AUDIO_DATA_INVALID", 422, "O áudio enviado para salvar é inválido ou excede o tamanho permitido.");
       }
-      if (speechResponse.status === 401 || speechResponse.status === 403) {
-        throw new AppError("OPENAI_CONFIGURATION_ERROR", 503, "A configuração de acesso ao serviço de áudio precisa ser verificada.");
-      }
-      throw new AppError("AUDIO_GENERATION_FAILED", 502, "Não foi possível gerar o áudio neste momento.");
-    }
 
-    const audioBuffer = Buffer.from(await speechResponse.arrayBuffer());
-    if (audioBuffer.byteLength === 0 || audioBuffer.byteLength > 20 * 1024 * 1024) {
-      throw new AppError("AUDIO_SIZE_INVALID", 502, "O arquivo de áudio gerado está vazio ou excede o tamanho permitido.");
+      audioBuffer = Buffer.from(input.audioBase64, "base64");
+      if (
+        audioBuffer.byteLength === 0
+        || audioBuffer.byteLength > 20 * 1024 * 1024
+        || audioBuffer.toString("base64") !== input.audioBase64
+      ) {
+        throw new AppError("AUDIO_SIZE_INVALID", 422, "O áudio enviado está vazio, inválido ou excede o tamanho permitido.");
+      }
+    } else {
+      const instructions = [
+        `Leia o texto naturalmente no idioma ${parsedContent.data.language}.`,
+        input.instructions?.trim(),
+      ].filter(Boolean).join(" ").slice(0, 1000);
+
+      const speechResponse = await fetch("https://api.openai.com/v1/audio/speech", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: env.OPENAI_TTS_MODEL,
+          voice: input.voice,
+          input: text,
+          instructions,
+          response_format: "mp3",
+        }),
+        signal: AbortSignal.timeout(90_000),
+      });
+
+      if (!speechResponse.ok) {
+        if (speechResponse.status === 429) {
+          throw new AppError("OPENAI_RATE_LIMIT", 429, "O serviço de áudio está ocupado. Aguarde e tente novamente.");
+        }
+        if (speechResponse.status === 401 || speechResponse.status === 403) {
+          throw new AppError("OPENAI_CONFIGURATION_ERROR", 503, "A configuração de acesso ao serviço de áudio precisa ser verificada.");
+        }
+        throw new AppError("AUDIO_GENERATION_FAILED", 502, "Não foi possível gerar o áudio neste momento.");
+      }
+
+      audioBuffer = Buffer.from(await speechResponse.arrayBuffer());
+      if (audioBuffer.byteLength === 0 || audioBuffer.byteLength > 20 * 1024 * 1024) {
+        throw new AppError("AUDIO_SIZE_INVALID", 502, "O arquivo de áudio gerado está vazio ou excede o tamanho permitido.");
+      }
     }
 
     const storage = makeStorageProvider();
