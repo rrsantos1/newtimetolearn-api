@@ -65,6 +65,24 @@ export class SubmitDragDropActivityAttemptService {
       content.data.sentences.forEach((sentence) => sentence.blanks.forEach((blank) => expected.set(blank.id, blank.expectedWordId)));
     }
 
+    const existingAttempt = await this.attemptRepository.findByAttemptToken(activity.id, input.userId, input.attemptToken);
+    if (existingAttempt) {
+      const storedAnswers = new Map((existingAttempt.answers ?? []).map((answer) => [answer.itemId, answer.selectedId]));
+      const corrections = [...expected.entries()].map(([itemId, expectedId]) => {
+        const selectedId = storedAnswers.get(itemId) ?? null;
+        return { itemId, selectedId, expectedId, isCorrect: selectedId === expectedId };
+      });
+      const ranking = await this.attemptRepository.getRanking(activity.id);
+      return {
+        attempt: existingAttempt,
+        ranking,
+        isInRanking: ranking.some((entry) => entry.id === existingAttempt.id),
+        correctCount: corrections.filter((correction) => correction.isCorrect).length,
+        totalItems: expected.size,
+        corrections,
+      };
+    }
+
     const uniqueItemAnswers = new Map<string, string>();
     const usedSelections = new Set<string>();
     for (const answer of input.answers) {
