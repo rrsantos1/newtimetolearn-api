@@ -26,22 +26,40 @@ export function generateCrosswordPuzzle(
 
   const board = new CrosswordBoard(rows, cols);
   const builder = new CrosswordBuilder(board);
-  builder.build(words);
-
   const renderer = new CrosswordRenderer();
-  const result = renderer.render(board);
+  let validatedResult: CrosswordRenderResult | undefined;
 
-  validateCrosswordGenerationResult(
-    words.map((word) => word.word),
-    result.clues.map((clue) => ({
-      word: { word: clue.word },
-      row: clue.row,
-      col: clue.col,
-      direction: clue.direction
-    })),
-    rows,
-    cols
-  );
+  builder.build(words, (candidateBoard) => {
+    try {
+      const candidateResult = renderer.render(candidateBoard);
+      validateCrosswordGenerationResult(
+        words.map((word) => word.word),
+        candidateResult.clues.map((clue) => ({
+          word: { word: clue.word },
+          row: clue.row,
+          col: clue.col,
+          direction: clue.direction,
+        })),
+        rows,
+        cols,
+      );
+      validatedResult = candidateResult;
+      return true;
+    } catch (error: unknown) {
+      if (error instanceof CrosswordGenerationError) {
+        return false;
+      }
 
-  return result;
+      throw error;
+    }
+  });
+
+  if (!validatedResult) {
+    throw new CrosswordGenerationError(
+      "Não foi possível gerar uma cruzadinha válida com as respostas informadas. Revise as palavras e tente novamente.",
+      "INVALID_PLACEMENT",
+    );
+  }
+
+  return validatedResult;
 }
