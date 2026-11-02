@@ -34,6 +34,8 @@ import { getQuarantinedMediaAssetController } from "../controllers/getQuarantine
 import { generateAiActivitySuggestionsController } from "../controllers/generateAiActivitySuggestionsController";
 import { makeCreateDragDropActivityController } from "../controllers/createDragDropActivityController";
 import { ActivityType } from "../types/ActivityType";
+import { makeSubmitDragDropActivityAttemptController } from "../controllers/submitDragDropActivityAttemptController";
+import { makeGetDragDropActivityRankingController } from "../controllers/getDragDropActivityRankingController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/ai/suggestions", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateAiActivitySuggestionsController);
@@ -60,6 +62,10 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
   app.post("/word-matching", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, makeCreateDragDropActivityController(ActivityType.WORD_MATCHING));
   app.post("/sentence-completion", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, makeCreateDragDropActivityController(ActivityType.SENTENCE_COMPLETION));
+  app.post("/:slug/word-matching/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, makeSubmitDragDropActivityAttemptController(ActivityType.WORD_MATCHING));
+  app.post("/:slug/sentence-completion/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, makeSubmitDragDropActivityAttemptController(ActivityType.SENTENCE_COMPLETION));
+  app.get("/:slug/word-matching/ranking", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, makeGetDragDropActivityRankingController(ActivityType.WORD_MATCHING));
+  app.get("/:slug/sentence-completion/ranking", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, makeGetDragDropActivityRankingController(ActivityType.SENTENCE_COMPLETION));
   app.post("/:slug/memory/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMemoryAttemptController);
   app.post("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitListeningAttemptController);
   app.get("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listListeningAttemptsController);
