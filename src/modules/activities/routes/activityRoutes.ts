@@ -5,6 +5,9 @@ import { RoleCode } from "../../users/types/RoleCode";
 import { createWordSearchActivityController } from "../controllers/createWordSearchActivityController";
 import { createCrosswordActivityController } from "../controllers/createCrosswordActivityController";
 import { createQuizActivityController } from "../controllers/createQuizActivityController";
+import { createMemoryActivityController } from "../controllers/createMemoryActivityController";
+import { editMemoryActivityController } from "../controllers/editMemoryActivityController";
+import { submitMemoryAttemptController } from "../controllers/submitMemoryAttemptController";
 import { editQuizActivityController } from "../controllers/editQuizActivityController";
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
@@ -38,6 +41,9 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   }, createMediaAssetController);
 
   app.post("/quiz", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createQuizActivityController);
+  app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
+  app.post("/:slug/memory/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMemoryAttemptController);
+  app.patch("/:slug/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, editMemoryActivityController);
   app.get("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, listActivitiesController);
   app.post("/crossword", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createCrosswordActivityController);
   app.get("/:slug/ranking", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, getWordSearchRankingController);
