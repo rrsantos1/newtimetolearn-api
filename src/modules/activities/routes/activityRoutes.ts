@@ -12,6 +12,7 @@ import { createMemoryActivityController } from "../controllers/createMemoryActiv
 import { editMemoryActivityController } from "../controllers/editMemoryActivityController";
 import { submitMemoryAttemptController } from "../controllers/submitMemoryAttemptController";
 import { submitListeningAttemptController } from "../controllers/submitListeningAttemptController";
+import { listListeningAttemptsController } from "../controllers/listListeningAttemptsController";
 import { editQuizActivityController } from "../controllers/editQuizActivityController";
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
@@ -51,6 +52,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
   app.post("/:slug/memory/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMemoryAttemptController);
   app.post("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitListeningAttemptController);
+  app.get("/:slug/listening/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listListeningAttemptsController);
   app.patch("/:slug/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, editMemoryActivityController);
   app.get("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, listActivitiesController);
   app.post("/crossword", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createCrosswordActivityController);
