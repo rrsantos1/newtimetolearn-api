@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CrosswordBoard } from "../../src/modules/activities/utils/crossword/board/CrosswordBoard";
 import { CrosswordBuilder } from "../../src/modules/activities/utils/crossword/CrosswordBuilder";
 import { CrosswordGenerationError } from "../../src/modules/activities/errors/CrosswordGenerationError";
+import { generateCrosswordPuzzle } from "../../src/modules/activities/utils/crossword/generateCrosswordPuzzle";
 
 describe("gerador de palavras cruzadas", () => {
   it("reconstrói o índice de letras usando as células clonadas", () => {
@@ -37,9 +38,6 @@ describe("gerador de palavras cruzadas", () => {
     expect((caughtError as CrosswordGenerationError).code).toBe("INCOMPLETE_GENERATION");
   });
   it("posiciona palavras curtas em uma cruzadinha sobre o sistema solar", () => {
-    const board = new CrosswordBoard(25, 25);
-    const builder = new CrosswordBuilder(board);
-
     const words = [
       { word: "SISTEMASOLAR", clue: "Conjunto formado pelo Sol e corpos celestes" },
       { word: "MERCURIO", clue: "Planeta mais próximo do Sol" },
@@ -55,13 +53,11 @@ describe("gerador de palavras cruzadas", () => {
       { word: "ASTRO", clue: "Corpo celeste" },
     ];
 
-    const result = builder.build(words);
+    const result = generateCrosswordPuzzle(words, 25, 25);
 
-    expect(result.getPlacements()).toHaveLength(words.length);
-    expect(result.getPlacements().map((placement) => placement.word.word))
-      .toContain("LUA");
-    expect(result.getPlacements().map((placement) => placement.word.word))
-      .toContain("SOL");
+    expect(result.clues).toHaveLength(words.length);
+    expect(result.clues.map((clue) => clue.word)).toContain("LUA");
+    expect(result.clues.map((clue) => clue.word)).toContain("SOL");
   });
 
   it("posiciona todas as palavras quando existem cruzamentos alternativos", () => {
