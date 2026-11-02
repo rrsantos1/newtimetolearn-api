@@ -43,6 +43,17 @@ export async function createCrosswordActivityController(
     });
   } catch (error: unknown) {
     if (error instanceof AppError) {
+      if (error.diagnostic) {
+        request.log.warn(
+          {
+            errorCode: error.code,
+            diagnostic: error.diagnostic,
+            requestId: request.id,
+          },
+          "Falha ao gerar a grade da cruzadinha.",
+        );
+      }
+
       return reply.status(error.statusCode).send({
         success: false,
         error: {
