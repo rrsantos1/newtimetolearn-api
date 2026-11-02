@@ -54,6 +54,11 @@ export class CreateCrosswordActivityService {
           "CROSSWORD_GENERATION_FAILED",
           422,
           "Não foi possível gerar uma cruzadinha válida com as respostas informadas. Revise as palavras e tente novamente.",
+          {
+            name: error.name,
+            message: error.message,
+            code: error.code,
+          },
         );
       }
 
