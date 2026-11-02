@@ -18,7 +18,7 @@ type RiskCategory = (typeof riskCategories)[number];
 type ModerationStatus = "APPROVED" | "REJECTED" | "PENDING_REVIEW";
 
 const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
-  ? new vision.ImageAnnotatorClient({ keyFilename: env.GOOGLE_APPLICATION_CREDENTIALS })
+  ? new vision.ImageAnnotatorClient()
   : null;
 
 async function moderateImage(imageBuffer: Buffer): Promise<ModerationStatus> {
