@@ -2,6 +2,14 @@ import { z } from "zod";
 
 export const aiActivitySuggestionsSchema = z.discriminatedUnion("activityType", [
   z.object({
+    activityType: z.literal("listening"),
+    topic: z.string().trim().min(2).max(160),
+    wordCount: z.coerce.number().int().min(50).max(600),
+    objective: z.string().trim().min(2).max(500),
+    difficulty: z.enum(["easy", "medium", "hard"]).default("medium"),
+    gradeLevel: z.string().trim().max(80).optional(),
+  }).strict(),
+  z.object({
     activityType: z.literal("word_search"),
     topic: z.string().trim().min(2).max(160),
     quantity: z.coerce.number().int().min(3).max(25),
@@ -40,6 +48,11 @@ export const aiActivitySuggestionsSchema = z.discriminatedUnion("activityType", 
 export type AiActivitySuggestionsInput = z.infer<typeof aiActivitySuggestionsSchema>;
 
 export const aiActivitySuggestionsOutputSchema = z.discriminatedUnion("activityType", [
+  z.object({
+    activityType: z.literal("listening"),
+    title: z.string().trim().min(3).max(160),
+    text: z.string().trim().min(100).max(4096),
+  }).strict(),
   z.object({
     activityType: z.literal("word_search"),
     words: z.array(z.string().trim().min(2).max(50).refine((word) => word.replace(/[\\s-]/g, "").length <= 20, "A palavra deve ter até 20 letras, desconsiderando espaços e hífens.")).min(1).max(25),
