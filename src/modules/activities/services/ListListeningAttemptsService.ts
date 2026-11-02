@@ -1,4 +1,5 @@
 import { AppError } from "../../../shared/errors/AppError";
+import { ActivityType } from "../types/ActivityType";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
 import type { IListeningAttemptRepository } from "../repositories/interfaces/IListeningAttemptRepository";
 
@@ -49,7 +50,7 @@ export class ListListeningAttemptsService {
       ? await this.activityRepository.findBySlug(input.slug)
       : await this.activityRepository.findBySlugAndTeacherId(input.slug, input.userId);
 
-    if (!activity || activity.deletedAt || activity.type !== "listening") {
+    if (!activity || activity.deletedAt || activity.type !== ActivityType.LISTENING) {
       throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade de Listening não encontrada.");
     }
 
