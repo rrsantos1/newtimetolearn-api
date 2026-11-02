@@ -16,6 +16,11 @@ function buildInstructions(input: AiActivitySuggestionsInput): string {
     return `${common}Retorne JSON no formato {"activityType":"word_search","words":["..."]}. Gere exatamente ${input.quantity} palavras ou expressões relevantes e distintas. Cada item deve ter até 25 caracteres, preferencialmente uma palavra ou expressão curta, sem explicações. Evite duplicatas e não use itens genéricos.`;
   }
 
+  if (input.activityType === "memory") {
+    const format = input.pairFormat === "text_text" ? "Ambos os lados devem ser textos." : input.pairFormat === "text_image" ? "Gere associações que possam ser representadas por texto de um lado e imagem do outro; retorne os dois textos descritivos para o professor anexar imagens." : input.pairFormat === "image_image" ? "Gere pares de dois elementos visuais relacionados, descrevendo ambos em texto para o professor associar imagens da biblioteca." : "Misture associações de conceitos e definições, perguntas e respostas curtas, elementos relacionados e pares que possam ser representados por texto ou imagem.";
+    return `${common}Retorne JSON no formato {"activityType":"memory","pairs":[{"firstText":"...","secondText":"..."}]}. Gere exatamente ${input.quantity} pares educacionais distintos. ${format} Os dois lados devem formar uma associação inequívoca. Não repita pares e mantenha textos curtos. Não inclua imagens nem URLs; o professor escolherá as imagens na biblioteca.`;
+  }
+
   if (input.activityType === "crossword") {
     return `${common}Retorne JSON no formato {"activityType":"crossword","entries":[{"answer":"...","clue":"..."}]}. Gere exatamente ${input.quantity} pares. Cada resposta deve ter até 25 caracteres, ser adequada a uma cruzadinha e corresponder a uma pista clara, objetiva e não ambígua. Não coloque a própria resposta na pista.`;
   }
@@ -84,7 +89,9 @@ export class GenerateAiActivitySuggestionsService {
       ? validated.data.words.length
       : validated.data.activityType === "crossword"
         ? validated.data.entries.length
-        : validated.data.questions.length;
+        : validated.data.activityType === "memory"
+          ? validated.data.pairs.length
+          : validated.data.questions.length;
 
     if (resultCount !== input.quantity) {
       throw new Error("A IA retornou uma quantidade diferente da solicitada. Tente novamente.");
@@ -102,6 +109,11 @@ export class GenerateAiActivitySuggestionsService {
       if (new Set(normalizedAnswers).size !== normalizedAnswers.length) {
         throw new Error("A IA retornou respostas repetidas. Tente novamente.");
       }
+    }
+
+    if (validated.data.activityType === "memory") {
+      const normalizedPairs = validated.data.pairs.map((pair) => `${pair.firstText.trim().toLocaleUpperCase("pt-BR")}::${pair.secondText.trim().toLocaleUpperCase("pt-BR")}`);
+      if (new Set(normalizedPairs).size !== normalizedPairs.length) throw new Error("A IA retornou pares repetidos. Tente novamente.");
     }
 
     if (validated.data.activityType === "quiz" && input.activityType === "quiz" && validated.data.questions.some((question) => question.options.length !== input.optionCount)) {
