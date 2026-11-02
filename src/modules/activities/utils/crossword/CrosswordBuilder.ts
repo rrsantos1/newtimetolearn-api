@@ -33,17 +33,56 @@ export class CrosswordBuilder {
       return this.board;
     }
 
-    const remainingWords = [...words];
     const initialPlacementCount = this.board.getPlacements().length;
-    const workingBoard = this.board.clone();
-    const workingBuilder = new CrosswordBuilder(workingBoard);
-
-    workingBuilder.placeFirstWord(remainingWords);
-
-    const result = workingBuilder.searchRemaining(
-      remainingWords,
-      { exploredCandidates: 0 },
+    const budget: SearchBudget = { exploredCandidates: 0 };
+    const seedWords = [...words].sort(
+      (first, second) => second.word.length - first.word.length,
     );
+
+    let result: CrosswordBoard | undefined;
+
+    for (const seedWord of seedWords) {
+      const seedIndex = words.indexOf(seedWord);
+
+      if (seedIndex < 0) {
+        continue;
+      }
+
+      const remainingWords = words.filter((_, index) => index !== seedIndex);
+      const orientations: readonly ("across" | "down")[] = ["across", "down"];
+
+      for (const direction of orientations) {
+        if (budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+          break;
+        }
+
+        const workingBoard = this.board.clone();
+        const workingBuilder = new CrosswordBuilder(workingBoard);
+
+        try {
+          workingBuilder.placeSeedWord(seedWord, direction);
+        } catch (error: unknown) {
+          if (
+            error instanceof CrosswordGenerationError &&
+            error.code === "INVALID_BOARD"
+          ) {
+            continue;
+          }
+
+          throw error;
+        }
+
+        result = workingBuilder.searchRemaining(remainingWords, budget);
+
+        if (result) {
+          break;
+        }
+      }
+
+      if (result || budget.exploredCandidates >= MAX_SEARCH_CANDIDATES) {
+        break;
+      }
+    }
 
     if (!result) {
       throw new CrosswordGenerationError(
@@ -139,56 +178,32 @@ export class CrosswordBuilder {
     return groups;
   }
 
-  private placeFirstWord(remainingWords: CrosswordWord[]): void {
-    let longestIndex = 0;
-
-    for (let index = 1; index < remainingWords.length; index += 1) {
-      const candidate = remainingWords[index];
-      const currentLongest = remainingWords[longestIndex];
-
-      if (
-        candidate &&
-        currentLongest &&
-        candidate.word.length > currentLongest.word.length
-      ) {
-        longestIndex = index;
-      }
-    }
-
-    const [firstWord] = remainingWords.splice(longestIndex, 1);
-
-    if (!firstWord) {
-      throw new CrosswordGenerationError(
-        "Não foi possível selecionar a primeira resposta.",
-        "INCOMPLETE_GENERATION",
-      );
-    }
+  private placeSeedWord(
+    word: CrosswordWord,
+    direction: "across" | "down",
+  ): void {
+    const isAcross = direction === "across";
+    const availableLength = isAcross ? this.board.cols : this.board.rows;
 
     if (
-      firstWord.word.length > this.board.cols ||
+      word.word.length > availableLength ||
       this.board.rows < 1 ||
       this.board.cols < 1
     ) {
       throw new CrosswordGenerationError(
-        `A resposta inicial "${firstWord.word}" não cabe na grade configurada.`,
+        `A resposta inicial "${word.word}" não cabe na grade configurada.`,
         "INVALID_BOARD",
       );
     }
 
-    const row = Math.floor(this.board.rows / 2);
-    const col = Math.max(
-      0,
-      Math.floor((this.board.cols - firstWord.word.length) / 2),
-    );
+    const row = isAcross
+      ? Math.floor(this.board.rows / 2)
+      : Math.max(0, Math.floor((this.board.rows - word.word.length) / 2));
+    const col = isAcross
+      ? Math.max(0, Math.floor((this.board.cols - word.word.length) / 2))
+      : Math.floor(this.board.cols / 2);
 
-    const move: CrosswordMove = {
-      word: firstWord,
-      row,
-      col,
-      direction: "across",
-    };
-
-    this.writer.write(move);
+    this.writer.write({ word, row, col, direction });
   }
 
   private evaluateMoves(
