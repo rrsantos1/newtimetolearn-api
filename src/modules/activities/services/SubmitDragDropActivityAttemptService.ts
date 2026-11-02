@@ -21,6 +21,7 @@ export interface SubmitDragDropAttemptInput {
   userId: string;
   answers: DragDropAnswer[];
   elapsedSeconds: number;
+  attemptToken: string;
 }
 
 export interface SubmitDragDropAttemptResult {
@@ -98,6 +99,8 @@ export class SubmitDragDropActivityAttemptService {
       score,
       accuracyPoints,
       speedPoints,
+      attemptToken: input.attemptToken,
+      answers: [...uniqueItemAnswers.entries()].map(([itemId, selectedId]) => ({ itemId, selectedId })),
     });
     const ranking = await this.attemptRepository.getRanking(activity.id);
     const corrections = [...expected.entries()].map(([itemId, expectedId]) => {
