@@ -25,8 +25,16 @@ export async function createActivityCoverGenerationController(
     RETURNING id
   `, [request.user.sub, parsed.data.prompt]);
 
+  const job = rows[0];
+  if (!job) {
+    return reply.status(500).send({
+      success: false,
+      error: { code: "GENERATION_JOB_CREATE_FAILED", message: "Não foi possível iniciar a geração da capa." },
+    });
+  }
+
   return reply.status(202).send({
     success: true,
-    data: { jobId: rows[0].id, status: "PENDING" },
+    data: { jobId: job.id, status: "PENDING" },
   });
 }
