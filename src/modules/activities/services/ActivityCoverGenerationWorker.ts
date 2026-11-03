@@ -18,13 +18,13 @@ interface CreatedMediaAsset {
   status: "APPROVED" | "PENDING_REVIEW" | "REJECTED";
 }
 
-const POLL_INTERVAL_MS = 2_000;
+const POLL_INTERVAL_MS = 10_000;
 const STALE_JOB_MINUTES = 5;
 let timer: NodeJS.Timeout | null = null;
 let running = false;
 
 async function claimNextJob(): Promise<ClaimedJob | null> {
-  const rows = await AppDataSource.query<ClaimedJob[]>(`
+  const rows = await AppDataSource.query<unknown[]>(`
     WITH candidate AS (
       SELECT id
       FROM public.activity_cover_generation_jobs
@@ -48,7 +48,13 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       job.prompt AS "prompt"
   `, [STALE_JOB_MINUTES]);
 
-  const row = rows[0];
+  const row = rows.find(
+    (value): value is Record<string, unknown> =>
+      typeof value === "object" &&
+      value !== null &&
+      !Array.isArray(value),
+  );
+
   if (!row) return null;
 
   const id = row.id;
