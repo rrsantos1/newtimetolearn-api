@@ -39,13 +39,16 @@ import { makeGetDragDropActivityRankingController } from "../controllers/getDrag
 import { makeEditDragDropActivityController } from "../controllers/editDragDropActivityController";
 import { updateActivityCoverController } from "../controllers/updateActivityCoverController";
 import { generateActivityCoverController } from "../controllers/generateActivityCoverController";
+import { createActivityCoverGenerationController } from "../controllers/createActivityCoverGenerationController";
+import { getActivityCoverGenerationController } from "../controllers/getActivityCoverGenerationController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/ai/suggestions", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateAiActivitySuggestionsController);
   app.post("/ai/listening-audio", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateListeningAudioPreviewController);
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
-  app.post("/ai/activity-cover", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateActivityCoverController);
+  app.post("/ai/activity-cover", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createActivityCoverGenerationController);
+  app.get("/ai/activity-cover/:jobId", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, getActivityCoverGenerationController);
   app.patch("/:slug/cover", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, updateActivityCoverController);
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
