@@ -15,10 +15,10 @@ export class GetWordSearchRankingService {
 
     if (
       !activity ||
-      activity.type !== ActivityType.WORD_SEARCH ||
+      ![ActivityType.WORD_SEARCH, ActivityType.CROSSWORD, ActivityType.QUIZ, ActivityType.MEMORY, ActivityType.LISTENING].includes(activity.type) ||
       activity.status !== ActivityStatus.PUBLISHED
     ) {
-      throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade publicada não encontrada.");
+      throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade publicada não encontrada ou sem ranking disponível.");
     }
 
     const ranking = await this.attemptRepository.getRanking(activity.id);
