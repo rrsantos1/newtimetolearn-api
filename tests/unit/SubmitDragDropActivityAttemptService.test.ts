@@ -167,4 +167,51 @@ describe("SubmitDragDropActivityAttemptService", () => {
 
     expect(createAttempt).not.toHaveBeenCalled();
   });
+  it("scores sentence-completion blanks using their expected word identifiers", async () => {
+    const sentenceActivity = {
+      ...activity,
+      type: ActivityType.SENTENCE_COMPLETION,
+      versions: [{
+        ...activity.versions[0],
+        content: {
+          words: [
+            { id: "word-sun", text: "Sol" },
+            { id: "word-moon", text: "Lua" },
+          ],
+          sentences: [
+            { id: "sentence-1", text: "O {{blank-1}} brilha.", blanks: [{ id: "blank-1", expectedWordId: "word-sun" }] },
+            { id: "sentence-2", text: "A {{blank-2}} aparece.", blanks: [{ id: "blank-2", expectedWordId: "word-moon" }] },
+          ],
+        },
+      }],
+    };
+    const sentenceService = new SubmitDragDropActivityAttemptService(
+      attemptRepository,
+      {
+        findBySlugWithVersions: vi.fn().mockResolvedValue(sentenceActivity),
+      } as unknown as IActivityRepository,
+      userRepository,
+      ActivityType.SENTENCE_COMPLETION,
+    );
+
+    const result = await sentenceService.execute({
+      slug: "complete-as-frases",
+      userId: "student-123",
+      answers: [
+        { itemId: "blank-1", selectedId: "word-sun" },
+        { itemId: "blank-2", selectedId: "word-moon" },
+      ],
+      elapsedSeconds: 0,
+      attemptToken: "sentence-attempt-token",
+    });
+
+    expect(result.correctCount).toBe(2);
+    expect(result.totalItems).toBe(2);
+    expect(result.corrections.every((correction) => correction.isCorrect)).toBe(true);
+    expect(createAttempt).toHaveBeenCalledWith(expect.objectContaining({
+      wordsFound: ["blank-1", "blank-2"],
+      totalWords: 2,
+    }));
+  });
+
 });
