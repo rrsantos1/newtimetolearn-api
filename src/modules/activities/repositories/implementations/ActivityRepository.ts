@@ -66,6 +66,7 @@ export class ActivityRepository implements IActivityRepository {
     const query = this.repository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.versions", "version")
+      .leftJoinAndSelect("activity.coverMediaAsset", "coverMediaAsset")
       .where("activity.deleted_at IS NULL");
 
     if (scope === "mine") {
