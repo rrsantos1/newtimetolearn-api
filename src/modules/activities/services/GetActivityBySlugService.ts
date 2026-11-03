@@ -100,6 +100,9 @@ export interface GetActivityBySlugResponse {
   createdAt: Date;
   updatedAt: Date;
   isOwner: boolean;
+  coverMediaAssetId: string | null;
+  coverImageUrl: string | null;
+  coverAltText: string | null;
   version: ActivityVersionDetails;
 }
 
@@ -187,6 +190,9 @@ export class GetActivityBySlugService {
       createdAt: activity.createdAt,
       updatedAt: activity.updatedAt,
       isOwner,
+      coverMediaAssetId: activity.coverMediaAssetId ?? null,
+      coverImageUrl: activity.coverMediaAsset?.status === "APPROVED" ? activity.coverMediaAsset.publicUrl : null,
+      coverAltText: activity.coverMediaAsset?.status === "APPROVED" ? activity.coverMediaAsset.altText : null,
       version: {
         versionNumber: selectedVersion.versionNumber,
         name: selectedVersion.name,

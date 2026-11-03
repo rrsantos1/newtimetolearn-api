@@ -12,6 +12,7 @@ import { ActivityStatus } from "../types/ActivityStatus";
 import { ActivityType } from "../types/ActivityType";
 import { ActivityVisibility } from "../types/ActivityVisibility";
 import { ActivityVersion } from "./ActivityVersion";
+import { MediaAsset } from "./MediaAsset";
 @Entity("activities")
 @Index("uq_activities_slug", ["slug"], { unique: true })
 @Index("idx_activities_teacher_status", ["teacherId", "status"])
@@ -60,6 +61,13 @@ export class Activity extends BaseEntity {
     nullable: true,
   })
   currentPublishedVersionId!: string | null;
+
+  @Column({ name: "cover_media_asset_id", type: "uuid", nullable: true })
+  coverMediaAssetId!: string | null;
+
+  @ManyToOne(() => MediaAsset, { nullable: true, onDelete: "SET NULL" })
+  @JoinColumn({ name: "cover_media_asset_id" })
+  coverMediaAsset!: MediaAsset | null;
 
   @Column({
     name: "deleted_at",
