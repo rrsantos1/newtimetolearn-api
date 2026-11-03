@@ -48,7 +48,7 @@ export async function generateActivityCoverController(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-image-2.5-flare",
+        model: "gpt-image-1",
         prompt,
         size: "1536x1024",
         quality: "low",
