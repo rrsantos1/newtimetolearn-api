@@ -62,4 +62,57 @@ describe("drag-drop activity content schemas", () => {
     });
     expect(parsed.success).toBe(false);
   });
+  it("accepts word-matching pairs with text and image items", () => {
+    const parsed = wordMatchingContentSchema.safeParse({
+      pairs: [
+        { id: "pair-1", source: { type: "text", value: "Cachorro" }, target: { type: "image", storageKey: "media/dog.jpg", altText: "Cachorro" } },
+        { id: "pair-2", source: { type: "image", storageKey: "media/cat.jpg" }, target: { type: "text", value: "Gato" } },
+        { id: "pair-3", source: { type: "text", value: "Pássaro" }, target: { type: "text", value: "Ave" } },
+      ],
+    });
+    expect(parsed.success).toBe(true);
+  });
+
+  it("rejects word-matching activities with fewer than three pairs", () => {
+    const parsed = wordMatchingContentSchema.safeParse({
+      pairs: [
+        { id: "pair-1", source: { type: "text", value: "Brasil" }, target: { type: "text", value: "Brasília" } },
+        { id: "pair-2", source: { type: "text", value: "França" }, target: { type: "text", value: "Paris" } },
+      ],
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects duplicate pair identifiers", () => {
+    const parsed = wordMatchingContentSchema.safeParse({
+      pairs: [
+        { id: "pair-1", source: { type: "text", value: "Brasil" }, target: { type: "text", value: "Brasília" } },
+        { id: "pair-1", source: { type: "text", value: "França" }, target: { type: "text", value: "Paris" } },
+        { id: "pair-3", source: { type: "text", value: "Japão" }, target: { type: "text", value: "Tóquio" } },
+      ],
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects duplicate sentence and blank identifiers", () => {
+    const parsed = sentenceCompletionContentSchema.safeParse({
+      words: [{ id: "word-1", text: "Sol" }, { id: "word-2", text: "Lua" }],
+      sentences: [
+        { id: "sentence-1", text: "O {{blank-1}} brilha.", blanks: [{ id: "blank-1", expectedWordId: "word-1" }] },
+        { id: "sentence-1", text: "A {{blank-1}} aparece.", blanks: [{ id: "blank-1", expectedWordId: "word-2" }] },
+      ],
+    });
+    expect(parsed.success).toBe(false);
+  });
+
+  it("rejects sentence text with a missing or unexpected blank marker", () => {
+    const parsed = sentenceCompletionContentSchema.safeParse({
+      words: [{ id: "word-1", text: "Sol" }],
+      sentences: [
+        { id: "sentence-1", text: "O Sol brilha em {{blank-2}}.", blanks: [{ id: "blank-1", expectedWordId: "word-1" }] },
+      ],
+    });
+    expect(parsed.success).toBe(false);
+  });
+
 });
