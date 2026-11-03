@@ -104,8 +104,17 @@ describe("GetWordSearchRankingService", () => {
     expect(attemptRepository.getRanking).not.toHaveBeenCalled();
   });
 
-  it("deve rejeitar uma atividade que não seja caça-palavras", async () => {
-    activity.type = ActivityType.QUIZ;
+  it.each([ActivityType.CROSSWORD, ActivityType.QUIZ, ActivityType.MEMORY, ActivityType.LISTENING])(
+    "deve retornar o ranking para atividades do tipo %s",
+    async (type) => {
+      activity.type = type;
+      await expect(service.execute(slug)).resolves.toEqual([]);
+      expect(attemptRepository.getRanking).toHaveBeenCalledWith(activity.id);
+    },
+  );
+
+  it("deve rejeitar um tipo de atividade sem ranking geral", async () => {
+    activity.type = ActivityType.WORD_MATCHING;
 
     await expect(service.execute(slug)).rejects.toMatchObject({
       code: "ACTIVITY_NOT_FOUND",
