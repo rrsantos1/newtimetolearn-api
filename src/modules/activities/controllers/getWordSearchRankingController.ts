@@ -41,7 +41,7 @@ export async function getWordSearchRankingController(
       });
     }
 
-    request.log.error({ err: error }, "Falha ao consultar ranking do caça-palavras.");
+    request.log.error({ err: error }, "Falha ao consultar ranking da atividade.");
     return reply.status(500).send({
       success: false,
       error: {
