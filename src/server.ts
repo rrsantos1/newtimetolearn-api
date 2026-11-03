@@ -3,6 +3,7 @@ import "dotenv/config";
 
 import { buildApp } from "./app";
 import { AppDataSource } from "./shared/database/data-source";
+import { startActivityCoverGenerationWorker, stopActivityCoverGenerationWorker } from "./modules/activities/services/ActivityCoverGenerationWorker";
 
 async function startServer(): Promise<void> {
   const app = buildApp();
@@ -12,6 +13,10 @@ async function startServer(): Promise<void> {
   try {
     await AppDataSource.initialize();
     app.log.info("Conexão com o banco de dados estabelecida.");
+    startActivityCoverGenerationWorker();
+    app.addHook("onClose", async () => {
+      stopActivityCoverGenerationWorker();
+    });
 
     await app.listen({ port, host });
   } catch (error: unknown) {
