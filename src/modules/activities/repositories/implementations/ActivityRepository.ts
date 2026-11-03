@@ -20,6 +20,7 @@ export class ActivityRepository implements IActivityRepository {
     return this.repository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.versions", "version")
+      .leftJoinAndSelect("activity.coverMediaAsset", "coverMediaAsset")
       .where("activity.slug = :slug", { slug })
       .andWhere("activity.deleted_at IS NULL")
       .orderBy("version.version_number", "DESC")
@@ -66,7 +67,6 @@ export class ActivityRepository implements IActivityRepository {
     const query = this.repository
       .createQueryBuilder("activity")
       .leftJoinAndSelect("activity.versions", "version")
-      .leftJoinAndSelect("activity.coverMediaAsset", "coverMediaAsset")
       .leftJoinAndSelect("activity.coverMediaAsset", "coverMediaAsset")
       .where("activity.deleted_at IS NULL");
 
