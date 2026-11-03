@@ -48,7 +48,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
 
   app.post("/ai/activity-cover", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createActivityCoverGenerationController);
-  app.get("/ai/activity-cover/:jobId", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, getActivityCoverGenerationController);
+  app.get<{ Params: { jobId: string } }>("/ai/activity-cover/:jobId", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, getActivityCoverGenerationController);
   app.patch("/:slug/cover", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, updateActivityCoverController);
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
