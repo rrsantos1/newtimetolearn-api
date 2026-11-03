@@ -42,9 +42,32 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
         error_message = NULL
     FROM candidate
     WHERE job.id = candidate.id
-    RETURNING job.id, job.user_id, job.prompt
+    RETURNING
+      job.id AS "id",
+      job.user_id AS "user_id",
+      job.prompt AS "prompt"
   `, [STALE_JOB_MINUTES]);
-  return rows[0] ?? null;
+
+  const row = rows[0];
+  if (!row) return null;
+
+  const id = row.id;
+  const userId = row.user_id;
+  const prompt = row.prompt;
+
+  if (
+    typeof id !== "string" ||
+    typeof userId !== "string" ||
+    typeof prompt !== "string"
+  ) {
+    console.error("Worker recebeu um job com estrutura inválida.", {
+      returnedColumns: Object.keys(row),
+      returnedValues: row,
+    });
+    return null;
+  }
+
+  return { id, user_id: userId, prompt };
 }
 
 async function updateJob(
@@ -67,6 +90,13 @@ async function updateJob(
 }
 
 async function processJob(job: ClaimedJob): Promise<void> {
+  if (!job.id || !job.user_id) {
+    console.error("Worker não processou um job sem identificador ou usuário.", {
+      job,
+    });
+    return;
+  }
+
   try {
     if (!env.OPENAI_API_KEY) throw new Error("AI_NOT_CONFIGURED");
 
