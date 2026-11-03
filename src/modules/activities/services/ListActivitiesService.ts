@@ -25,6 +25,8 @@ export interface ListedActivity {
   executionCount: number;
   createdAt: Date;
   requiresApproval: boolean;
+  coverImageUrl: string | null;
+  coverAltText: string | null;
   latestVersion: {
     versionNumber: number;
     name: string;
@@ -108,6 +110,8 @@ export class ListActivitiesService {
         requiresApproval:
           activity.status !== "ARCHIVED" &&
           latestVersion?.status === ActivityVersionStatus.DRAFT,
+        coverImageUrl: activity.coverMediaAsset?.status === "APPROVED" ? activity.coverMediaAsset.publicUrl : null,
+        coverAltText: activity.coverMediaAsset?.status === "APPROVED" ? activity.coverMediaAsset.altText : null,
         createdAt: activity.createdAt,
         latestVersion: latestVersion
           ? {
