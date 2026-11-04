@@ -131,13 +131,13 @@ export class SubmitActivityVersionService {
       }
     }
 
-    if (activity.type === ActivityType.WORD_MATCHING) {
+    if (activity.type === ActivityType.WORD_MATCHING || activity.type === ActivityType.MULTIPLE_CHOICE) {
       const validated = wordMatchingContentSchema.safeParse(latestVersion.content);
       if (!validated.success) {
         throw new AppError(
-          "WORD_MATCHING_NOT_READY_FOR_REVIEW",
+          activity.type === ActivityType.MULTIPLE_CHOICE ? "MULTIPLE_CHOICE_NOT_READY_FOR_REVIEW" : "WORD_MATCHING_NOT_READY_FOR_REVIEW",
           422,
-          "A atividade precisa ter pelo menos 3 associações válidas antes do envio para revisão.",
+          activity.type === ActivityType.MULTIPLE_CHOICE ? "A atividade precisa ter pelo menos 3 opções e correspondências válidas antes do envio para revisão." : "A atividade precisa ter pelo menos 3 associações válidas antes do envio para revisão.",
         );
       }
     }
