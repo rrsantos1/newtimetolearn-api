@@ -20,6 +20,34 @@ interface CreatedMediaAsset {
 
 const POLL_INTERVAL_MS = 10_000;
 const STALE_JOB_MINUTES = 5;
+const OPENAI_TIMEOUT_MS = 120_000;
+
+async function runTimedStage<T>(
+  jobId: string,
+  stage: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const startedAt = Date.now();
+  console.info("[CoverWorker] Etapa iniciada.", { jobId, stage });
+
+  try {
+    const result = await operation();
+    console.info("[CoverWorker] Etapa concluída.", {
+      jobId,
+      stage,
+      durationMs: Date.now() - startedAt,
+    });
+    return result;
+  } catch (error: unknown) {
+    console.error("[CoverWorker] Etapa falhou.", {
+      jobId,
+      stage,
+      durationMs: Date.now() - startedAt,
+      message: error instanceof Error ? error.message : "Erro desconhecido",
+    });
+    throw error;
+  }
+}
 let timer: NodeJS.Timeout | null = null;
 let running = false;
 
@@ -113,42 +141,49 @@ async function processJob(job: ClaimedJob): Promise<void> {
       job.prompt,
     ].join(" ");
 
-    const response = await fetch("https://api.openai.com/v1/images/generations", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-image-2",
-        prompt,
-        size: "1536x1024",
-        quality: "low",
-        output_format: "jpeg",
-        output_compression: 80,
-        n: 1,
-        moderation: "auto",
-      }),
-      signal: AbortSignal.timeout(120_000),
-    });
+    const result = await runTimedStage(job.id, "openai_image_generation", async () => {
+      const response = await fetch("https://api.openai.com/v1/images/generations", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "gpt-image-2",
+          prompt,
+          size: "1536x1024",
+          quality: "low",
+          output_format: "jpeg",
+          output_compression: 80,
+          n: 1,
+          moderation: "auto",
+        }),
+        signal: AbortSignal.timeout(OPENAI_TIMEOUT_MS),
+      });
 
-    const result = await response.json() as OpenAiImageResponse;
-    if (!response.ok) {
-      throw new Error(result.error?.message ?? "AI_IMAGE_GENERATION_FAILED");
-    }
+      const imageResponse = await response.json() as OpenAiImageResponse;
+      if (!response.ok) {
+        throw new Error(imageResponse.error?.message ?? "AI_IMAGE_GENERATION_FAILED");
+      }
+      return imageResponse;
+    });
 
     const encodedImage = result.data?.[0]?.b64_json;
     if (!encodedImage) throw new Error("AI_IMAGE_EMPTY_RESPONSE");
 
-    const imageBuffer = Buffer.from(encodedImage, "base64");
-    const asset = await makeCreateMediaAssetService().execute({
-      uploadedBy: job.user_id,
-      fileName: "capa-atividade-ia.jpg",
-      contentType: "image/jpeg",
-      sizeBytes: imageBuffer.byteLength,
-      altText: "Capa da atividade gerada por inteligência artificial",
-      imageBuffer,
-    }) as CreatedMediaAsset;
+    const imageBuffer = await runTimedStage(job.id, "base64_conversion", async () =>
+      Buffer.from(encodedImage, "base64"),
+    );
+    const asset = await runTimedStage(job.id, "media_asset_pipeline", () =>
+      makeCreateMediaAssetService().execute({
+        uploadedBy: job.user_id,
+        fileName: "capa-atividade-ia.jpg",
+        contentType: "image/jpeg",
+        sizeBytes: imageBuffer.byteLength,
+        altText: "Capa da atividade gerada por inteligência artificial",
+        imageBuffer,
+      }),
+    ) as CreatedMediaAsset;
 
     if (asset.status === "PENDING_REVIEW") {
       await updateJob(
@@ -163,6 +198,7 @@ async function processJob(job: ClaimedJob): Promise<void> {
 
     if (asset.status !== "APPROVED") throw new Error("IMAGE_REJECTED_BY_MODERATION");
     await updateJob(job.id, "COMPLETED", asset.id, null, null);
+    console.info("[CoverWorker] Job concluído.", { jobId: job.id, assetId: asset.id });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "ACTIVITY_COVER_GENERATION_FAILED";
     const isModerationRejection = message.includes("IMAGE_REJECTED_BY_MODERATION");
