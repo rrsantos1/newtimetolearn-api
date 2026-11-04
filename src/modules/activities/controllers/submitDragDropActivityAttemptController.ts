@@ -8,8 +8,8 @@ const paramsSchema = z.object({ slug: z.string().trim().min(1).max(150) });
 const bodySchema = z.object({
   attemptToken: z.string().uuid(),
   answers: z.array(z.object({
-    itemId: z.string().trim().min(1).max(50),
-    selectedId: z.string().trim().min(1).max(50),
+    itemId: z.string().trim().min(1).max(128),
+    selectedId: z.string().trim().min(1).max(128),
   }).strict()).max(200),
   elapsedSeconds: z.number().int().min(0).max(86_400),
 }).strict();
