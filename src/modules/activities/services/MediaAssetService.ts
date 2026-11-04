@@ -14,6 +14,7 @@ const extensionByType: Record<string, string> = {
 };
 const blockedLikelihoods = new Set<number>([4, 5]);
 const riskCategories = ["adult", "violence", "racy"] as const;
+const GOOGLE_VISION_TIMEOUT_MS = 30_000;
 type RiskCategory = (typeof riskCategories)[number];
 type ModerationStatus = "APPROVED" | "REJECTED" | "PENDING_REVIEW";
 
@@ -23,8 +24,16 @@ const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
 
 async function moderateImage(imageBuffer: Buffer): Promise<ModerationStatus> {
   if (!visionClient) return "PENDING_REVIEW";
+  const startedAt = Date.now();
+  console.info("[MediaAsset] Google Vision iniciado.", { timeoutMs: GOOGLE_VISION_TIMEOUT_MS });
   try {
-    const [result] = await visionClient.safeSearchDetection({ image: { content: imageBuffer } });
+    const [result] = await visionClient.safeSearchDetection(
+      { image: { content: imageBuffer } },
+      { timeout: GOOGLE_VISION_TIMEOUT_MS },
+    );
+    console.info("[MediaAsset] Google Vision concluído.", {
+      durationMs: Date.now() - startedAt,
+    });
     const annotation = result.safeSearchAnnotation;
     if (!annotation) return "PENDING_REVIEW";
     const rejected = riskCategories.some((category: RiskCategory) => {
@@ -34,6 +43,7 @@ async function moderateImage(imageBuffer: Buffer): Promise<ModerationStatus> {
     return rejected ? "REJECTED" : "APPROVED";
   } catch (error: unknown) {
     console.warn("Falha na verificação automática Google Vision; imagem encaminhada para quarentena privada.", {
+      durationMs: Date.now() - startedAt,
       message: error instanceof Error ? error.message : "Erro desconhecido",
     });
     return "PENDING_REVIEW";
