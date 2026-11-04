@@ -14,7 +14,7 @@ import { ActivityVisibility } from "../types/ActivityVisibility";
 import { generateActivitySlug } from "../utils/generateActivitySlug";
 import type { CreateDragDropActivityBody } from "../schemas/createDragDropActivitySchema";
 
-export type DragDropActivityType = ActivityType.WORD_MATCHING | ActivityType.SENTENCE_COMPLETION;
+export type DragDropActivityType = ActivityType.WORD_MATCHING | ActivityType.MULTIPLE_CHOICE | ActivityType.SENTENCE_COMPLETION;
 
 interface Input extends CreateDragDropActivityBody {
   teacherId: string;
@@ -30,7 +30,7 @@ export class CreateDragDropActivityService {
   ) {}
 
   async execute(input: Input) {
-    const parsedContent = this.activityType === ActivityType.WORD_MATCHING
+    const parsedContent = this.activityType === ActivityType.WORD_MATCHING || this.activityType === ActivityType.MULTIPLE_CHOICE
       ? wordMatchingContentSchema.safeParse(input.content)
       : sentenceCompletionContentSchema.safeParse(input.content);
 
