@@ -19,7 +19,7 @@ interface CreatedMediaAsset {
 }
 
 const POLL_INTERVAL_MS = 10_000;
-const STALE_JOB_MINUTES = 5;
+const STALE_JOB_MINUTES = 10;
 const OPENAI_TIMEOUT_MS = 120_000;
 
 async function runTimedStage<T>(
@@ -101,6 +101,11 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
     return null;
   }
 
+  console.info("[CoverWorker] Job assumido da fila.", {
+    jobId: id,
+    userId,
+  });
+
   return { id, user_id: userId, prompt };
 }
 
@@ -124,6 +129,11 @@ async function updateJob(
 }
 
 async function processJob(job: ClaimedJob): Promise<void> {
+  console.info("[CoverWorker] Processamento iniciado.", {
+    jobId: job.id,
+    userId: job.user_id,
+  });
+
   if (!job.id || !job.user_id) {
     console.error("Worker não processou um job sem identificador ou usuário.", {
       job,
@@ -224,7 +234,9 @@ async function tick(): Promise<void> {
   running = true;
   try {
     const job = await claimNextJob();
-    if (job) await processJob(job);
+    if (job) {
+      await processJob(job);
+    }
   } catch (error: unknown) {
     console.error("Falha ao executar worker de geração de capas.", error);
   } finally {
@@ -234,6 +246,10 @@ async function tick(): Promise<void> {
 
 export function startActivityCoverGenerationWorker(): void {
   if (timer) return;
+  console.info("[CoverWorker] Worker iniciado.", {
+    pollIntervalMs: POLL_INTERVAL_MS,
+    staleJobMinutes: STALE_JOB_MINUTES,
+  });
   timer = setInterval(() => void tick(), POLL_INTERVAL_MS);
   timer.unref();
   void tick();
