@@ -30,10 +30,10 @@ function sanitizeListeningForExecution(content: Record<string, unknown>): Record
 }
 
 function sanitizeDragDropForExecution(
-  activityType: ActivityType.WORD_MATCHING | ActivityType.SENTENCE_COMPLETION,
+  activityType: ActivityType.WORD_MATCHING | ActivityType.MULTIPLE_CHOICE | ActivityType.SENTENCE_COMPLETION,
   content: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (activityType === ActivityType.WORD_MATCHING) {
+  if (activityType === ActivityType.WORD_MATCHING || activityType === ActivityType.MULTIPLE_CHOICE) {
     const pairs = Array.isArray(content.pairs) ? content.pairs : [];
     return {
       pairs: pairs.map((value) => {
@@ -177,7 +177,7 @@ export class GetActivityBySlugService {
         ? sanitizeCrosswordForExecution(selectedVersion.content, selectedVersion.generatedData)
         : !canViewAllVersions && activity.type === ActivityType.LISTENING
           ? { content: sanitizeListeningForExecution(selectedVersion.content), generatedData: selectedVersion.generatedData }
-          : !canViewAllVersions && (activity.type === ActivityType.WORD_MATCHING || activity.type === ActivityType.SENTENCE_COMPLETION)
+          : !canViewAllVersions && (activity.type === ActivityType.WORD_MATCHING || activity.type === ActivityType.MULTIPLE_CHOICE || activity.type === ActivityType.SENTENCE_COMPLETION)
             ? { content: sanitizeDragDropForExecution(activity.type, selectedVersion.content), generatedData: selectedVersion.generatedData }
             : { content: selectedVersion.content, generatedData: selectedVersion.generatedData };
 
