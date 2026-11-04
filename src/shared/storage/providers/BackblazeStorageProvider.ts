@@ -19,6 +19,7 @@ const EXTENSIONS_BY_CONTENT_TYPE: Record<string, string> = {
 const UPLOAD_URL_EXPIRES_IN_SECONDS = 300;
 const S3_SERVICE = "s3";
 const AWS_ALGORITHM = "AWS4-HMAC-SHA256";
+const OBJECT_UPLOAD_TIMEOUT_MS = 30_000;
 
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -112,12 +113,36 @@ export class BackblazeStorageProvider implements IStorageProvider {
     const maxSizeBytes = input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
     if (input.body.byteLength <= 0 || input.body.byteLength > maxSizeBytes) throw new Error("INVALID_STORAGE_OBJECT_SIZE");
 
-    await this.s3Client.send(new PutObjectCommand({
-      Bucket: input.bucketName,
-      Key: input.storageKey,
-      Body: input.body,
-      ContentType: input.contentType,
-    }));
+    const startedAt = Date.now();
+    console.info("[Backblaze] Upload iniciado.", {
+      bucketName: input.bucketName,
+      storageKey: input.storageKey,
+      sizeBytes: input.body.byteLength,
+      timeoutMs: OBJECT_UPLOAD_TIMEOUT_MS,
+    });
+
+    try {
+      await this.s3Client.send(
+        new PutObjectCommand({
+          Bucket: input.bucketName,
+          Key: input.storageKey,
+          Body: input.body,
+          ContentType: input.contentType,
+        }),
+        { abortSignal: AbortSignal.timeout(OBJECT_UPLOAD_TIMEOUT_MS) },
+      );
+      console.info("[Backblaze] Upload concluído.", {
+        storageKey: input.storageKey,
+        durationMs: Date.now() - startedAt,
+      });
+    } catch (error: unknown) {
+      console.error("[Backblaze] Upload falhou.", {
+        storageKey: input.storageKey,
+        durationMs: Date.now() - startedAt,
+        message: error instanceof Error ? error.message : "Erro desconhecido",
+      });
+      throw error;
+    }
   }
 
   async deleteObject(storageKey: string, bucketName = env.B2_BUCKET_NAME): Promise<void> {
