@@ -27,10 +27,23 @@ async function moderateImage(imageBuffer: Buffer): Promise<ModerationStatus> {
   const startedAt = Date.now();
   console.info("[MediaAsset] Google Vision iniciado.", { timeoutMs: GOOGLE_VISION_TIMEOUT_MS });
   try {
-    const [result] = await visionClient.safeSearchDetection(
-      { image: { content: imageBuffer } },
-      { timeout: GOOGLE_VISION_TIMEOUT_MS },
-    );
+    let timeout: NodeJS.Timeout | undefined;
+    const visionRequest = visionClient.safeSearchDetection({
+      image: { content: imageBuffer },
+    });
+    const timeoutRequest = new Promise<never>((_, reject) => {
+      timeout = setTimeout(
+        () => reject(new Error("GOOGLE_VISION_TIMEOUT")),
+        GOOGLE_VISION_TIMEOUT_MS,
+      );
+    });
+
+    let result: Awaited<typeof visionRequest>[0];
+    try {
+      [result] = await Promise.race([visionRequest, timeoutRequest]);
+    } finally {
+      if (timeout) clearTimeout(timeout);
+    }
     console.info("[MediaAsset] Google Vision concluído.", {
       durationMs: Date.now() - startedAt,
     });
