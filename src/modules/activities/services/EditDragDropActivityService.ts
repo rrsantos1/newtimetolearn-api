@@ -44,7 +44,7 @@ export class EditDragDropActivityService {
       throw new AppError("ACTIVITY_VERSION_PENDING_REVIEW", 409, "A atividade possui uma versão aguardando revisão e não pode ser editada.");
     }
 
-    const parsedContent = this.activityType === ActivityType.WORD_MATCHING
+    const parsedContent = this.activityType === ActivityType.WORD_MATCHING || this.activityType === ActivityType.MULTIPLE_CHOICE
       ? wordMatchingContentSchema.safeParse(input.content)
       : sentenceCompletionContentSchema.safeParse(input.content);
     if (!parsedContent.success) {
