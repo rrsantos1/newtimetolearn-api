@@ -50,13 +50,13 @@ export class SubmitDragDropActivityAttemptService {
     const version = activity.versions.find((entry) => entry.id === activity.currentPublishedVersionId && entry.status === ActivityVersionStatus.PUBLISHED);
     if (!version) throw new AppError("ACTIVITY_VERSION_NOT_FOUND", 404, "Versão publicada não encontrada.");
 
-    const content = this.activityType === ActivityType.WORD_MATCHING
+    const content = this.activityType === ActivityType.WORD_MATCHING || this.activityType === ActivityType.MULTIPLE_CHOICE
       ? wordMatchingContentSchema.safeParse(version.content)
       : sentenceCompletionContentSchema.safeParse(version.content);
     if (!content.success) throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O conteúdo da atividade é inválido.");
 
     const expected = new Map<string, string>();
-    if (this.activityType === ActivityType.WORD_MATCHING && "pairs" in content.data) {
+    if ((this.activityType === ActivityType.WORD_MATCHING || this.activityType === ActivityType.MULTIPLE_CHOICE) && "pairs" in content.data) {
       content.data.pairs.forEach((pair) => expected.set(
         createDragDropExecutionToken(pair.id, "source"),
         createDragDropExecutionToken(pair.id, "target"),
@@ -87,9 +87,9 @@ export class SubmitDragDropActivityAttemptService {
     const usedSelections = new Set<string>();
     for (const answer of input.answers) {
       if (!expected.has(answer.itemId) || uniqueItemAnswers.has(answer.itemId)) continue;
-      if (usedSelections.has(answer.selectedId)) continue;
+      if (this.activityType !== ActivityType.MULTIPLE_CHOICE && usedSelections.has(answer.selectedId)) continue;
       uniqueItemAnswers.set(answer.itemId, answer.selectedId);
-      usedSelections.add(answer.selectedId);
+      if (this.activityType !== ActivityType.MULTIPLE_CHOICE) usedSelections.add(answer.selectedId);
     }
 
     const correctIds = [...expected.entries()]
