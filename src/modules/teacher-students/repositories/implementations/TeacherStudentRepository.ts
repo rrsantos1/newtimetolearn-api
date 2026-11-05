@@ -26,7 +26,7 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
       .createQueryBuilder("userRole")
       .innerJoin("userRole.role", "role")
       .select("role.code", "code")
-      .where("userRole.userId = :userId", { userId })
+      .where("userRole.user_id = :userId", { userId })
       .getRawMany<{ code: string }>();
     return rows.map((row) => row.code);
   }
