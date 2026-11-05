@@ -30,19 +30,19 @@ export async function teacherStudentRoutes(app: FastifyInstance): Promise<void> 
     preHandler: authorizeRoles(RoleCode.STUDENT),
   }, listStudentRelationshipsController);
 
-  app.patch("/student/relationships/:relationshipId/respond", {
+  app.patch<{ Params: { relationshipId: string } }>("/student/relationships/:relationshipId/respond", {
     preHandler: authorizeRoles(RoleCode.STUDENT),
   }, respondInvitationController);
 
-  app.patch("/teacher/invitations/:relationshipId/cancel", {
+  app.patch<{ Params: { relationshipId: string } }>("/teacher/invitations/:relationshipId/cancel", {
     preHandler: authorizeRoles(RoleCode.TEACHER),
   }, cancelInvitationController);
 
-  app.patch("/student/invitations/:relationshipId/cancel", {
+  app.patch<{ Params: { relationshipId: string } }>("/student/invitations/:relationshipId/cancel", {
     preHandler: authorizeRoles(RoleCode.STUDENT),
   }, withdrawInvitationController);
 
-  app.patch("/teacher/relationships/:relationshipId/end", {
+  app.patch<{ Params: { relationshipId: string } }>("/teacher/relationships/:relationshipId/end", {
     preHandler: authorizeRoles(RoleCode.TEACHER),
   }, endRelationshipController);
 }
