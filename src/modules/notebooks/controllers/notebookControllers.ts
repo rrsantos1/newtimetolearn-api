@@ -28,7 +28,7 @@ const entrySchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const updateEntrySchema = z.discriminatedUnion("kind", [
+const updateEntrySchema = z.union([
   z.object({
     kind: z.literal("TEXT"),
     content: z.union([
