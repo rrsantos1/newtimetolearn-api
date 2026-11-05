@@ -1,9 +1,17 @@
 import { AuthError } from "../../auth/errors/AuthError";
+import { EmailService } from "../../../shared/email/EmailService";
+import { NotificationService } from "../../notifications/services/NotificationService";
+import { NotificationType } from "../../notifications/types/NotificationType";
 import type { ITeacherStudentRepository } from "../repositories/interfaces/ITeacherStudentRepository";
 import { TeacherStudentStatus } from "../types/TeacherStudentStatus";
 
 export class TeacherStudentService {
-  constructor(private readonly repository: ITeacherStudentRepository) {}
+  constructor(
+    private readonly repository: ITeacherStudentRepository,
+    private readonly notificationService: NotificationService,
+    private readonly emailService: EmailService,
+    private readonly onDeliveryError: (error: unknown, channel: "notification" | "email") => void,
+  ) {}
 
   async searchStudentByEmail(email: string) {
     const student = await this.repository.findUserByEmail(email);
@@ -31,6 +39,33 @@ export class TeacherStudentService {
     if (pending) throw new AuthError("INVITATION_ALREADY_PENDING", 409, "Já existe um convite pendente para este aluno.");
 
     const invitation = await this.repository.createInvitation(teacherId, student.id);
+    const teacher = await this.repository.findUserById(teacherId);
+
+    try {
+      await this.notificationService.create({
+        recipientId: student.id,
+        type: NotificationType.TEACHER_STUDENT_INVITATION,
+        title: "Novo convite de professor",
+        message: `${teacher?.name ?? "Um professor"} enviou um convite para acompanhar seus estudos.`,
+        link: "/student/teachers",
+        metadata: { relationshipId: invitation.id },
+      });
+    } catch (error: unknown) {
+      this.onDeliveryError(error, "notification");
+    }
+
+    if (teacher) {
+      try {
+        await this.emailService.sendTeacherStudentInvitationEmail({
+          email: student.email,
+          studentName: student.name,
+          teacherName: teacher.name,
+        });
+      } catch (error: unknown) {
+        this.onDeliveryError(error, "email");
+      }
+    }
+
     return { id: invitation.id, status: invitation.status, invitedAt: invitation.invitedAt, student };
   }
 
