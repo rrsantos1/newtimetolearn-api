@@ -39,14 +39,18 @@ export class NotebookService {
 
     const result = await this.repository.createEntry(relationshipId, userId, kind, content);
     if (result.isFirstEntry) {
-      await this.notifications.create({
-        recipientId: relationship.studentId,
-        type: NotificationType.NOTEBOOK_DAY_PUBLISHED,
-        title: "Novidade no seu caderno",
-        message: "Seu professor adicionou conteúdo ao caderno de hoje.",
-        link: "/student/notebook",
-        metadata: { relationshipId, dayId: result.day.id },
-      });
+      try {
+        await this.notifications.create({
+          recipientId: relationship.studentId,
+          type: NotificationType.NOTEBOOK_DAY_PUBLISHED,
+          title: "Novidade no seu caderno",
+          message: "Seu professor adicionou conteúdo ao caderno de hoje.",
+          link: "/student/notebook",
+          metadata: { relationshipId, dayId: result.day.id },
+        });
+      } catch {
+        // A publicação já foi salva; falhas de notificação não devem revertê-la.
+      }
     }
     return result;
   }
@@ -64,18 +68,20 @@ export class NotebookService {
   ) {
     const relationship = await this.getAuthorizedRelationship(relationshipId, userId);
     const note = await this.repository.createNote(relationshipId, userId, message, parentId);
-    if (parentId) {
-      const recipientId = userId === relationship.teacherId
-        ? relationship.studentId
-        : relationship.teacherId;
+    const recipientId = userId === relationship.teacherId
+      ? relationship.studentId
+      : relationship.teacherId;
+    try {
       await this.notifications.create({
         recipientId,
         type: NotificationType.NOTEBOOK_NOTE_REPLY,
-        title: "Nova resposta no caderno",
-        message: "Você recebeu uma resposta no bloco de notas compartilhado.",
+        title: parentId ? "Nova resposta no caderno" : "Nova mensagem no caderno",
+        message: "Há uma nova mensagem no bloco de notas compartilhado.",
         link: userId === relationship.teacherId ? "/student/notebook" : "/teacher/students",
         metadata: { relationshipId, noteId: note.id },
       });
+    } catch {
+      // A mensagem já foi salva; falhas de notificação não devem revertê-la.
     }
     return note;
   }
