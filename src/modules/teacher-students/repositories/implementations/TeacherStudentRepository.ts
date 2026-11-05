@@ -25,9 +25,9 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
   async findUserRoles(userId: string): Promise<string[]> {
     const rows = await AppDataSource.getRepository(UserRole)
       .createQueryBuilder("userRole")
-      .innerJoin("userRole.role", "role")
+      .innerJoin(Role, "role", "role.id = userRole.role_id")
       .select("role.code", "code")
-      .where("userRole.userId = :userId", { userId })
+      .where("userRole.user_id = :userId", { userId })
       .getRawMany<{ code: string }>();
     return rows.map((row) => row.code);
   }
