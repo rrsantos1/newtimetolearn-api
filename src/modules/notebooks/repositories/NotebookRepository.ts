@@ -105,6 +105,7 @@ export class NotebookRepository {
   async updateEntry(
     relationshipId: string,
     entryId: string,
+    expectedKind: NotebookEntryKind,
     content: Record<string, unknown> | undefined,
     dayDate: string | undefined,
   ): Promise<NotebookEntry> {
@@ -119,6 +120,7 @@ export class NotebookRepository {
         .setLock("pessimistic_write")
         .getOne();
       if (!entry) throw new Error("NOTEBOOK_ENTRY_NOT_FOUND");
+      if (entry.kind !== expectedKind) throw new Error("NOTEBOOK_ENTRY_KIND_MISMATCH");
 
       if (content) entry.content = content;
 
