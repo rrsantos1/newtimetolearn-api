@@ -3,10 +3,22 @@ import { ZodError, z } from "zod";
 import { AuthError } from "../../auth/errors/AuthError";
 import { makeNotebookService } from "../factories/make-notebook-service";
 
-const entrySchema = z.object({
-  kind: z.enum(["TEXT", "IMAGE", "ACTIVITY_LINK", "FILE"]),
-  content: z.record(z.string(), z.unknown()),
-});
+const entrySchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("TEXT"),
+    content: z.object({ text: z.string().trim().min(1).max(20000) }),
+  }),
+  z.object({
+    kind: z.literal("ACTIVITY_LINK"),
+    content: z.object({
+      title: z.string().trim().min(1).max(160),
+      url: z.string().url().refine((value) => {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      }, "O link precisa usar HTTP ou HTTPS."),
+    }),
+  }),
+]);
 
 const noteSchema = z.object({
   message: z.string().trim().min(1).max(5000),
