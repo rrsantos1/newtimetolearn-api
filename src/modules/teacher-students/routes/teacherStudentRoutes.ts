@@ -9,6 +9,7 @@ import { listStudentRelationshipsController } from "../controllers/listStudentRe
 import { respondInvitationController } from "../controllers/respondInvitationController";
 import { cancelInvitationController } from "../controllers/cancelInvitationController";
 import { endRelationshipController } from "../controllers/endRelationshipController";
+import { withdrawInvitationController } from "../controllers/withdrawInvitationController";
 
 export async function teacherStudentRoutes(app: FastifyInstance): Promise<void> {
   app.addHook("preHandler", authMiddleware);
@@ -36,6 +37,10 @@ export async function teacherStudentRoutes(app: FastifyInstance): Promise<void> 
   app.patch("/teacher/invitations/:relationshipId/cancel", {
     preHandler: authorizeRoles(RoleCode.TEACHER),
   }, cancelInvitationController);
+
+  app.patch("/student/invitations/:relationshipId/cancel", {
+    preHandler: authorizeRoles(RoleCode.STUDENT),
+  }, withdrawInvitationController);
 
   app.patch("/teacher/relationships/:relationshipId/end", {
     preHandler: authorizeRoles(RoleCode.TEACHER),
