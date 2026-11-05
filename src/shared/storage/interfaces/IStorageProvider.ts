@@ -18,8 +18,14 @@ export interface UploadObjectInput {
   body: Buffer;
 }
 
+export interface DownloadObjectResult {
+  body: Buffer;
+  contentType: string;
+}
+
 export interface IStorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult>;
   uploadObject(input: UploadObjectInput): Promise<void>;
+  downloadObject(storageKey: string, bucketName: string): Promise<DownloadObjectResult>;
   deleteObject(storageKey: string, bucketName?: string): Promise<void>;
 }
