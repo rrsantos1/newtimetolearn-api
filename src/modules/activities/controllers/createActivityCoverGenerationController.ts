@@ -1,6 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
-import { AppDataSource } from "../../../shared/database/data-source";
+import { makeActivityCoverGenerationJobRepository } from "../factories/make-activity-cover-generation-job-repository";
 
 const bodySchema = z.object({
   prompt: z.string().trim().min(5).max(1000),
@@ -19,17 +19,16 @@ export async function createActivityCoverGenerationController(
     });
   }
 
-  const rows = await AppDataSource.query<Array<{ id: string }>>( `
-    INSERT INTO public.activity_cover_generation_jobs (user_id, prompt)
-    VALUES ($1, $2)
-    RETURNING id
-  `, [request.user.sub, parsed.data.prompt]);
+  const job = await makeActivityCoverGenerationJobRepository().create(
+    request.user.sub,
+    parsed.data.prompt,
+  );
 
-  const job = rows[0];
   if (!job) {
     return reply.status(500).send({
       success: false,
       error: { code: "GENERATION_JOB_CREATE_FAILED", message: "Não foi possível iniciar a geração da capa." },
+      requestId: request.id,
     });
   }
 
