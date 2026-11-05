@@ -52,12 +52,15 @@ let timer: NodeJS.Timeout | null = null;
 let running = false;
 
 async function claimNextJob(): Promise<ClaimedJob | null> {
-  const rows = await AppDataSource.query<unknown[]>(`
+  const result = await AppDataSource.query<unknown[]>(`
     WITH candidate AS (
       SELECT id
       FROM public.activity_cover_generation_jobs
       WHERE status = 'PENDING'
-         OR (status = 'PROCESSING' AND started_at < NOW() - ($1 * INTERVAL '1 minute'))
+        OR (
+          status = 'PROCESSING'
+          AND started_at < NOW() - ($1 * INTERVAL '1 minute')
+        )
       ORDER BY created_at ASC
       FOR UPDATE SKIP LOCKED
       LIMIT 1
@@ -76,19 +79,17 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       job.prompt AS "prompt"
   `, [STALE_JOB_MINUTES]);
 
-  console.info("[CoverWorker] Retorno bruto do PostgreSQL.", {
-    isArray: Array.isArray(rows),
-    constructor: rows?.constructor?.name,
-    value: JSON.stringify(rows),
-  });
+  const returnedRows: unknown = Array.isArray(result)
+    ? result[0]
+    : undefined;
 
   const row: Record<string, unknown> | undefined =
-  Array.isArray(rows) &&
-  typeof rows[0] === "object" &&
-  rows[0] !== null &&
-  !Array.isArray(rows[0])
-    ? rows[0] as Record<string, unknown>
-    : undefined;
+    Array.isArray(returnedRows) &&
+    typeof returnedRows[0] === "object" &&
+    returnedRows[0] !== null &&
+    !Array.isArray(returnedRows[0])
+      ? returnedRows[0] as Record<string, unknown>
+      : undefined;
 
   if (!row) return null;
 
@@ -101,10 +102,10 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
     typeof userId !== "string" ||
     typeof prompt !== "string"
   ) {
-    console.error("Worker recebeu um job com estrutura inválida.", {
+    console.error("[CoverWorker] Estrutura inválida no retorno.", {
       returnedColumns: Object.keys(row),
-      returnedValues: row,
     });
+
     return null;
   }
 
