@@ -143,6 +143,7 @@ export async function getNotebookAttachmentController(
     return reply
       .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedFileName}`)
       .header("Cache-Control", "private, no-store")
+      .header("X-Content-Type-Options", "nosniff")
       .type(file.contentType)
       .send(file.body);
   } catch (error: unknown) {
