@@ -13,6 +13,7 @@ import { ActivityAttempt } from "../../modules/activities/entities/ActivityAttem
 import { ListeningAttempt } from "../../modules/activities/entities/ListeningAttempt";
 import { MediaAsset } from "../../modules/activities/entities/MediaAsset";
 import { TeacherStudentRelationship } from "../../modules/teacher-students/entities/TeacherStudentRelationship";
+import { Notification } from "../../modules/notifications/entities/Notification";
 
 if (!env.DATABASE_URL) {
   throw new Error("DATABASE_URL não foi configurada.");
@@ -37,6 +38,7 @@ export const AppDataSource = new DataSource({
     ListeningAttempt,
     MediaAsset,
     TeacherStudentRelationship,
+    Notification,
   ],
   synchronize: false,
   migrationsRun: false,
