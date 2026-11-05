@@ -137,6 +137,35 @@ export class NotebookService {
     return result;
   }
 
+  async updateEntry(
+    relationshipId: string,
+    userId: string,
+    entryId: string,
+    kind: NotebookEntryKind,
+    content: Record<string, unknown> | undefined,
+    dayDate: string | undefined,
+  ) {
+    const relationship = await this.getAuthorizedRelationship(relationshipId, userId);
+    if (relationship.teacherId !== userId) {
+      throw new AuthError("FORBIDDEN", 403, "Somente o professor pode editar o conteúdo do caderno.");
+    }
+    if (dayDate) {
+      const parsedDate = new Date(`${dayDate}T00:00:00.000Z`);
+      if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== dayDate) {
+        throw new Error("INVALID_NOTEBOOK_DAY_DATE");
+      }
+    }
+    return this.repository.updateEntry(relationshipId, entryId, kind, content, dayDate);
+  }
+
+  async deleteEntry(relationshipId: string, userId: string, entryId: string): Promise<void> {
+    const relationship = await this.getAuthorizedRelationship(relationshipId, userId);
+    if (relationship.teacherId !== userId) {
+      throw new AuthError("FORBIDDEN", 403, "Somente o professor pode remover conteúdo do caderno.");
+    }
+    await this.repository.softDeleteEntry(relationshipId, entryId, userId);
+  }
+
   async createAttachment(
     relationshipId: string,
     userId: string,
