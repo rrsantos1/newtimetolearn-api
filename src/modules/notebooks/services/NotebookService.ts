@@ -55,6 +55,19 @@ export class NotebookService {
     return result;
   }
 
+  async reorderEntries(
+    relationshipId: string,
+    userId: string,
+    dayId: string,
+    entryIds: string[],
+  ): Promise<void> {
+    const relationship = await this.getAuthorizedRelationship(relationshipId, userId);
+    if (relationship.teacherId !== userId) {
+      throw new AuthError("FORBIDDEN", 403, "Somente o professor pode organizar o conteúdo do caderno.");
+    }
+    await this.repository.reorderEntries(relationshipId, dayId, entryIds);
+  }
+
   async listNotes(relationshipId: string, userId: string) {
     await this.getAuthorizedRelationship(relationshipId, userId);
     return this.repository.listNotes(relationshipId);
