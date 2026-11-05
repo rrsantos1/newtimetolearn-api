@@ -5,6 +5,12 @@ import { ActivityVersionStatus } from "../../types/ActivityVersionStatus";
 export interface IActivityVersionRepository {
   findById(id: string): Promise<ActivityVersion | null>;
 
+  findByIdAndActivityIdForUpdate(
+    manager: EntityManager,
+    id: string,
+    activityId: string,
+  ): Promise<ActivityVersion | null>;
+
   findByActivityIdAndVersionNumber(
     activityId: string,
     versionNumber: number,
