@@ -230,17 +230,31 @@ async function processJob(job: ClaimedJob): Promise<void> {
 }
 
 async function tick(): Promise<void> {
-  if (running || !AppDataSource.isInitialized) return;
+  if (!AppDataSource.isInitialized) {
+    console.warn("[CoverWorker] Banco ainda não inicializado.");
+    return;
+  }
+
+  if (running) {
+    console.warn("[CoverWorker] Tick ignorado: execução anterior pendente.");
+    return;
+  }
+
   running = true;
+
+  console.info("[CoverWorker] Tick iniciado.");
+
   try {
     const job = await claimNextJob();
-    if (job) {
-      await processJob(job);
-    }
+
+    if (!job) return;
+
+    await processJob(job);
   } catch (error: unknown) {
-    console.error("Falha ao executar worker de geração de capas.", error);
+    console.error("[CoverWorker] Falha no tick.", error);
   } finally {
     running = false;
+    console.info("[CoverWorker] Tick finalizado.");
   }
 }
 
