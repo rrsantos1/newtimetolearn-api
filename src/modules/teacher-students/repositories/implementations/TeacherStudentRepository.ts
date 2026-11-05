@@ -19,7 +19,6 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
       where: { email },
       select: { id: true, name: true, email: true },
     });
-
     return user ? { id: user.id, name: user.name, email: user.email } : null;
   }
 
@@ -30,19 +29,18 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
       .select("role.code", "code")
       .where("userRole.user_id = :userId", { userId })
       .getRawMany<{ code: string }>();
-
     return rows.map((row) => row.code);
   }
 
   async findActiveRelationshipForStudent(studentId: string): Promise<TeacherStudentRelationship | null> {
     return this.relationshipRepository.findOne({
-      where: { studentId, status: "ACTIVE" as TeacherStudentStatus },
+      where: { studentId, status: TeacherStudentStatus.ACTIVE },
     });
   }
 
   async findPendingRelationship(teacherId: string, studentId: string): Promise<TeacherStudentRelationship | null> {
     return this.relationshipRepository.findOne({
-      where: { teacherId, studentId, status: "PENDING" as TeacherStudentStatus },
+      where: { teacherId, studentId, status: TeacherStudentStatus.PENDING },
     });
   }
 
@@ -50,12 +48,11 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
     const invitation = this.relationshipRepository.create({
       teacherId,
       studentId,
-      status: "PENDING" as TeacherStudentStatus,
+      status: TeacherStudentStatus.PENDING,
       invitedAt: new Date(),
       respondedAt: null,
       endedAt: null,
     });
-
     return this.relationshipRepository.save(invitation);
   }
 
@@ -73,21 +70,8 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
 
   async listForTeacher(teacherId: string, status?: TeacherStudentStatus): Promise<TeacherStudentRelationshipRecord[]> {
     const query = this.relationshipRepository.createQueryBuilder("relationship")
-      .innerJoin("relationship.teacher", "teacher")
-      .innerJoin("relationship.student", "student")
-      .select([
-        "relationship.id",
-        "relationship.status",
-        "relationship.invitedAt",
-        "relationship.respondedAt",
-        "relationship.endedAt",
-        "teacher.id",
-        "teacher.name",
-        "teacher.email",
-        "student.id",
-        "student.name",
-        "student.email",
-      ])
+      .innerJoinAndSelect("relationship.teacher", "teacher")
+      .innerJoinAndSelect("relationship.student", "student")
       .where("relationship.teacherId = :teacherId", { teacherId })
       .orderBy("relationship.createdAt", "DESC");
 
@@ -107,21 +91,8 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
 
   async listForStudent(studentId: string): Promise<TeacherStudentRelationshipRecord[]> {
     const rows = await this.relationshipRepository.createQueryBuilder("relationship")
-      .innerJoin("relationship.teacher", "teacher")
-      .innerJoin("relationship.student", "student")
-      .select([
-        "relationship.id",
-        "relationship.status",
-        "relationship.invitedAt",
-        "relationship.respondedAt",
-        "relationship.endedAt",
-        "teacher.id",
-        "teacher.name",
-        "teacher.email",
-        "student.id",
-        "student.name",
-        "student.email",
-      ])
+      .innerJoinAndSelect("relationship.teacher", "teacher")
+      .innerJoinAndSelect("relationship.student", "student")
       .where("relationship.studentId = :studentId", { studentId })
       .orderBy("relationship.createdAt", "DESC")
       .getMany();
@@ -135,11 +106,5 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
       teacher: { id: item.teacher.id, name: item.teacher.name, email: item.teacher.email },
       student: { id: item.student.id, name: item.student.name, email: item.student.email },
     }));
-  }
-
-  async hasActiveRelationship(teacherId: string, studentId: string): Promise<boolean> {
-    return this.relationshipRepository.exists({
-      where: { teacherId, studentId, status: "ACTIVE" as TeacherStudentStatus },
-    });
   }
 }
