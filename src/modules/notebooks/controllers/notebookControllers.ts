@@ -34,6 +34,20 @@ interface RelationshipParams {
   relationshipId: string;
 }
 
+interface AttachmentParams extends RelationshipParams {
+  entryId: string;
+}
+
+function decodeFileName(value: string | string[] | undefined): string {
+  const header = Array.isArray(value) ? value[0] : value;
+  if (!header) return "anexo";
+  try {
+    return decodeURIComponent(header).replace(/[\\r\\n\\0]/g, "_").slice(0, 180);
+  } catch {
+    return "anexo";
+  }
+}
+
 function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply, message: string) {
   if (error instanceof ZodError) {
     return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Os dados enviados são inválidos." }, requestId: request.id });
@@ -43,6 +57,12 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply,
   }
   if (error instanceof Error && error.message === "NOTEBOOK_DAY_NOT_FOUND") {
     return reply.status(404).send({ success: false, error: { code: error.message, message: "Dia do caderno não encontrado." }, requestId: request.id });
+  }
+  if (error instanceof Error && ["UNSUPPORTED_NOTEBOOK_ATTACHMENT_TYPE", "INVALID_NOTEBOOK_ATTACHMENT_SIZE", "INVALID_NOTEBOOK_ATTACHMENT_CONTENT"].includes(error.message)) {
+    return reply.status(400).send({ success: false, error: { code: error.message, message: "O arquivo não atende aos formatos, conteúdo ou limites permitidos." }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "STORAGE_OBJECT_NOT_FOUND") {
+    return reply.status(404).send({ success: false, error: { code: error.message, message: "Arquivo não encontrado no armazenamento." }, requestId: request.id });
   }
   if (error instanceof Error && error.message === "INVALID_NOTEBOOK_ENTRY_ORDER") {
     return reply.status(400).send({ success: false, error: { code: error.message, message: "A ordem dos itens enviada é inválida." }, requestId: request.id });
@@ -78,6 +98,49 @@ export async function createNotebookEntryController(
     return reply.status(201).send({ success: true, data });
   } catch (error: unknown) {
     return sendError(error, request, reply, "Falha ao publicar conteúdo no caderno.");
+  }
+}
+
+export async function createNotebookAttachmentController(
+  request: FastifyRequest<{ Params: RelationshipParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  const contentType = request.headers["content-type"]?.split(";")[0]?.trim();
+  const body = Buffer.isBuffer(request.body) ? request.body : null;
+  if (!contentType || !body) {
+    return reply.status(400).send({ success: false, error: { code: "INVALID_NOTEBOOK_ATTACHMENT", message: "Envie um arquivo válido." }, requestId: request.id });
+  }
+
+  try {
+    const data = await makeNotebookService().createAttachment(
+      request.params.relationshipId,
+      request.user.sub,
+      { fileName: decodeFileName(request.headers["x-file-name"]), contentType, body },
+    );
+    return reply.status(201).send({ success: true, data });
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao anexar arquivo ao caderno.");
+  }
+}
+
+export async function getNotebookAttachmentController(
+  request: FastifyRequest<{ Params: AttachmentParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  try {
+    const file = await makeNotebookService().getAttachment(
+      request.params.relationshipId,
+      request.params.entryId,
+      request.user.sub,
+    );
+    const encodedFileName = encodeURIComponent(file.fileName).replace(/['()]/g, escape);
+    return reply
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedFileName}`)
+      .header("Cache-Control", "private, no-store")
+      .type(file.contentType)
+      .send(file.body);
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao baixar anexo do caderno.");
   }
 }
 
