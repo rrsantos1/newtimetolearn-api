@@ -20,6 +20,41 @@ const entrySchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+const richDocumentSchema = z.record(z.string(), z.unknown()).refine(
+  (document) => JSON.stringify(document).length <= 20000,
+  "O conteúdo formatado excede o limite permitido.",
+);
+
+const updateEntrySchema = z.discriminatedUnion("kind", [
+  z.object({
+    kind: z.literal("TEXT"),
+    content: z.union([
+      z.object({ text: z.string().trim().min(1).max(20000) }),
+      z.object({ document: richDocumentSchema }),
+    ]).optional(),
+    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
+  z.object({
+    kind: z.literal("ACTIVITY_LINK"),
+    content: z.object({
+      title: z.string().trim().min(1).max(160),
+      url: z.string().url().refine((value) => {
+        const protocol = new URL(value).protocol;
+        return protocol === "http:" || protocol === "https:";
+      }, "O link precisa usar HTTP ou HTTPS."),
+    }).optional(),
+    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
+  z.object({
+    kind: z.literal("IMAGE"),
+    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  }).refine((value) => value.dayDate !== undefined),
+  z.object({
+    kind: z.literal("FILE"),
+    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+  }).refine((value) => value.dayDate !== undefined),
+]);
+
 const reorderSchema = z.object({
   dayId: z.string().uuid(),
   entryIds: z.array(z.string().uuid()).min(1).max(200),
@@ -34,7 +69,7 @@ interface RelationshipParams {
   relationshipId: string;
 }
 
-interface AttachmentParams extends RelationshipParams {
+interface EntryParams extends RelationshipParams {\n  entryId: string;\n}\n\ninterface AttachmentParams extends RelationshipParams {
   entryId: string;
 }
 
@@ -54,6 +89,15 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply,
   }
   if (error instanceof AuthError) {
     return reply.status(error.statusCode).send({ success: false, error: { code: error.code, message: error.message }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "NOTEBOOK_ENTRY_NOT_FOUND") {
+    return reply.status(404).send({ success: false, error: { code: error.message, message: "Conteúdo não encontrado no caderno." }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "NOTEBOOK_ENTRY_KIND_MISMATCH") {
+    return reply.status(400).send({ success: false, error: { code: error.message, message: "O tipo de conteúdo não pode ser alterado." }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "INVALID_NOTEBOOK_DAY_DATE") {
+    return reply.status(400).send({ success: false, error: { code: error.message, message: "A data informada é inválida." }, requestId: request.id });
   }
   if (error instanceof Error && error.message === "NOTEBOOK_DAY_NOT_FOUND") {
     return reply.status(404).send({ success: false, error: { code: error.message, message: "Dia do caderno não encontrado." }, requestId: request.id });
@@ -104,6 +148,42 @@ export async function createNotebookEntryController(
     return reply.status(201).send({ success: true, data });
   } catch (error: unknown) {
     return sendError(error, request, reply, "Falha ao publicar conteúdo no caderno.");
+  }
+}
+
+export async function updateNotebookEntryController(
+  request: FastifyRequest<{ Params: EntryParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  try {
+    const input = updateEntrySchema.parse(request.body);
+    const data = await makeNotebookService().updateEntry(
+      request.params.relationshipId,
+      request.user.sub,
+      request.params.entryId,
+      input.kind,
+      "content" in input ? input.content : undefined,
+      input.dayDate,
+    );
+    return reply.status(200).send({ success: true, data });
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao atualizar conteúdo do caderno.");
+  }
+}
+
+export async function deleteNotebookEntryController(
+  request: FastifyRequest<{ Params: EntryParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  try {
+    await makeNotebookService().deleteEntry(
+      request.params.relationshipId,
+      request.user.sub,
+      request.params.entryId,
+    );
+    return reply.status(200).send({ success: true, message: "Conteúdo removido do caderno." });
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao remover conteúdo do caderno.");
   }
 }
 
