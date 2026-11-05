@@ -123,7 +123,11 @@ export class NotebookRepository {
       if (!entry) throw new Error("NOTEBOOK_ENTRY_NOT_FOUND");
       if (entry.kind !== expectedKind) throw new Error("NOTEBOOK_ENTRY_KIND_MISMATCH");
 
-      if (content) entry.content = content;
+      if (content) {
+        entry.content = expectedKind === "IMAGE"
+          ? { ...entry.content, ...content }
+          : content;
+      }
 
       if (dayDate) {
         const oldDay = await manager.getRepository(NotebookDay).findOne({
