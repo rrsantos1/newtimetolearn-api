@@ -14,6 +14,9 @@ import { ListeningAttempt } from "../../modules/activities/entities/ListeningAtt
 import { MediaAsset } from "../../modules/activities/entities/MediaAsset";
 import { TeacherStudentRelationship } from "../../modules/teacher-students/entities/TeacherStudentRelationship";
 import { Notification } from "../../modules/notifications/entities/Notification";
+import { NotebookDay } from "../../modules/notebooks/entities/NotebookDay";
+import { NotebookEntry } from "../../modules/notebooks/entities/NotebookEntry";
+import { NotebookNote } from "../../modules/notebooks/entities/NotebookNote";
 
 if (!env.DATABASE_URL) {
   throw new Error("DATABASE_URL não foi configurada.");
@@ -39,6 +42,9 @@ export const AppDataSource = new DataSource({
     MediaAsset,
     TeacherStudentRelationship,
     Notification,
+    NotebookDay,
+    NotebookEntry,
+    NotebookNote,
   ],
   synchronize: false,
   migrationsRun: false,
