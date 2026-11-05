@@ -230,6 +230,11 @@ async function processJob(job: ClaimedJob): Promise<void> {
 }
 
 async function tick(): Promise<void> {
+  console.info("[CoverWorker] Estado do tick.", {
+    databaseInitialized: AppDataSource.isInitialized,
+    running,
+  });
+
   if (!AppDataSource.isInitialized) {
     console.warn("[CoverWorker] Banco ainda não inicializado.");
     return;
@@ -245,11 +250,18 @@ async function tick(): Promise<void> {
   console.info("[CoverWorker] Tick iniciado.");
 
   try {
+    console.info("[CoverWorker] Chamando claimNextJob.");
+
     const job = await claimNextJob();
 
-    if (!job) return;
+    console.info("[CoverWorker] Retorno de claimNextJob.", {
+      found: job !== null,
+      jobId: job?.id ?? null,
+    });
 
-    await processJob(job);
+    if (job) {
+      await processJob(job);
+    }
   } catch (error: unknown) {
     console.error("[CoverWorker] Falha no tick.", error);
   } finally {
