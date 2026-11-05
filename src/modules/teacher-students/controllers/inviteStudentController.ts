@@ -7,7 +7,10 @@ import { createInvitationSchema } from "../schemas/createInvitationSchema";
 export async function inviteStudentController(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
   try {
     const { email } = createInvitationSchema.parse(request.body);
-    const result = await makeTeacherStudentService().inviteStudent(request.user.sub, email);
+    const service = makeTeacherStudentService((error, channel) => {
+      request.log.error({ err: error, channel }, "Falha ao entregar aviso do convite.");
+    });
+    const result = await service.inviteStudent(request.user.sub, email);
     return reply.status(201).send({ success: true, data: result });
   } catch (error: unknown) {
     if (error instanceof ZodError) return reply.status(400).send({ success: false, error: { code: "VALIDATION_ERROR", message: "Informe um e-mail válido." }, requestId: request.id });
