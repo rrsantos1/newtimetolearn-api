@@ -24,4 +24,6 @@ export interface IForgotPasswordRepository {
     userId: string,
     exceptTokenId: string,
   ): Promise<void>;
+
+  deleteTokenById(manager: EntityManager, tokenId: string): Promise<void>;
 }
