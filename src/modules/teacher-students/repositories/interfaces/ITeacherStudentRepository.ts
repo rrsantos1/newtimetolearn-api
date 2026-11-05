@@ -28,5 +28,4 @@ export interface ITeacherStudentRepository {
   save(relationship: TeacherStudentRelationship): Promise<TeacherStudentRelationship>;
   listForTeacher(teacherId: string, status?: TeacherStudentStatus): Promise<TeacherStudentRelationshipRecord[]>;
   listForStudent(studentId: string): Promise<TeacherStudentRelationshipRecord[]>;
-  hasActiveRelationship(teacherId: string, studentId: string): Promise<boolean>;
 }
