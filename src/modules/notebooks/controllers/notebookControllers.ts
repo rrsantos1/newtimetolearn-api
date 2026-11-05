@@ -46,15 +46,15 @@ const updateEntrySchema = z.discriminatedUnion("kind", [
         return protocol === "http:" || protocol === "https:";
       }, "O link precisa usar HTTP ou HTTPS."),
     }).optional(),
-    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+    dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
   z.object({
     kind: z.literal("IMAGE"),
-    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+    dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).refine((value) => value.dayDate !== undefined),
   z.object({
     kind: z.literal("FILE"),
-    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+    dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).refine((value) => value.dayDate !== undefined),
 ]);
 
