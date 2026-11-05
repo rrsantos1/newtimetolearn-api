@@ -56,7 +56,7 @@ function hasFileSignature(contentType: string, body: Buffer): boolean {
 }
 
 function safeFileName(value: string): string {
-  return value.replace(/[\\/\\r\\n\\0]/g, "_").trim().slice(0, 180) || "anexo";
+  return value.replace(/[\/\\\r\n\0]/g, "_").trim().slice(0, 180) || "anexo";
 }
 
 export class NotebookService {
