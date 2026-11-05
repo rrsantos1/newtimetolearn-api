@@ -3,8 +3,18 @@ import { ZodError, z } from "zod";
 import { AuthError } from "../../auth/errors/AuthError";
 import { makeNotebookService } from "../factories/make-notebook-service";
 
+function containsTextContent(value: unknown): boolean {
+  if (typeof value === "string") return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(containsTextContent);
+  if (typeof value !== "object" || value === null) return false;
+
+  const record = value as Record<string, unknown>;
+  if (typeof record.text === "string" && record.text.trim().length > 0) return true;
+  return Object.values(record).some(containsTextContent);
+}
+
 const richDocumentSchema = z.record(z.string(), z.unknown()).refine(
-  (document) => (JSON.stringify(document)?.length ?? Number.POSITIVE_INFINITY) <= 20000,
+  (document) => (JSON.stringify(document)?.length ?? Number.POSITIVE_INFINITY) <= 20000 && containsTextContent(document),
   "O conteúdo formatado excede o limite permitido.",
 );
 
