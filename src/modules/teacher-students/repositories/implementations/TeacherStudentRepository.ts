@@ -21,6 +21,14 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
     return user ? { id: user.id, name: user.name, email: user.email } : null;
   }
 
+  async findUserById(userId: string): Promise<TeacherStudentUserSummary | null> {
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      select: { id: true, name: true, email: true },
+    });
+    return user ? { id: user.id, name: user.name, email: user.email } : null;
+  }
+
   async findUserRoles(userId: string): Promise<string[]> {
     const rows = await AppDataSource.getRepository(UserRole)
       .createQueryBuilder("userRole")
