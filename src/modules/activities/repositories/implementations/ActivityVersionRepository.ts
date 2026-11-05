@@ -15,6 +15,17 @@ export class ActivityVersionRepository
     });
   }
 
+  async findByIdAndActivityIdForUpdate(
+    manager: EntityManager,
+    id: string,
+    activityId: string,
+  ): Promise<ActivityVersion | null> {
+    return manager.getRepository(ActivityVersion).findOne({
+      where: { id, activityId },
+      lock: { mode: "pessimistic_write" },
+    });
+  }
+
   async findByActivityIdAndVersionNumber(
     activityId: string,
     versionNumber: number,
