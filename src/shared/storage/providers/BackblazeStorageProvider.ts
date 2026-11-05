@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomUUID } from "node:crypto";
-import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "../../config/env";
 import type {
   CreateUploadUrlInput,
@@ -9,7 +9,19 @@ import type {
 } from "../interfaces/IStorageProvider";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const ALLOWED_OBJECT_TYPES = new Set([...ALLOWED_IMAGE_TYPES, "audio/mpeg"]);
+const ALLOWED_OBJECT_TYPES = new Set([
+  ...ALLOWED_IMAGE_TYPES,
+  "audio/mpeg",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+]);
 const EXTENSIONS_BY_CONTENT_TYPE: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -110,7 +122,9 @@ export class BackblazeStorageProvider implements IStorageProvider {
 
   async uploadObject(input: UploadObjectInput): Promise<void> {
     if (!ALLOWED_OBJECT_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_STORAGE_CONTENT_TYPE");
-    const maxSizeBytes = input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 5 * 1024 * 1024;
+    const maxSizeBytes = input.contentType.startsWith("video/")
+      ? 50 * 1024 * 1024
+      : input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 20 * 1024 * 1024;
     if (input.body.byteLength <= 0 || input.body.byteLength > maxSizeBytes) throw new Error("INVALID_STORAGE_OBJECT_SIZE");
 
     const startedAt = Date.now();
@@ -143,6 +157,18 @@ export class BackblazeStorageProvider implements IStorageProvider {
       });
       throw error;
     }
+  }
+
+  async downloadObject(storageKey: string, bucketName: string): Promise<{ body: Buffer; contentType: string }> {
+    const response = await this.s3Client.send(new GetObjectCommand({
+      Bucket: bucketName,
+      Key: storageKey,
+    }));
+    if (!response.Body) throw new Error("STORAGE_OBJECT_NOT_FOUND");
+    return {
+      body: Buffer.from(await response.Body.transformToByteArray()),
+      contentType: response.ContentType ?? "application/octet-stream",
+    };
   }
 
   async deleteObject(storageKey: string, bucketName = env.B2_BUCKET_NAME): Promise<void> {
