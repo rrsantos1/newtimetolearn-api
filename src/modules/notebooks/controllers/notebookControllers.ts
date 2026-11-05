@@ -4,7 +4,6 @@ import { AuthError } from "../../auth/errors/AuthError";
 import { makeNotebookService } from "../factories/make-notebook-service";
 
 function containsTextContent(value: unknown): boolean {
-  if (typeof value === "string") return value.trim().length > 0;
   if (Array.isArray(value)) return value.some(containsTextContent);
   if (typeof value !== "object" || value === null) return false;
 
