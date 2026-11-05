@@ -23,6 +23,7 @@ export class NotebookRepository {
     const entries = await AppDataSource.getRepository(NotebookEntry)
       .createQueryBuilder("entry")
       .where("entry.dayId IN (:...dayIds)", { dayIds })
+      .andWhere("entry.deletedAt IS NULL")
       .orderBy("entry.position", "ASC")
       .addOrderBy("entry.createdAt", "ASC")
       .getMany();
@@ -85,7 +86,7 @@ export class NotebookRepository {
       if (!day) throw new Error("NOTEBOOK_DAY_NOT_FOUND");
 
       const repository = manager.getRepository(NotebookEntry);
-      const entries = await repository.find({ where: { dayId }, order: { position: "ASC" } });
+      const entries = await repository.find({ where: { dayId, deletedAt: null }, order: { position: "ASC" } });
       const currentIds = new Set(entries.map((entry) => entry.id));
       if (
         entryIds.length !== entries.length ||
@@ -101,6 +102,97 @@ export class NotebookRepository {
     });
   }
 
+  async updateEntry(
+    relationshipId: string,
+    entryId: string,
+    content: Record<string, unknown> | undefined,
+    dayDate: string | undefined,
+  ): Promise<NotebookEntry> {
+    return AppDataSource.transaction(async (manager) => {
+      const entryRepository = manager.getRepository(NotebookEntry);
+      const entry = await entryRepository
+        .createQueryBuilder("entry")
+        .innerJoin(NotebookDay, "day", "day.id = entry.day_id")
+        .where("entry.id = :entryId", { entryId })
+        .andWhere("day.relationship_id = :relationshipId", { relationshipId })
+        .andWhere("entry.deleted_at IS NULL")
+        .setLock("pessimistic_write")
+        .getOne();
+      if (!entry) throw new Error("NOTEBOOK_ENTRY_NOT_FOUND");
+
+      if (content) entry.content = content;
+
+      if (dayDate) {
+        const oldDay = await manager.getRepository(NotebookDay).findOne({
+          where: { id: entry.dayId, relationshipId },
+          lock: { mode: "pessimistic_write" },
+        });
+        if (!oldDay) throw new Error("NOTEBOOK_DAY_NOT_FOUND");
+
+        if (oldDay.dayDate !== dayDate) {
+          await manager.query(
+            `INSERT INTO notebook_days (relationship_id, day_date)
+             VALUES ($1, $2)
+             ON CONFLICT (relationship_id, day_date) DO NOTHING`,
+            [relationshipId, dayDate],
+          );
+          const newDay = await manager.getRepository(NotebookDay).findOne({
+            where: { relationshipId, dayDate },
+            lock: { mode: "pessimistic_write" },
+          });
+          if (!newDay) throw new Error("NOTEBOOK_DAY_CREATE_FAILED");
+
+          const newPosition = await entryRepository.count({ where: { dayId: newDay.id, deletedAt: null } });
+          entry.dayId = newDay.id;
+          entry.position = newPosition;
+          await entryRepository.save(entry);
+
+          const remaining = await entryRepository.find({
+            where: { dayId: oldDay.id, deletedAt: null },
+            order: { position: "ASC" },
+          });
+          for (const [position, remainingEntry] of remaining.entries()) {
+            await entryRepository.update({ id: remainingEntry.id }, { position });
+          }
+          return entry;
+        }
+      }
+
+      return entryRepository.save(entry);
+    });
+  }
+
+  async softDeleteEntry(
+    relationshipId: string,
+    entryId: string,
+    userId: string,
+  ): Promise<void> {
+    await AppDataSource.transaction(async (manager) => {
+      const entryRepository = manager.getRepository(NotebookEntry);
+      const entry = await entryRepository
+        .createQueryBuilder("entry")
+        .innerJoin(NotebookDay, "day", "day.id = entry.day_id")
+        .where("entry.id = :entryId", { entryId })
+        .andWhere("day.relationship_id = :relationshipId", { relationshipId })
+        .andWhere("entry.deleted_at IS NULL")
+        .setLock("pessimistic_write")
+        .getOne();
+      if (!entry) throw new Error("NOTEBOOK_ENTRY_NOT_FOUND");
+
+      entry.deletedAt = new Date();
+      entry.deletedBy = userId;
+      await entryRepository.save(entry);
+
+      const remaining = await entryRepository.find({
+        where: { dayId: entry.dayId, deletedAt: null },
+        order: { position: "ASC" },
+      });
+      for (const [position, remainingEntry] of remaining.entries()) {
+        await entryRepository.update({ id: remainingEntry.id }, { position });
+      }
+    });
+  }
+
   async findAttachmentEntry(relationshipId: string, entryId: string): Promise<NotebookEntry | null> {
     return AppDataSource.getRepository(NotebookEntry)
       .createQueryBuilder("entry")
@@ -108,6 +200,7 @@ export class NotebookRepository {
       .where("entry.id = :entryId", { entryId })
       .andWhere("day.relationship_id = :relationshipId", { relationshipId })
       .andWhere("entry.kind IN (:...kinds)", { kinds: ["IMAGE", "FILE"] })
+      .andWhere("entry.deleted_at IS NULL")
       .getOne();
   }
 
