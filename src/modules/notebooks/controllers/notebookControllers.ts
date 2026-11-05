@@ -72,7 +72,11 @@ interface RelationshipParams {
   relationshipId: string;
 }
 
-interface EntryParams extends RelationshipParams {\n  entryId: string;\n}\n\ninterface AttachmentParams extends RelationshipParams {
+interface EntryParams extends RelationshipParams {
+  entryId: string;
+}
+
+interface AttachmentParams extends RelationshipParams {
   entryId: string;
 }
 
