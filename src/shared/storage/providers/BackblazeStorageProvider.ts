@@ -31,7 +31,8 @@ const EXTENSIONS_BY_CONTENT_TYPE: Record<string, string> = {
 const UPLOAD_URL_EXPIRES_IN_SECONDS = 300;
 const S3_SERVICE = "s3";
 const AWS_ALGORITHM = "AWS4-HMAC-SHA256";
-const OBJECT_UPLOAD_TIMEOUT_MS = 30_000;
+const DEFAULT_OBJECT_UPLOAD_TIMEOUT_MS = 60_000;
+const VIDEO_UPLOAD_TIMEOUT_MS = 300_000;
 
 function sha256(value: string): string {
   return createHash("sha256").update(value, "utf8").digest("hex");
@@ -127,12 +128,15 @@ export class BackblazeStorageProvider implements IStorageProvider {
       : input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 20 * 1024 * 1024;
     if (input.body.byteLength <= 0 || input.body.byteLength > maxSizeBytes) throw new Error("INVALID_STORAGE_OBJECT_SIZE");
 
+    const timeoutMs = input.contentType.startsWith("video/")
+      ? VIDEO_UPLOAD_TIMEOUT_MS
+      : DEFAULT_OBJECT_UPLOAD_TIMEOUT_MS;
     const startedAt = Date.now();
     console.info("[Backblaze] Upload iniciado.", {
       bucketName: input.bucketName,
       storageKey: input.storageKey,
       sizeBytes: input.body.byteLength,
-      timeoutMs: OBJECT_UPLOAD_TIMEOUT_MS,
+      timeoutMs,
     });
 
     try {
@@ -143,7 +147,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
           Body: input.body,
           ContentType: input.contentType,
         }),
-        { abortSignal: AbortSignal.timeout(OBJECT_UPLOAD_TIMEOUT_MS) },
+        { abortSignal: AbortSignal.timeout(timeoutMs) },
       );
       console.info("[Backblaze] Upload concluído.", {
         storageKey: input.storageKey,
