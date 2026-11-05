@@ -7,6 +7,7 @@ import {
   createNotebookNoteController,
   getNotebookController,
   listNotebookNotesController,
+  reorderNotebookEntriesController,
 } from "../controllers/notebookControllers";
 
 export async function notebookRoutes(app: FastifyInstance): Promise<void> {
@@ -22,6 +23,11 @@ export async function notebookRoutes(app: FastifyInstance): Promise<void> {
     "/:relationshipId/entries",
     { preHandler: authorizeRoles(RoleCode.TEACHER) },
     createNotebookEntryController,
+  );
+  app.patch<{ Params: { relationshipId: string } }>(
+    "/:relationshipId/entries/reorder",
+    { preHandler: authorizeRoles(RoleCode.TEACHER) },
+    reorderNotebookEntriesController,
   );
   app.get<{ Params: { relationshipId: string } }>(
     "/:relationshipId/notes",
