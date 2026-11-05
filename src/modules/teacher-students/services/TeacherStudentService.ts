@@ -1,4 +1,5 @@
 import { AuthError } from "../../auth/errors/AuthError";
+import { QueryFailedError } from "typeorm";
 import type { ITeacherStudentRepository } from "../repositories/interfaces/ITeacherStudentRepository";
 import { TeacherStudentStatus } from "../types/TeacherStudentStatus";
 
@@ -91,7 +92,14 @@ export class TeacherStudentService {
     }
 
     invitation.respondedAt = new Date();
-    return this.repository.save(invitation);
+    try {
+      return await this.repository.save(invitation);
+    } catch (error: unknown) {
+      if (accept && error instanceof QueryFailedError) {
+        throw new AuthError("STUDENT_ALREADY_LINKED", 409, "Você já possui um professor vinculado.");
+      }
+      throw error;
+    }
   }
 
   async cancelInvitation(teacherId: string, relationshipId: string) {
