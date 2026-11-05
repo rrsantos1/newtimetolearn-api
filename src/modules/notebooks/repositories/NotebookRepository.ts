@@ -1,3 +1,4 @@
+import { IsNull } from "typeorm";
 import { AppDataSource } from "../../../shared/database/data-source";
 import { TeacherStudentRelationship } from "../../teacher-students/entities/TeacherStudentRelationship";
 import { TeacherStudentStatus } from "../../teacher-students/types/TeacherStudentStatus";
@@ -63,7 +64,7 @@ export class NotebookRepository {
       if (!day) throw new Error("NOTEBOOK_DAY_CREATE_FAILED");
 
       const entryRepository = manager.getRepository(NotebookEntry);
-      const count = await entryRepository.count({ where: { dayId: day.id, deletedAt: null } });
+      const count = await entryRepository.count({ where: { dayId: day.id, deletedAt: IsNull() } });
       const entry = entryRepository.create({
         dayId: day.id,
         createdBy: authorId,
@@ -86,7 +87,7 @@ export class NotebookRepository {
       if (!day) throw new Error("NOTEBOOK_DAY_NOT_FOUND");
 
       const repository = manager.getRepository(NotebookEntry);
-      const entries = await repository.find({ where: { dayId, deletedAt: null }, order: { position: "ASC" } });
+      const entries = await repository.find({ where: { dayId, deletedAt: IsNull() }, order: { position: "ASC" } });
       const currentIds = new Set(entries.map((entry) => entry.id));
       if (
         entryIds.length !== entries.length ||
@@ -144,13 +145,13 @@ export class NotebookRepository {
           });
           if (!newDay) throw new Error("NOTEBOOK_DAY_CREATE_FAILED");
 
-          const newPosition = await entryRepository.count({ where: { dayId: newDay.id, deletedAt: null } });
+          const newPosition = await entryRepository.count({ where: { dayId: newDay.id, deletedAt: IsNull() } });
           entry.dayId = newDay.id;
           entry.position = newPosition;
           await entryRepository.save(entry);
 
           const remaining = await entryRepository.find({
-            where: { dayId: oldDay.id, deletedAt: null },
+            where: { dayId: oldDay.id, deletedAt: IsNull() },
             order: { position: "ASC" },
           });
           for (const [position, remainingEntry] of remaining.entries()) {
@@ -186,7 +187,7 @@ export class NotebookRepository {
       await entryRepository.save(entry);
 
       const remaining = await entryRepository.find({
-        where: { dayId: entry.dayId, deletedAt: null },
+        where: { dayId: entry.dayId, deletedAt: IsNull() },
         order: { position: "ASC" },
       });
       for (const [position, remainingEntry] of remaining.entries()) {
