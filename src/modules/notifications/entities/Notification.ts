@@ -1,9 +1,7 @@
-import { Column, Entity, Index } from "typeorm";
+import { Column, Entity } from "typeorm";
 import { BaseEntity } from "../../../shared/database/entities/BaseEntity";
 
 @Entity("notifications")
-@Index("idx_notifications_recipient_created", ["recipientId", "createdAt"], { synchronize: false })
-@Index("idx_notifications_recipient_unread", ["recipientId", "readAt"], { synchronize: false })
 export class Notification extends BaseEntity {
   @Column({ name: "recipient_id", type: "uuid" })
   recipientId!: string;
