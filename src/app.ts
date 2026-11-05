@@ -7,6 +7,7 @@ import { authRoutes } from "./modules/auth/routes/authRoutes";
 import { userRoutes } from "./modules/users/routes/userRoutes";
 import { activityRoutes } from "./modules/activities/routes/activityRoutes";
 import { teacherStudentRoutes } from "./modules/teacher-students/routes/teacherStudentRoutes";
+import { notificationRoutes } from "./modules/notifications/routes/notificationRoutes";
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 
@@ -34,6 +35,7 @@ export function buildApp(): FastifyInstance {
   app.register(authRoutes, { prefix: "/api/v1/auth" });
   app.register(userRoutes, { prefix: "/api/v1/users" });
   app.register(teacherStudentRoutes, { prefix: "/api/v1/teacher-students" });
+  app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
   app.register(activityRoutes, { prefix: "/api/v1/activities" });
   return app;
 }
