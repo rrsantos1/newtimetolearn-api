@@ -76,6 +76,31 @@ export class NotebookRepository {
     });
   }
 
+  async reorderEntries(relationshipId: string, dayId: string, entryIds: string[]): Promise<void> {
+    await AppDataSource.transaction(async (manager) => {
+      const day = await manager.getRepository(NotebookDay).findOne({
+        where: { id: dayId, relationshipId },
+        lock: { mode: "pessimistic_write" },
+      });
+      if (!day) throw new Error("NOTEBOOK_DAY_NOT_FOUND");
+
+      const repository = manager.getRepository(NotebookEntry);
+      const entries = await repository.find({ where: { dayId }, order: { position: "ASC" } });
+      const currentIds = new Set(entries.map((entry) => entry.id));
+      if (
+        entryIds.length !== entries.length ||
+        new Set(entryIds).size !== entryIds.length ||
+        entryIds.some((id) => !currentIds.has(id))
+      ) {
+        throw new Error("INVALID_NOTEBOOK_ENTRY_ORDER");
+      }
+
+      for (const [position, id] of entryIds.entries()) {
+        await repository.update({ id, dayId }, { position });
+      }
+    });
+  }
+
   async listNotes(relationshipId: string): Promise<NotebookNote[]> {
     return AppDataSource.getRepository(NotebookNote).find({
       where: { relationshipId },
