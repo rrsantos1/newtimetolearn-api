@@ -59,8 +59,11 @@ const updateEntrySchema = z.union([
   }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
   z.object({
     kind: z.literal("IMAGE"),
+    content: z.object({
+      displayWidth: z.number().int().min(25).max(100),
+    }).optional(),
     dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  }).refine((value) => value.dayDate !== undefined),
+  }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
   z.object({
     kind: z.literal("FILE"),
     dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
