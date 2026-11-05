@@ -42,7 +42,7 @@ function decodeFileName(value: string | string[] | undefined): string {
   const header = Array.isArray(value) ? value[0] : value;
   if (!header) return "anexo";
   try {
-    return decodeURIComponent(header).replace(/[\\r\\n\\0]/g, "_").slice(0, 180);
+    return decodeURIComponent(header).replace(/[\r\n\0]/g, "_").slice(0, 180);
   } catch {
     return "anexo";
   }
