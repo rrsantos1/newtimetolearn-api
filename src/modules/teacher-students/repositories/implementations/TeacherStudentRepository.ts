@@ -1,5 +1,4 @@
 import { AppDataSource } from "../../../../shared/database/data-source";
-import { Role } from "../../../users/entities/Role";
 import { User } from "../../../users/entities/User";
 import { UserRole } from "../../../users/entities/UserRole";
 import { TeacherStudentRelationship } from "../../entities/TeacherStudentRelationship";
@@ -25,9 +24,9 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
   async findUserRoles(userId: string): Promise<string[]> {
     const rows = await AppDataSource.getRepository(UserRole)
       .createQueryBuilder("userRole")
-      .innerJoin(Role, "role", "role.id = userRole.role_id")
+      .innerJoin("userRole.role", "role")
       .select("role.code", "code")
-      .where("userRole.user_id = :userId", { userId })
+      .where("userRole.userId = :userId", { userId })
       .getRawMany<{ code: string }>();
     return rows.map((row) => row.code);
   }
