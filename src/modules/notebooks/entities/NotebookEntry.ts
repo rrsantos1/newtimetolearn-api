@@ -20,4 +20,10 @@ export class NotebookEntry extends BaseEntity {
 
   @Column({ type: "integer", default: 0 })
   position!: number;
+
+  @Column({ name: "deleted_at", type: "timestamptz", nullable: true })
+  deletedAt!: Date | null;
+
+  @Column({ name: "deleted_by", type: "uuid", nullable: true })
+  deletedBy!: string | null;
 }
