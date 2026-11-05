@@ -8,7 +8,7 @@ import type {
   TeacherStudentRelationshipRecord,
   TeacherStudentUserSummary,
 } from "../interfaces/ITeacherStudentRepository";
-import type { TeacherStudentStatus } from "../../types/TeacherStudentStatus";
+import { TeacherStudentStatus } from "../../types/TeacherStudentStatus";
 
 export class TeacherStudentRepository implements ITeacherStudentRepository {
   private readonly relationshipRepository = AppDataSource.getRepository(TeacherStudentRelationship);
