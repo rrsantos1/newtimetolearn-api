@@ -118,6 +118,22 @@ export class TeacherStudentService {
     return this.repository.save(invitation);
   }
 
+  async withdrawInvitation(studentId: string, relationshipId: string) {
+    const roles = await this.repository.findUserRoles(studentId);
+    if (!roles.includes("STUDENT")) {
+      throw new AuthError("FORBIDDEN", 403, "Apenas alunos podem cancelar convites recebidos.");
+    }
+
+    const invitation = await this.repository.findStudentRelationship(relationshipId, studentId);
+    if (!invitation || invitation.status !== TeacherStudentStatus.PENDING) {
+      throw new AuthError("INVITATION_NOT_FOUND", 404, "Convite pendente não encontrado.");
+    }
+
+    invitation.status = TeacherStudentStatus.CANCELLED;
+    invitation.endedAt = new Date();
+    return this.repository.save(invitation);
+  }
+
   async endRelationship(teacherId: string, relationshipId: string) {
     const roles = await this.repository.findUserRoles(teacherId);
     if (!roles.includes("TEACHER")) {
