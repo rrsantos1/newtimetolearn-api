@@ -25,6 +25,10 @@ export class ForgotPasswordRepository
     return repository.save(token);
   }
 
+  async deleteTokenById(manager: EntityManager, tokenId: string): Promise<void> {
+    await manager.getRepository(PasswordResetToken).delete({ id: tokenId });
+  }
+
   async consumePreviousTokens(
     manager: EntityManager,
     userId: string,
