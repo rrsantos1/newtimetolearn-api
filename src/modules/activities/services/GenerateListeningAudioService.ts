@@ -158,9 +158,11 @@ export class GenerateListeningAudioService {
 
     try {
       savedVersion = await AppDataSource.transaction(async (manager) => {
-        const currentVersion = await manager.getRepository(ActivityVersion).findOne({
-          where: { id: version.id, activityId: activity.id },
-        });
+        const currentVersion = await this.activityVersionRepository.findByIdAndActivityIdForUpdate(
+          manager,
+          version.id,
+          activity.id,
+        );
         if (!currentVersion || currentVersion.status !== ActivityVersionStatus.DRAFT) {
           throw new AppError("LISTENING_VERSION_CHANGED", 409, "A versão do Listening mudou durante a geração do áudio. Atualize a página e tente novamente.");
         }
