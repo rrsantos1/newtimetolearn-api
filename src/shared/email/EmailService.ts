@@ -132,4 +132,52 @@ export class EmailService {
     }
   }
 
+
+  async sendTeacherStudentInvitationEmail(input: {
+    email: string;
+    studentName: string;
+    teacherName: string;
+  }): Promise<void> {
+    if (!env.RESEND_API_KEY) {
+      throw new Error("RESEND_API_KEY não foi configurada.");
+    }
+
+    const resend = new Resend(env.RESEND_API_KEY);
+    const invitationUrl = `${env.FRONTEND_URL}/student/teachers`;
+    const escapeHtml = (value: string): string => value
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+    const studentName = escapeHtml(input.studentName);
+    const teacherName = escapeHtml(input.teacherName);
+
+    const { error } = await resend.emails.send({
+      from: env.EMAIL_FROM,
+      to: input.email,
+      subject: "Você recebeu um convite no Timetolearn",
+      text: [
+        `Olá, ${input.studentName}!`,
+        "",
+        `${input.teacherName} enviou um convite para acompanhar seus estudos no Timetolearn.`,
+        "",
+        `Acesse sua área de professores para aceitar ou recusar: ${invitationUrl}`,
+        "",
+        "Se você não esperava este convite, pode ignorar esta mensagem.",
+      ].join("\n"),
+      html: `
+        <h2>Você recebeu um convite no Timetolearn</h2>
+        <p>Olá, ${studentName}.</p>
+        <p><strong>${teacherName}</strong> enviou um convite para acompanhar seus estudos.</p>
+        <p><a href="${invitationUrl}">Ver convite</a></p>
+        <p>Se você não esperava este convite, pode ignorar esta mensagem.</p>
+      `,
+    });
+
+    if (error) {
+      throw new Error("Não foi possível enviar o e-mail de convite.");
+    }
+  }
+
 }
