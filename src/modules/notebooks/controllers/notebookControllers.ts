@@ -3,10 +3,18 @@ import { ZodError, z } from "zod";
 import { AuthError } from "../../auth/errors/AuthError";
 import { makeNotebookService } from "../factories/make-notebook-service";
 
+const richDocumentSchema = z.record(z.string(), z.unknown()).refine(
+  (document) => (JSON.stringify(document)?.length ?? Number.POSITIVE_INFINITY) <= 20000,
+  "O conteúdo formatado excede o limite permitido.",
+);
+
 const entrySchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("TEXT"),
-    content: z.object({ text: z.string().trim().min(1).max(20000) }),
+    content: z.union([
+      z.object({ text: z.string().trim().min(1).max(20000) }),
+      z.object({ document: richDocumentSchema }),
+    ]),
   }),
   z.object({
     kind: z.literal("ACTIVITY_LINK"),
@@ -20,11 +28,6 @@ const entrySchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
-const richDocumentSchema = z.record(z.string(), z.unknown()).refine(
-  (document) => JSON.stringify(document).length <= 20000,
-  "O conteúdo formatado excede o limite permitido.",
-);
-
 const updateEntrySchema = z.discriminatedUnion("kind", [
   z.object({
     kind: z.literal("TEXT"),
@@ -32,7 +35,7 @@ const updateEntrySchema = z.discriminatedUnion("kind", [
       z.object({ text: z.string().trim().min(1).max(20000) }),
       z.object({ document: richDocumentSchema }),
     ]).optional(),
-    dayDate: z.string().regex(/^\\d{4}-\\d{2}-\\d{2}$/).optional(),
+    dayDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
   }).refine((value) => value.content !== undefined || value.dayDate !== undefined),
   z.object({
     kind: z.literal("ACTIVITY_LINK"),
