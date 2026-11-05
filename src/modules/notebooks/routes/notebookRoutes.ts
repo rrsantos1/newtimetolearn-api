@@ -28,7 +28,7 @@ export async function notebookRoutes(app: FastifyInstance): Promise<void> {
   );
   app.post<{ Params: { relationshipId: string } }>(
     "/:relationshipId/attachments",
-    { bodyLimit: 50 * 1024 * 1024, preHandler: authorizeRoles(RoleCode.TEACHER) },
+    { bodyLimit: 50 * 1024 * 1024, config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: authorizeRoles(RoleCode.TEACHER) },
     createNotebookAttachmentController,
   );
   app.get<{ Params: { relationshipId: string; entryId: string } }>(
