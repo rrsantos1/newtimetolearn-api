@@ -76,12 +76,19 @@ async function claimNextJob(): Promise<ClaimedJob | null> {
       job.prompt AS "prompt"
   `, [STALE_JOB_MINUTES]);
 
-  const row = rows.find(
-    (value): value is Record<string, unknown> =>
-      typeof value === "object" &&
-      value !== null &&
-      !Array.isArray(value),
-  );
+  console.info("[CoverWorker] Retorno bruto do PostgreSQL.", {
+    isArray: Array.isArray(rows),
+    constructor: rows?.constructor?.name,
+    value: JSON.stringify(rows),
+  });
+
+  const row: Record<string, unknown> | undefined =
+  Array.isArray(rows) &&
+  typeof rows[0] === "object" &&
+  rows[0] !== null &&
+  !Array.isArray(rows[0])
+    ? rows[0] as Record<string, unknown>
+    : undefined;
 
   if (!row) return null;
 
