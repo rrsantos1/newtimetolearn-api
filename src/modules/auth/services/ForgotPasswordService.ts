@@ -53,11 +53,7 @@ export class ForgotPasswordService {
       this.onEmailError(error);
 
       await AppDataSource.transaction(async (manager) => {
-        const repository = manager.getRepository("password_reset_tokens");
-
-        await repository.delete({
-          id: user.tokenId,
-        });
+        await this.repository.deleteTokenById(manager, user.tokenId);
       });
 
       return;
