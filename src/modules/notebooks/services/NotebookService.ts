@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import vision from "@google-cloud/vision";
 import { AuthError } from "../../auth/errors/AuthError";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
@@ -25,6 +26,22 @@ const attachmentTypes = new Map<string, string>([
 
 const maxDocumentSize = 20 * 1024 * 1024;
 const maxVideoSize = 50 * 1024 * 1024;
+const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
+  ? new vision.ImageAnnotatorClient()
+  : null;
+
+async function validateNotebookImage(body: Buffer): Promise<void> {
+  if (!visionClient) throw new Error("IMAGE_MODERATION_UNAVAILABLE");
+  const [result] = await visionClient.safeSearchDetection({ image: { content: body } });
+  const annotation = result.safeSearchAnnotation;
+  if (!annotation) throw new Error("IMAGE_MODERATION_UNAVAILABLE");
+
+  const blocked = ["adult", "violence", "racy"].some((category) => {
+    const likelihood = annotation[category as keyof typeof annotation];
+    return typeof likelihood === "number" && likelihood >= 4;
+  });
+  if (blocked) throw new Error("IMAGE_REJECTED_BY_MODERATION");
+}
 
 export interface NotebookAttachmentInput {
   fileName: string;
@@ -137,6 +154,9 @@ export class NotebookService {
     }
     if (!hasFileSignature(input.contentType, input.body)) {
       throw new Error("INVALID_NOTEBOOK_ATTACHMENT_CONTENT");
+    }
+    if (input.contentType.startsWith("image/")) {
+      await validateNotebookImage(input.body);
     }
 
     const fileName = safeFileName(input.fileName);
