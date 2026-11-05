@@ -68,15 +68,37 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
     return this.relationshipRepository.save(relationship);
   }
 
+  async acceptInvitation(relationship: TeacherStudentRelationship): Promise<TeacherStudentRelationship> {
+    return AppDataSource.transaction(async (manager) => {
+      await manager.query(
+        "SELECT id FROM users WHERE id = $1 FOR UPDATE",
+        [relationship.studentId],
+      );
+
+      const active = await manager.getRepository(TeacherStudentRelationship).findOne({
+        where: {
+          studentId: relationship.studentId,
+          status: TeacherStudentStatus.ACTIVE,
+        },
+      });
+
+      if (active && active.id !== relationship.id) {
+        throw new Error("STUDENT_ALREADY_LINKED");
+      }
+
+      relationship.status = TeacherStudentStatus.ACTIVE;
+      relationship.respondedAt = new Date();
+      return manager.getRepository(TeacherStudentRelationship).save(relationship);
+    });
+  }
+
   async listForTeacher(teacherId: string, status?: TeacherStudentStatus): Promise<TeacherStudentRelationshipRecord[]> {
     const query = this.relationshipRepository.createQueryBuilder("relationship")
       .innerJoinAndSelect("relationship.teacher", "teacher")
       .innerJoinAndSelect("relationship.student", "student")
       .where("relationship.teacherId = :teacherId", { teacherId })
       .orderBy("relationship.createdAt", "DESC");
-
     if (status) query.andWhere("relationship.status = :status", { status });
-
     const rows = await query.getMany();
     return rows.map((item) => ({
       id: item.id,
@@ -96,7 +118,6 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
       .where("relationship.studentId = :studentId", { studentId })
       .orderBy("relationship.createdAt", "DESC")
       .getMany();
-
     return rows.map((item) => ({
       id: item.id,
       status: item.status,
