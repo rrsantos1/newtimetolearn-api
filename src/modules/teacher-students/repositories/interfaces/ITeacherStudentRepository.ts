@@ -20,6 +20,7 @@ export interface TeacherStudentRelationshipRecord {
 
 export interface ITeacherStudentRepository {
   findUserByEmail(email: string): Promise<TeacherStudentUserSummary | null>;
+  findUserById(userId: string): Promise<TeacherStudentUserSummary | null>;
   findUserRoles(userId: string): Promise<string[]>;
   findActiveRelationshipForStudent(studentId: string): Promise<TeacherStudentRelationship | null>;
   findPendingRelationship(teacherId: string, studentId: string): Promise<TeacherStudentRelationship | null>;
