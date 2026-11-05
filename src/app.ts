@@ -11,11 +11,25 @@ import { notificationRoutes } from "./modules/notifications/routes/notificationR
 import { notebookRoutes } from "./modules/notebooks/routes/notebookRoutes";
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const notebookAttachmentContentTypes = [
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+];
 
 export function buildApp(): FastifyInstance {
-  const app = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
+  const app = Fastify({ logger: true, bodyLimit: 50 * 1024 * 1024 });
 
   app.addContentTypeParser(imageContentTypes, { parseAs: "buffer", bodyLimit: 5 * 1024 * 1024 }, (_request, body, done) => {
+    done(null, body);
+  });
+  app.addContentTypeParser(notebookAttachmentContentTypes, { parseAs: "buffer", bodyLimit: 50 * 1024 * 1024 }, (_request, body, done) => {
     done(null, body);
   });
 
