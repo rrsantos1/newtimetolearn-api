@@ -4,6 +4,8 @@ import { authorizeRoles } from "../../../shared/http/middlewares/authorizeRoles"
 import { RoleCode } from "../../users/types/RoleCode";
 import {
   createNotebookEntryController,
+  updateNotebookEntryController,
+  deleteNotebookEntryController,
   createNotebookNoteController,
   createNotebookAttachmentController,
   getNotebookAttachmentController,
@@ -25,6 +27,16 @@ export async function notebookRoutes(app: FastifyInstance): Promise<void> {
     "/:relationshipId/entries",
     { preHandler: authorizeRoles(RoleCode.TEACHER) },
     createNotebookEntryController,
+  );
+  app.patch<{ Params: { relationshipId: string; entryId: string } }>(
+    "/:relationshipId/entries/:entryId",
+    { preHandler: authorizeRoles(RoleCode.TEACHER) },
+    updateNotebookEntryController,
+  );
+  app.delete<{ Params: { relationshipId: string; entryId: string } }>(
+    "/:relationshipId/entries/:entryId",
+    { preHandler: authorizeRoles(RoleCode.TEACHER) },
+    deleteNotebookEntryController,
   );
   app.post<{ Params: { relationshipId: string } }>(
     "/:relationshipId/attachments",
