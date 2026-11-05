@@ -139,7 +139,7 @@ export async function getNotebookAttachmentController(
       request.params.entryId,
       request.user.sub,
     );
-    const encodedFileName = encodeURIComponent(file.fileName).replace(/['()]/g, escape);
+    const encodedFileName = encodeURIComponent(file.fileName).replace(/[!'()*]/g, (character) => "%" + character.charCodeAt(0).toString(16).toUpperCase());
     return reply
       .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedFileName}`)
       .header("Cache-Control", "private, no-store")
