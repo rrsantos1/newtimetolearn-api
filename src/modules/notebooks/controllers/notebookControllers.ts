@@ -20,6 +20,11 @@ const entrySchema = z.discriminatedUnion("kind", [
   }),
 ]);
 
+const reorderSchema = z.object({
+  dayId: z.string().uuid(),
+  entryIds: z.array(z.string().uuid()).min(1).max(200),
+});
+
 const noteSchema = z.object({
   message: z.string().trim().min(1).max(5000),
   parentId: z.string().uuid().nullable().optional(),
@@ -35,6 +40,12 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply,
   }
   if (error instanceof AuthError) {
     return reply.status(error.statusCode).send({ success: false, error: { code: error.code, message: error.message }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "NOTEBOOK_DAY_NOT_FOUND") {
+    return reply.status(404).send({ success: false, error: { code: error.message, message: "Dia do caderno não encontrado." }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "INVALID_NOTEBOOK_ENTRY_ORDER") {
+    return reply.status(400).send({ success: false, error: { code: error.message, message: "A ordem dos itens enviada é inválida." }, requestId: request.id });
   }
   request.log.error({ err: error }, message);
   return reply.status(500).send({ success: false, error: { code: "INTERNAL_SERVER_ERROR", message: "Ocorreu um erro interno." }, requestId: request.id });
@@ -67,6 +78,24 @@ export async function createNotebookEntryController(
     return reply.status(201).send({ success: true, data });
   } catch (error: unknown) {
     return sendError(error, request, reply, "Falha ao publicar conteúdo no caderno.");
+  }
+}
+
+export async function reorderNotebookEntriesController(
+  request: FastifyRequest<{ Params: RelationshipParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  try {
+    const input = reorderSchema.parse(request.body);
+    await makeNotebookService().reorderEntries(
+      request.params.relationshipId,
+      request.user.sub,
+      input.dayId,
+      input.entryIds,
+    );
+    return reply.status(200).send({ success: true, message: "Itens organizados com sucesso." });
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao organizar itens do caderno.");
   }
 }
 
