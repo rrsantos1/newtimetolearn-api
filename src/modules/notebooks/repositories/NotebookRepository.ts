@@ -63,7 +63,7 @@ export class NotebookRepository {
       if (!day) throw new Error("NOTEBOOK_DAY_CREATE_FAILED");
 
       const entryRepository = manager.getRepository(NotebookEntry);
-      const count = await entryRepository.count({ where: { dayId: day.id } });
+      const count = await entryRepository.count({ where: { dayId: day.id, deletedAt: null } });
       const entry = entryRepository.create({
         dayId: day.id,
         createdBy: authorId,
