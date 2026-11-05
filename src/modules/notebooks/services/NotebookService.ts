@@ -26,6 +26,8 @@ const attachmentTypes = new Map<string, string>([
 
 const maxDocumentSize = 20 * 1024 * 1024;
 const maxVideoSize = 50 * 1024 * 1024;
+const riskCategories = ["adult", "violence", "racy"] as const;
+type RiskCategory = (typeof riskCategories)[number];
 const visionClient = env.GOOGLE_APPLICATION_CREDENTIALS
   ? new vision.ImageAnnotatorClient()
   : null;
@@ -36,8 +38,8 @@ async function validateNotebookImage(body: Buffer): Promise<void> {
   const annotation = result.safeSearchAnnotation;
   if (!annotation) throw new Error("IMAGE_MODERATION_UNAVAILABLE");
 
-  const blocked = ["adult", "violence", "racy"].some((category) => {
-    const likelihood = annotation[category as keyof typeof annotation];
+  const blocked = riskCategories.some((category: RiskCategory) => {
+    const likelihood = annotation[category];
     return typeof likelihood === "number" && likelihood >= 4;
   });
   if (blocked) throw new Error("IMAGE_REJECTED_BY_MODERATION");
