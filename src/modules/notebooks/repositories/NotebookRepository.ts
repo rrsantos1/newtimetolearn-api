@@ -101,6 +101,16 @@ export class NotebookRepository {
     });
   }
 
+  async findAttachmentEntry(relationshipId: string, entryId: string): Promise<NotebookEntry | null> {
+    return AppDataSource.getRepository(NotebookEntry)
+      .createQueryBuilder("entry")
+      .innerJoin(NotebookDay, "day", "day.id = entry.day_id")
+      .where("entry.id = :entryId", { entryId })
+      .andWhere("day.relationship_id = :relationshipId", { relationshipId })
+      .andWhere("entry.kind IN (:...kinds)", { kinds: ["IMAGE", "FILE"] })
+      .getOne();
+  }
+
   async listNotes(relationshipId: string): Promise<NotebookNote[]> {
     return AppDataSource.getRepository(NotebookNote).find({
       where: { relationshipId },
