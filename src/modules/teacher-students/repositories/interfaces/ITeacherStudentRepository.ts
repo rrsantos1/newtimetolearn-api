@@ -1,3 +1,4 @@
+import type { EntityManager } from "typeorm";
 import type { TeacherStudentRelationship } from "../../entities/TeacherStudentRelationship";
 import type { TeacherStudentStatus } from "../../types/TeacherStudentStatus";
 
@@ -28,4 +29,5 @@ export interface ITeacherStudentRepository {
   save(relationship: TeacherStudentRelationship): Promise<TeacherStudentRelationship>;
   listForTeacher(teacherId: string, status?: TeacherStudentStatus): Promise<TeacherStudentRelationshipRecord[]>;
   listForStudent(studentId: string): Promise<TeacherStudentRelationshipRecord[]>;
+  acceptInvitation(relationship: TeacherStudentRelationship): Promise<TeacherStudentRelationship>;
 }
