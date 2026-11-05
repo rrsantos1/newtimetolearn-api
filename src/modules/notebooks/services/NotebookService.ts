@@ -150,7 +150,8 @@ export class NotebookService {
     const extension = attachmentTypes.get(input.contentType);
     if (!extension) throw new Error("UNSUPPORTED_NOTEBOOK_ATTACHMENT_TYPE");
     const isVideo = input.contentType.startsWith("video/");
-    const maxSize = isVideo ? maxVideoSize : maxDocumentSize;
+    const isImage = input.contentType.startsWith("image/");
+    const maxSize = isVideo ? maxVideoSize : isImage ? 5 * 1024 * 1024 : maxDocumentSize;
     if (input.body.byteLength <= 0 || input.body.byteLength > maxSize) {
       throw new Error("INVALID_NOTEBOOK_ATTACHMENT_SIZE");
     }
