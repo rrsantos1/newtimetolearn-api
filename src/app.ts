@@ -24,7 +24,7 @@ const notebookAttachmentContentTypes = [
 ];
 
 export function buildApp(): FastifyInstance {
-  const app = Fastify({ logger: true, bodyLimit: 50 * 1024 * 1024 });
+  const app = Fastify({ logger: true, bodyLimit: 5 * 1024 * 1024 });
 
   app.addContentTypeParser(imageContentTypes, { parseAs: "buffer", bodyLimit: 5 * 1024 * 1024 }, (_request, body, done) => {
     done(null, body);
