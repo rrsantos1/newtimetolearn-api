@@ -77,7 +77,9 @@ export class NotebookService {
         type: NotificationType.NOTEBOOK_NOTE_REPLY,
         title: parentId ? "Nova resposta no caderno" : "Nova mensagem no caderno",
         message: "Há uma nova mensagem no bloco de notas compartilhado.",
-        link: userId === relationship.teacherId ? "/student/notebook" : "/teacher/students",
+        link: userId === relationship.teacherId
+          ? "/student/notebook"
+          : `/teacher/students/${relationshipId}/notebook`,
         metadata: { relationshipId, noteId: note.id },
       });
     } catch {
