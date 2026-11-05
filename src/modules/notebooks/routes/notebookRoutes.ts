@@ -5,6 +5,8 @@ import { RoleCode } from "../../users/types/RoleCode";
 import {
   createNotebookEntryController,
   createNotebookNoteController,
+  createNotebookAttachmentController,
+  getNotebookAttachmentController,
   getNotebookController,
   listNotebookNotesController,
   reorderNotebookEntriesController,
@@ -23,6 +25,16 @@ export async function notebookRoutes(app: FastifyInstance): Promise<void> {
     "/:relationshipId/entries",
     { preHandler: authorizeRoles(RoleCode.TEACHER) },
     createNotebookEntryController,
+  );
+  app.post<{ Params: { relationshipId: string } }>(
+    "/:relationshipId/attachments",
+    { bodyLimit: 50 * 1024 * 1024, preHandler: authorizeRoles(RoleCode.TEACHER) },
+    createNotebookAttachmentController,
+  );
+  app.get<{ Params: { relationshipId: string; entryId: string } }>(
+    "/:relationshipId/entries/:entryId/file",
+    { preHandler: authorizeRoles(...roles) },
+    getNotebookAttachmentController,
   );
   app.patch<{ Params: { relationshipId: string } }>(
     "/:relationshipId/entries/reorder",
