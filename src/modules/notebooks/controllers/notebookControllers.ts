@@ -58,6 +58,12 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply,
   if (error instanceof Error && error.message === "NOTEBOOK_DAY_NOT_FOUND") {
     return reply.status(404).send({ success: false, error: { code: error.message, message: "Dia do caderno não encontrado." }, requestId: request.id });
   }
+  if (error instanceof Error && error.message === "IMAGE_REJECTED_BY_MODERATION") {
+    return reply.status(422).send({ success: false, error: { code: error.message, message: "A imagem não passou pela validação automática de conteúdo." }, requestId: request.id });
+  }
+  if (error instanceof Error && error.message === "IMAGE_MODERATION_UNAVAILABLE") {
+    return reply.status(503).send({ success: false, error: { code: error.message, message: "A validação da imagem está indisponível. Tente novamente mais tarde." }, requestId: request.id });
+  }
   if (error instanceof Error && ["UNSUPPORTED_NOTEBOOK_ATTACHMENT_TYPE", "INVALID_NOTEBOOK_ATTACHMENT_SIZE", "INVALID_NOTEBOOK_ATTACHMENT_CONTENT"].includes(error.message)) {
     return reply.status(400).send({ success: false, error: { code: error.message, message: "O arquivo não atende aos formatos, conteúdo ou limites permitidos." }, requestId: request.id });
   }
