@@ -100,7 +100,11 @@ describe("ReviewMediaAssetService", () => {
       getUsageByTeacherId: mocks.getUsage,
       listReferencedObjects: vi.fn(),
     };
-    service = new ReviewMediaAssetService(repository, storageUsageRepository);
+    service = new ReviewMediaAssetService(
+      repository,
+      storageUsageRepository,
+      { getForTeacher: vi.fn().mockResolvedValue({ storageLimitBytes: 1024 }) } as never,
+    );
   });
 
   it("impede aprovar uma imagem quando o tamanho otimizado excede a cota", async () => {
