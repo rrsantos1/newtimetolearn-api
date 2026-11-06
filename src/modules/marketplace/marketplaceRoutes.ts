@@ -60,7 +60,7 @@ async function createAdminProduct(req:FastifyRequest,reply:FastifyReply):Promise
 async async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
  const user=req.user as JwtUser|undefined;
  if(!user?.sub)return reply.code(401).send({success:false});
- if(req.isJson()) {
+ if(String(req.headers["content-type"]??"").includes("application/json")) {
   const body=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),priceCents:z.number().int().min(100).max(1000000),externalUrl:z.string().url().max(2048)}).safeParse(req.body);
   if(!body.success)return reply.code(400).send({success:false,error:{code:"INVALID_EXTERNAL_PRODUCT"}});
   const input={seller:user.sub,title:body.data.title,description:body.data.description,category:body.data.category,price:body.data.priceCents,externalUrl:body.data.externalUrl};
