@@ -1,11 +1,12 @@
 import { createHash, createHmac, randomUUID } from "node:crypto";
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, ListObjectsV2Command, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { env } from "../../config/env";
 import type {
   CreateUploadUrlInput,
   CreateUploadUrlResult,
   IStorageProvider,
   UploadObjectInput,
+  StorageObjectInfo,
 } from "../interfaces/IStorageProvider";
 
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -211,6 +212,35 @@ export class BackblazeStorageProvider implements IStorageProvider {
     const signature = hmac(getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!), stringToSign).toString("hex");
 
     return endpoint.origin + canonicalUri + "?" + canonicalQueryString + "&X-Amz-Signature=" + signature;
+  }
+
+  async listObjects(bucketName: string, prefix: string): Promise<StorageObjectInfo[]> {
+    const objects: StorageObjectInfo[] = [];
+    let continuationToken: string | undefined;
+
+    do {
+      const response = await this.s3Client.send(new ListObjectsV2Command({
+        Bucket: bucketName,
+        Prefix: prefix,
+        ContinuationToken: continuationToken,
+        MaxKeys: 1000,
+      }));
+
+      for (const object of response.Contents ?? []) {
+        if (!object.Key) continue;
+        objects.push({
+          key: object.Key,
+          sizeBytes: object.Size ?? 0,
+          lastModified: object.LastModified ?? null,
+        });
+      }
+
+      continuationToken = response.IsTruncated
+        ? response.NextContinuationToken
+        : undefined;
+    } while (continuationToken);
+
+    return objects;
   }
 
   async deleteObject(storageKey: string, bucketName = env.B2_BUCKET_NAME): Promise<void> {
