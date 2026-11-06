@@ -99,6 +99,7 @@ describe("NotebookService", () => {
       repository as unknown as NotebookRepository,
       notifications as unknown as NotificationService,
       storageUsage as unknown as StorageUsageRepository,
+      { getForTeacher: vi.fn().mockResolvedValue({ storageLimitBytes: 1024 }) } as never,
     );
   });
 
