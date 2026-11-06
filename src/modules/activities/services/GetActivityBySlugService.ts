@@ -74,6 +74,7 @@ export interface GetActivityBySlugInput {
   slug: string;
   userId: string;
   isAdmin: boolean;
+  publicOnly?: boolean;
 }
 
 export interface ActivityVersionDetails {
@@ -127,8 +128,12 @@ export class GetActivityBySlugService {
       );
     }
 
+    if (input.publicOnly && (activity.visibility !== "PUBLIC" || activity.status !== ActivityStatus.PUBLISHED || !activity.currentPublishedVersionId)) {
+      throw new AppError("ACTIVITY_NOT_FOUND", 404, "Atividade pública não encontrada.");
+    }
+
     const isOwner = activity.teacherId === input.userId;
-    const canViewAllVersions = isOwner || input.isAdmin;
+    const canViewAllVersions = !input.publicOnly && (isOwner || input.isAdmin);
 
     let selectedVersion: ActivityVersion | undefined;
 
