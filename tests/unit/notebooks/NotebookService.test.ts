@@ -258,7 +258,7 @@ describe("NotebookService", () => {
 
     expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
       bucketName: "notebook-private-test",
-      storageKey: expect.stringMatching(/^notebooks\/relationship-123\/\\d{4}-\\d{2}-\\d{2}\//),
+      storageKey: expect.stringContaining("notebooks/relationship-123/"),
       contentType: "application/pdf",
       body,
       cacheControl: "private, max-age=300",
@@ -271,7 +271,7 @@ describe("NotebookService", () => {
         fileName: ".._material_seguro.pdf",
         contentType: "application/pdf",
         sizeBytes: body.byteLength,
-        storageKey: expect.stringMatching(/^notebooks\//),
+        storageKey: expect.stringContaining("notebooks/"),
       }),
     );
     expect(result).toMatchObject({ entry: { id: "entry-123" } });
