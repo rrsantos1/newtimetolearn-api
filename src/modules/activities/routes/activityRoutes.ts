@@ -46,6 +46,7 @@ import { generateActivityCoverController } from "../controllers/generateActivity
 import { createActivityCoverGenerationController } from "../controllers/createActivityCoverGenerationController";
 import { getActivityCoverGenerationController } from "../controllers/getActivityCoverGenerationController";
 import { cleanupOrphanMediaFilesController } from "../controllers/cleanupOrphanMediaFilesController";
+import { getMediaStorageUsageController } from "../controllers/getMediaStorageUsageController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.get("/public", listPublicActivitiesController);
@@ -60,6 +61,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.get<{ Params: { jobId: string } }>("/ai/activity-cover/:jobId", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, getActivityCoverGenerationController);
   app.patch("/:slug/cover", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, updateActivityCoverController);
   app.get("/media-library", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, listMediaAssetsController);
+  app.get("/media-library/storage-usage", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, getMediaStorageUsageController);
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
   app.get("/media-library/:id/preview", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, getQuarantinedMediaAssetController);
   app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
