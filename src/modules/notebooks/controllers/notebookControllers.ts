@@ -252,7 +252,7 @@ export async function getNotebookAttachmentController(
 ): Promise<FastifyReply> {
   try {
     const rangeHeader = request.headers.range;
-    if (rangeHeader && !/^bytes=(?:\\d+-\\d*|-\\d+)$/.test(rangeHeader)) {
+    if (rangeHeader && !/^bytes=(?:\d+-\d*|-\d+)$/.test(rangeHeader)) {
       return reply
         .status(416)
         .header("Accept-Ranges", "bytes")
