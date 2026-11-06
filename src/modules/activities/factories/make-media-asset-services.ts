@@ -1,4 +1,5 @@
 import { MediaAssetRepository } from "../repositories/implementations/MediaAssetRepository";
+import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import { CreateMediaAssetService, ListMediaAssetsService, ReviewMediaAssetService, ListPendingMediaAssetsService, GetQuarantinedMediaAssetService } from "../services/MediaAssetService";
 
 export function makeCreateMediaAssetService(): CreateMediaAssetService {
@@ -11,7 +12,7 @@ export function makeListPendingMediaAssetsService(): ListPendingMediaAssetsServi
   return new ListPendingMediaAssetsService(new MediaAssetRepository());
 }
 export function makeReviewMediaAssetService(): ReviewMediaAssetService {
-  return new ReviewMediaAssetService(new MediaAssetRepository());
+  return new ReviewMediaAssetService(new MediaAssetRepository(), new StorageUsageRepository());
 }
 
 export function makeGetQuarantinedMediaAssetService(): GetQuarantinedMediaAssetService {
