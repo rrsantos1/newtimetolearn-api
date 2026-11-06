@@ -29,5 +29,6 @@ export interface IStorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult>;
   uploadObject(input: UploadObjectInput): Promise<void>;
   downloadObject(storageKey: string, bucketName: string, range?: string): Promise<DownloadObjectResult>;
+  createDownloadUrl(storageKey: string, bucketName: string, expiresInSeconds?: number): Promise<string>;
   deleteObject(storageKey: string, bucketName?: string): Promise<void>;
 }
