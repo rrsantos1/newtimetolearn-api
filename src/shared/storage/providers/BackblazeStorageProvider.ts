@@ -163,15 +163,18 @@ export class BackblazeStorageProvider implements IStorageProvider {
     }
   }
 
-  async downloadObject(storageKey: string, bucketName: string): Promise<{ body: Buffer; contentType: string }> {
+  async downloadObject(storageKey: string, bucketName: string, range?: string): Promise<{ body: Buffer; contentType: string; contentLength: number; contentRange?: string }> {
     const response = await this.s3Client.send(new GetObjectCommand({
       Bucket: bucketName,
       Key: storageKey,
+      ...(range ? { Range: range } : {}),
     }));
     if (!response.Body) throw new Error("STORAGE_OBJECT_NOT_FOUND");
     return {
       body: Buffer.from(await response.Body.transformToByteArray()),
       contentType: response.ContentType ?? "application/octet-stream",
+      contentLength: response.ContentLength ?? 0,
+      ...(response.ContentRange ? { contentRange: response.ContentRange } : {}),
     };
   }
 
