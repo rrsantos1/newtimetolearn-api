@@ -6,7 +6,7 @@ const THUMBNAIL_WIDTH = 480;
 
 export interface OptimizedImage {
   imageBuffer: Buffer;
-  contentType: "image/webp" | "image/gif";
+  contentType: string;
   thumbnailBuffer: Buffer;
   isAnimated: boolean;
 }
