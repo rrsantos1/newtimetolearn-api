@@ -5,7 +5,9 @@ export interface ListActivitiesFilters {
   page: number;
   limit: number;
   teacherId?: string;
-  scope: "mine" | "explore" | "all";
+  scope: "mine" | "explore" | "all" | "public";
+  favoriteIds?: string[];
+  favoritesOnly?: boolean;
   search?: string;
   type?: Activity["type"];
   difficulty?: "EASY" | "MEDIUM" | "HARD";
@@ -18,6 +20,8 @@ export interface ListActivitiesResult {
 
 export interface IActivityRepository {
   findById(id: string): Promise<Activity | null>;
+
+  listFavoriteIds(userId: string): Promise<string[]>;
 
   findBySlug(slug: string): Promise<Activity | null>;
 
