@@ -3,7 +3,7 @@ import vision from "@google-cloud/vision";
 import { AuthError } from "../../auth/errors/AuthError";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
-import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import type { NotificationService } from "../../notifications/services/NotificationService";
 import { NotificationType } from "../../notifications/types/NotificationType";
 import type { NotebookEntryKind } from "../entities/NotebookEntry";
