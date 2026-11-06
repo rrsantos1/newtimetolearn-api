@@ -3,6 +3,7 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
+import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import { optimizeImage } from "./ImageOptimizationService";
 import type { IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
