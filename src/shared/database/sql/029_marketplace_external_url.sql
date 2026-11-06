@@ -41,6 +41,7 @@ ALTER TABLE marketplace_products
       AND original_content_type IS NULL
       AND original_size_bytes IS NULL
       AND cover_key IS NULL
+      AND preview_pages IS NOT NULL
       AND preview_pages = 0)
   );
 
