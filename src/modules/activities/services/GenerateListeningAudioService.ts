@@ -155,7 +155,7 @@ export class GenerateListeningAudioService {
       : 0;
     const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(input.teacherId);
     if (!input.isAdmin && currentUsage - reclaimableBytes + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
-      throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento de 1 GB. Remova arquivos da biblioteca ou anexos para liberar espaço.");
+      throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento da conta. Remova arquivos ou anexos para liberar espaço.");
     }
 
     const storage = makeStorageProvider();
