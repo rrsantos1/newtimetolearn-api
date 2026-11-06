@@ -1,11 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { IMediaAssetRepository } from "../../src/modules/activities/repositories/interfaces/IMediaAssetRepository";
 
-const { safeSearchDetection, uploadObject, deleteObject, repositoryCreate } = vi.hoisted(() => ({
+const { safeSearchDetection, uploadObject, deleteObject, repositoryCreate, optimizeImage } = vi.hoisted(() => ({
   safeSearchDetection: vi.fn(),
   uploadObject: vi.fn(),
   deleteObject: vi.fn(),
   repositoryCreate: vi.fn(),
+  optimizeImage: vi.fn(),
 }));
 
 vi.mock("@google-cloud/vision", () => ({
@@ -23,6 +24,10 @@ vi.mock("../../src/shared/config/env", () => ({
     B2_BUCKET_NAME: "media-test",
     B2_PUBLIC_BASE_URL: "https://cdn.example.test",
   },
+}));
+
+vi.mock("../../src/modules/activities/services/ImageOptimizationService", () => ({
+  optimizeImage,
 }));
 
 vi.mock("../../src/shared/storage/storageFactory", () => ({
@@ -55,6 +60,12 @@ describe("CreateMediaAssetService", () => {
     }]);
     uploadObject.mockResolvedValue(undefined);
     deleteObject.mockResolvedValue(undefined);
+    optimizeImage.mockResolvedValue({
+      imageBuffer: Buffer.from("optimized-webp"),
+      contentType: "image/webp",
+      thumbnailBuffer: Buffer.from("thumbnail-webp"),
+      isAnimated: false,
+    });
     repositoryCreate.mockImplementation(async (asset) => ({
       id: "asset-123",
       ...asset,
@@ -71,14 +82,25 @@ describe("CreateMediaAssetService", () => {
     expect(safeSearchDetection).toHaveBeenCalledOnce();
     expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
       bucketName: "media-test",
-      contentType: "image/png",
-      body: imageBuffer,
+      contentType: "image/webp",
+      body: Buffer.from("optimized-webp"),
       cacheControl: "public, max-age=31536000, immutable",
+    }));
+    expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
+      bucketName: "media-test",
+      storageKey: expect.stringMatching(/^media\/thumbnails\//),
+      contentType: "image/webp",
+      body: Buffer.from("thumbnail-webp"),
     }));
     expect(repositoryCreate).toHaveBeenCalledWith(expect.objectContaining({
       uploadedBy: input.uploadedBy,
       status: "APPROVED",
       fileName: "imagem.png",
+      contentType: "image/webp",
+      sizeBytes: Buffer.byteLength("optimized-webp"),
+      thumbnailStorageKey: expect.stringMatching(/^media\/thumbnails\//),
+      thumbnailPublicUrl: expect.stringMatching(/^https:\/\/cdn\.example\.test\/media\/thumbnails\//),
+      thumbnailSizeBytes: Buffer.byteLength("thumbnail-webp"),
       altText: "Ilustração de teste",
       publicUrl: expect.stringMatching(/^https:\/\/cdn\.example\.test\/media\//),
     }));
@@ -91,9 +113,11 @@ describe("CreateMediaAssetService", () => {
 
     const result = await service.execute(input);
 
+    expect(optimizeImage).not.toHaveBeenCalled();
     expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
       bucketName: "quarantine-test",
       storageKey: expect.stringMatching(/^quarantine\//),
+      cacheControl: "private, no-store",
     }));
     expect(repositoryCreate).toHaveBeenCalledWith(expect.objectContaining({
       status: "PENDING_REVIEW",
@@ -141,9 +165,13 @@ describe("CreateMediaAssetService", () => {
 
     await expect(service.execute(input)).rejects.toThrow("Falha no banco");
 
-    expect(uploadObject).toHaveBeenCalledOnce();
+    expect(uploadObject).toHaveBeenCalledTimes(2);
     expect(deleteObject).toHaveBeenCalledWith(
-      expect.stringMatching(/^media\//),
+      expect.stringMatching(/^media\/\d{4}-\d{2}-\d{2}\//),
+      "media-test",
+    );
+    expect(deleteObject).toHaveBeenCalledWith(
+      expect.stringMatching(/^media\/thumbnails\//),
       "media-test",
     );
   });
