@@ -41,7 +41,7 @@ export class MercadoPagoProvider {
     const response = await fetch(`${this.baseUrl}/preapproval/${encodeURIComponent(subscriptionId)}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${env.MERCADO_PAGO_ACCESS_TOKEN}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "cancelled" }),
+      body: JSON.stringify({ status: "canceled" }),
       signal: AbortSignal.timeout(15_000),
     });
     if (!response.ok) throw new Error("MERCADO_PAGO_CANCEL_SUBSCRIPTION_FAILED");
