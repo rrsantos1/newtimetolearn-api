@@ -17,6 +17,8 @@ export class CreateTeacherSubscriptionService {
     if (!plan) throw new Error("SUBSCRIPTION_PLAN_NOT_CONFIGURED");
 
     const localId = await this.repository.createPendingSubscription(teacherId, plan.id);
+    let remoteSubscriptionId: string | null = null;
+
     try {
       const remote = await this.provider.createSubscription({
         teacherId,
@@ -24,11 +26,17 @@ export class CreateTeacherSubscriptionService {
         amountCents: plan.amount_cents,
         idempotencyKey: randomUUID(),
       });
-      if (!remote.id || !remote.init_point) throw new Error("MERCADO_PAGO_INVALID_CHECKOUT_RESPONSE");
+      remoteSubscriptionId = remote.id || null;
+      if (!remoteSubscriptionId || !remote.init_point) {
+        throw new Error("MERCADO_PAGO_INVALID_CHECKOUT_RESPONSE");
+      }
 
-      await this.repository.setProviderSubscriptionId(localId, remote.id);
+      await this.repository.setProviderSubscriptionId(localId, remoteSubscriptionId);
       return { checkoutUrl: remote.init_point, subscriptionId: localId };
     } catch (error: unknown) {
+      if (remoteSubscriptionId) {
+        await this.provider.cancelSubscription(remoteSubscriptionId).catch(() => undefined);
+      }
       await this.repository.markSubscriptionCancelled(localId);
       throw error;
     }

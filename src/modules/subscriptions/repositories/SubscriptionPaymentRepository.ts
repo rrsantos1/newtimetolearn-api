@@ -17,10 +17,6 @@ export class SubscriptionPaymentRepository {
   async createPendingSubscription(teacherId: string, planId: string): Promise<string> {
     return AppDataSource.transaction(async (manager) => {
       await manager.query("SELECT id FROM public.users WHERE id = $1 FOR UPDATE", [teacherId]);
-      await manager.query(
-        "UPDATE public.teacher_subscriptions SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE teacher_id = $1 AND status = 'PENDING' AND created_at < CURRENT_TIMESTAMP - INTERVAL '30 minutes'",
-        [teacherId],
-      );
       const existing = await manager.query<Array<{ id: string }>>("SELECT id FROM public.teacher_subscriptions WHERE teacher_id = $1 AND status IN ('PENDING', 'ACTIVE') LIMIT 1", [teacherId]);
       if (existing.length > 0) throw new Error("SUBSCRIPTION_ALREADY_EXISTS");
       const rows = await manager.query<Array<{ id: string }>>("INSERT INTO public.teacher_subscriptions (teacher_id, plan_id, status, provider) VALUES ($1, $2, 'PENDING', 'MERCADO_PAGO') RETURNING id", [teacherId, planId]);
