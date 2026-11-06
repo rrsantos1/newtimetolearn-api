@@ -1,6 +1,6 @@
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
-import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 
 const ORPHAN_MIN_AGE_MS = 24 * 60 * 60 * 1000;
 const MAX_DELETIONS_PER_RUN = 500;
