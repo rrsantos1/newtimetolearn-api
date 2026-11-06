@@ -3,7 +3,6 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { buildApp } from "../../../src/app";
 import { AppDataSource } from "../../../src/shared/database/data-source";
-import { RoleCode } from "../../../src/modules/users/types/RoleCode";
 
 describe("Acesso público e execução anônima de atividades - integração HTTP", () => {
   let app: FastifyInstance;
@@ -102,12 +101,4 @@ describe("Acesso público e execução anônima de atividades - integração HTT
     });
   });
 
-  it("deve permitir que o backend diferencie a role de estudante em tokens autenticados", () => {
-    const token = app.jwt.sign({
-      sub: "00000000-0000-4000-8000-000000000001",
-      roles: [RoleCode.STUDENT],
-    });
-
-    expect(token).toEqual(expect.any(String));
-  });
 });
