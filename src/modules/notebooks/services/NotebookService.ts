@@ -235,8 +235,8 @@ export class NotebookService {
     const bucketName = env.B2_QUARANTINE_BUCKET_NAME;
     if (!bucketName) throw new Error("PRIVATE_STORAGE_NOT_CONFIGURED");
 
-    const downloadUrl = await makeStorageProvider().createDownloadUrl(storageKey, bucketName, 1800);
-    return { downloadUrl, expiresInSeconds: 1800 };
+    const downloadUrl = await makeStorageProvider().createDownloadUrl(storageKey, bucketName, 3600);
+    return { downloadUrl, expiresInSeconds: 3600 };
   }
 
   async getAttachment(relationshipId: string, entryId: string, userId: string, range?: string) {
