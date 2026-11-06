@@ -3,6 +3,7 @@ import { GetObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
+import { optimizeImage } from "./ImageOptimizationService";
 import type { IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -106,39 +107,65 @@ export class CreateMediaAssetService {
     const status = await moderateImage(input.imageBuffer);
     if (status === "REJECTED") throw new Error("IMAGE_REJECTED_BY_MODERATION");
 
-    const extension = extensionByType[input.contentType];
     const date = new Date().toISOString().slice(0, 10);
     const id = randomUUID();
     const storage = makeStorageProvider();
     const isPending = status === "PENDING_REVIEW";
-    const storageKey = isPending
-      ? `quarantine/${date}/${id}.${extension}`
-      : `media/${date}/${id}.${extension}`;
     const bucketName = isPending ? env.B2_QUARANTINE_BUCKET_NAME! : env.B2_BUCKET_NAME!;
-
-    await storage.uploadObject({
-      bucketName,
-      storageKey,
-      contentType: input.contentType,
-      body: input.imageBuffer,
-      ...(isPending
-        ? { cacheControl: "private, no-store" }
-        : { cacheControl: "public, max-age=31536000, immutable" }),
-    });
+    const optimized = isPending
+      ? null
+      : await optimizeImage(input.imageBuffer, input.contentType);
+    const finalContentType = optimized?.contentType ?? input.contentType;
+    const extension = extensionByType[finalContentType];
+    const storageKey = isPending
+      ? `quarantine/${date}/${id}.${extensionByType[input.contentType]}`
+      : `media/${date}/${id}.${extension}`;
+    const thumbnailStorageKey = optimized
+      ? `media/thumbnails/${date}/${id}.webp`
+      : null;
+    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "");
+    const uploadedKeys: string[] = [];
 
     try {
+      await storage.uploadObject({
+        bucketName,
+        storageKey,
+        contentType: finalContentType,
+        body: optimized?.imageBuffer ?? input.imageBuffer,
+        cacheControl: isPending
+          ? "private, no-store"
+          : "public, max-age=31536000, immutable",
+      });
+      uploadedKeys.push(storageKey);
+
+      if (optimized && thumbnailStorageKey) {
+        await storage.uploadObject({
+          bucketName,
+          storageKey: thumbnailStorageKey,
+          contentType: "image/webp",
+          body: optimized.thumbnailBuffer,
+          cacheControl: "public, max-age=31536000, immutable",
+        });
+        uploadedKeys.push(thumbnailStorageKey);
+      }
+
       return await this.repository.create({
         uploadedBy: input.uploadedBy,
         storageKey,
-        publicUrl: isPending ? "" : `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${storageKey}`,
+        publicUrl: isPending ? "" : `${publicBaseUrl}/${storageKey}`,
         fileName: input.fileName.trim().slice(0, 255),
-        contentType: input.contentType,
-        sizeBytes: input.sizeBytes,
+        contentType: finalContentType,
+        sizeBytes: optimized?.imageBuffer.byteLength ?? input.sizeBytes,
+        thumbnailStorageKey,
+        thumbnailPublicUrl: thumbnailStorageKey
+          ? `${publicBaseUrl}/${thumbnailStorageKey}`
+          : null,
+        thumbnailSizeBytes: optimized?.thumbnailBuffer.byteLength ?? null,
         altText: input.altText.trim().slice(0, 250),
         status,
       });
     } catch (error: unknown) {
-      await storage.deleteObject(storageKey, bucketName);
+      await Promise.all(uploadedKeys.map((key) => storage.deleteObject(key, bucketName)));
       throw error;
     }
   }
@@ -186,19 +213,45 @@ export class ReviewMediaAssetService {
     if (!response.Body) throw new Error("QUARANTINE_OBJECT_NOT_FOUND");
 
     const imageBuffer = Buffer.from(await response.Body.transformToByteArray());
-    const extension = extensionByType[asset.contentType];
-    const publicStorageKey = `media/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.${extension}`;
-    await storage.uploadObject({
-      bucketName: env.B2_BUCKET_NAME!,
-      storageKey: publicStorageKey,
-      contentType: asset.contentType,
-      body: imageBuffer,
-      cacheControl: "public, max-age=31536000, immutable",
-    });
+    const optimized = await optimizeImage(imageBuffer, asset.contentType);
+    const date = new Date().toISOString().slice(0, 10);
+    const idSuffix = randomUUID();
+    const extension = extensionByType[optimized.contentType];
+    const publicStorageKey = `media/${date}/${idSuffix}.${extension}`;
+    const thumbnailStorageKey = `media/thumbnails/${date}/${idSuffix}.webp`;
+    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "");
+    const uploadedKeys: string[] = [];
 
-    const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${publicStorageKey}`;
     try {
-      const updated = await this.repository.updateReview(id, "APPROVED", publicStorageKey, publicUrl);
+      await storage.uploadObject({
+        bucketName: env.B2_BUCKET_NAME!,
+        storageKey: publicStorageKey,
+        contentType: optimized.contentType,
+        body: optimized.imageBuffer,
+        cacheControl: "public, max-age=31536000, immutable",
+      });
+      uploadedKeys.push(publicStorageKey);
+
+      await storage.uploadObject({
+        bucketName: env.B2_BUCKET_NAME!,
+        storageKey: thumbnailStorageKey,
+        contentType: "image/webp",
+        body: optimized.thumbnailBuffer,
+        cacheControl: "public, max-age=31536000, immutable",
+      });
+      uploadedKeys.push(thumbnailStorageKey);
+
+      const updated = await this.repository.updateReview(
+        id,
+        "APPROVED",
+        publicStorageKey,
+        `${publicBaseUrl}/${publicStorageKey}`,
+        {
+          storageKey: thumbnailStorageKey,
+          publicUrl: `${publicBaseUrl}/${thumbnailStorageKey}`,
+          sizeBytes: optimized.thumbnailBuffer.byteLength,
+        },
+      );
       try {
         await storage.deleteObject(asset.storageKey, env.B2_QUARANTINE_BUCKET_NAME);
       } catch (error: unknown) {
@@ -206,7 +259,7 @@ export class ReviewMediaAssetService {
       }
       return updated;
     } catch (error: unknown) {
-      await storage.deleteObject(publicStorageKey, env.B2_BUCKET_NAME);
+      await Promise.all(uploadedKeys.map((key) => storage.deleteObject(key, env.B2_BUCKET_NAME)));
       throw error;
     }
   }
