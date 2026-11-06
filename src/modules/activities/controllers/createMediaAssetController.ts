@@ -54,7 +54,7 @@ export async function createMediaAssetController(request: FastifyRequest, reply:
     if (error instanceof Error && error.message === "IMAGE_REJECTED_BY_MODERATION") {
       return reply.status(422).send({ success: false, error: { code: error.message, message: "A imagem foi recusada pela validação automática de conteúdo." }, requestId: request.id });
     }
-    if (error instanceof Error && ["UNSUPPORTED_IMAGE_TYPE", "INVALID_IMAGE_SIZE"].includes(error.message)) {
+    if (error instanceof Error && ["UNSUPPORTED_IMAGE_TYPE", "INVALID_IMAGE_SIZE", "INVALID_IMAGE_CONTENT"].includes(error.message)) {
       return reply.status(400).send({ success: false, error: { code: error.message, message: "A imagem não atende aos requisitos permitidos." }, requestId: request.id });
     }
     request.log.error({ err: error }, "Falha ao moderar e armazenar imagem.");
