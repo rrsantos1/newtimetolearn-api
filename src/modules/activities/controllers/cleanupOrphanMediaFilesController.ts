@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { MediaAssetRepository } from "../repositories/implementations/MediaAssetRepository";
+import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import { CleanupOrphanMediaFilesService } from "../services/CleanupOrphanMediaFilesService";
 
 export async function cleanupOrphanMediaFilesController(
@@ -8,7 +8,7 @@ export async function cleanupOrphanMediaFilesController(
 ) {
   try {
     const result = await new CleanupOrphanMediaFilesService(
-      new MediaAssetRepository(),
+      new StorageUsageRepository(),
     ).execute();
     return reply.status(200).send({
       success: true,
