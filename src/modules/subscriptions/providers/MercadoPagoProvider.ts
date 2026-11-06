@@ -11,9 +11,7 @@ export class MercadoPagoProvider {
       method: "POST",
       headers: { Authorization: `Bearer ${env.MERCADO_PAGO_ACCESS_TOKEN}`, "Content-Type": "application/json", "X-Idempotency-Key": input.idempotencyKey },
       body: JSON.stringify({
-        reason: "Assinatura Professor TimeToLearn",
-        external_reference: input.teacherId,
-        payer_email: input.email,
+        reason: "Assinatura Professor TimeToLearn", external_reference: input.teacherId, payer_email: input.email,
         auto_recurring: { frequency: 1, frequency_type: "months", transaction_amount: input.amountCents / 100, currency_id: "BRL" },
         back_url: `${env.FRONTEND_URL}/teacher/subscription?checkout=return`,
       }),
@@ -37,6 +35,16 @@ export class MercadoPagoProvider {
     });
     if (!response.ok) throw new Error("MERCADO_PAGO_GET_AUTHORIZED_PAYMENT_FAILED");
     return response.json() as Promise<MercadoPagoAuthorizedPayment>;
+  }
+  async cancelSubscription(subscriptionId: string): Promise<void> {
+    this.ensureEnabled();
+    const response = await fetch(`${this.baseUrl}/preapproval/${encodeURIComponent(subscriptionId)}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${env.MERCADO_PAGO_ACCESS_TOKEN}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "cancelled" }),
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) throw new Error("MERCADO_PAGO_CANCEL_SUBSCRIPTION_FAILED");
   }
   validateWebhookSignature(signature: string | undefined, requestId: string | undefined, dataId: string | undefined): boolean {
     if (!signature || !env.MERCADO_PAGO_WEBHOOK_SECRET || !requestId || !dataId) return false;

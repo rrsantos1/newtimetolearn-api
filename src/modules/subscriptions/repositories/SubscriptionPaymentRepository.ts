@@ -1,5 +1,6 @@
 import { AppDataSource } from "../../../shared/database/data-source";
 export interface PaidSubscriptionPlan { id: string; amount_cents: number; }
+export interface CurrentProviderSubscription { id: string; provider_subscription_id: string | null; status: "PENDING" | "ACTIVE" | "PAST_DUE"; }
 export interface SubscriptionWebhookUpdate {
   eventId: string; eventType: string; payload: unknown; providerSubscriptionId: string;
   status: "PENDING" | "ACTIVE" | "PAST_DUE" | "CANCELLED" | "EXPIRED";
@@ -16,6 +17,10 @@ export class SubscriptionPaymentRepository {
   async createPendingSubscription(teacherId: string, planId: string): Promise<string> {
     return AppDataSource.transaction(async (manager) => {
       await manager.query("SELECT id FROM public.users WHERE id = $1 FOR UPDATE", [teacherId]);
+      await manager.query(
+        "UPDATE public.teacher_subscriptions SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE teacher_id = $1 AND status = 'PENDING' AND created_at < CURRENT_TIMESTAMP - INTERVAL '30 minutes'",
+        [teacherId],
+      );
       const existing = await manager.query<Array<{ id: string }>>("SELECT id FROM public.teacher_subscriptions WHERE teacher_id = $1 AND status IN ('PENDING', 'ACTIVE') LIMIT 1", [teacherId]);
       if (existing.length > 0) throw new Error("SUBSCRIPTION_ALREADY_EXISTS");
       const rows = await manager.query<Array<{ id: string }>>("INSERT INTO public.teacher_subscriptions (teacher_id, plan_id, status, provider) VALUES ($1, $2, 'PENDING', 'MERCADO_PAGO') RETURNING id", [teacherId, planId]);
@@ -29,6 +34,19 @@ export class SubscriptionPaymentRepository {
   }
   async markSubscriptionCancelled(localId: string): Promise<void> {
     await AppDataSource.query("UPDATE public.teacher_subscriptions SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status = 'PENDING'", [localId]);
+  }
+  async findCurrentSubscription(teacherId: string): Promise<CurrentProviderSubscription | null> {
+    const rows = await AppDataSource.query<CurrentProviderSubscription[]>(
+      "SELECT id, provider_subscription_id, status FROM public.teacher_subscriptions WHERE teacher_id = $1 AND status IN ('PENDING', 'ACTIVE', 'PAST_DUE') ORDER BY created_at DESC LIMIT 1",
+      [teacherId],
+    );
+    return rows[0] ?? null;
+  }
+  async markCurrentSubscriptionCancelled(localId: string): Promise<void> {
+    await AppDataSource.query(
+      "UPDATE public.teacher_subscriptions SET status = 'CANCELLED', cancelled_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND status IN ('PENDING', 'ACTIVE', 'PAST_DUE')",
+      [localId],
+    );
   }
   async applyWebhookUpdate(input: SubscriptionWebhookUpdate): Promise<boolean> {
     return AppDataSource.transaction(async (manager) => {
