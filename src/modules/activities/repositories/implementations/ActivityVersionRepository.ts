@@ -19,7 +19,7 @@ export class ActivityVersionRepository
     storageKey: string,
     excludingVersionId: string,
   ): Promise<boolean> {
-    const rows = await AppDataSource.query<Array<{ exists: boolean }>>(
+    const rows = await AppDataSource.query<Array<{ is_referenced: boolean }>>(
       `SELECT EXISTS (
         SELECT 1
         FROM public.activity_versions version
@@ -29,10 +29,10 @@ export class ActivityVersionRepository
         ) AS passage
         WHERE version.id <> $2
           AND passage->'audio'->>'storageKey' = $1
-      ) AS exists`,
+      ) AS is_referenced`,
       [storageKey, excludingVersionId],
     );
-    return rows[0]?.exists ?? false;
+    return rows[0]?.is_referenced ?? false;
   }
 
   async findByIdAndActivityIdForUpdate(
