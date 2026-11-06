@@ -18,7 +18,8 @@ export async function getPublicActivityBySlugController(request: FastifyRequest,
     const service = makeGetActivityBySlugService();
     const data = await service.execute({ slug: params.data.slug, userId: "", isAdmin: false, publicOnly: true });
     return reply.status(200).send({ success: true, data });
-  } catch {
+  } catch (error: unknown) {
+    request.log.warn({ err: error }, "Atividade pública indisponível.");
     return reply.status(404).send({
       success: false,
       error: { code: "ACTIVITY_NOT_FOUND", message: "Atividade pública não encontrada." },
