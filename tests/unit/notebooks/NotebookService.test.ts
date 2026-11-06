@@ -247,4 +247,76 @@ describe("NotebookService", () => {
 
     expect(repository.createNote).toHaveBeenCalledOnce();
   });
+  it("armazena anexo PDF no bucket privado e registra os metadados no caderno", async () => {
+    const body = Buffer.from("%PDF-1.7 conteúdo");
+
+    const result = await service.createAttachment(relationshipId, teacherId, {
+      fileName: "../material\\nseguro.pdf",
+      contentType: "application/pdf",
+      body,
+    });
+
+    expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
+      bucketName: "notebook-private-test",
+      storageKey: expect.stringMatching(/^notebooks\\/relationship-123\\/\\d{4}-\\d{2}-\\d{2}\\//),
+      contentType: "application/pdf",
+      body,
+      cacheControl: "private, max-age=300",
+    }));
+    expect(repository.createEntry).toHaveBeenCalledWith(
+      relationshipId,
+      teacherId,
+      "FILE",
+      expect.objectContaining({
+        fileName: ".._material_seguro.pdf",
+        contentType: "application/pdf",
+        sizeBytes: body.byteLength,
+        storageKey: expect.stringMatching(/^notebooks\\//),
+      }),
+    );
+    expect(result).toMatchObject({ entry: { id: "entry-123" } });
+  });
+
+  it("remove o anexo do armazenamento se não conseguir registrar a entrada", async () => {
+    repository.createEntry.mockRejectedValueOnce(new Error("Database unavailable"));
+    const body = Buffer.from("%PDF-1.7 conteúdo");
+
+    await expect(service.createAttachment(relationshipId, teacherId, {
+      fileName: "material.pdf",
+      contentType: "application/pdf",
+      body,
+    })).rejects.toThrow("Database unavailable");
+
+    expect(uploadObject).toHaveBeenCalledOnce();
+    expect(deleteObject).toHaveBeenCalledWith(
+      expect.stringMatching(/^notebooks\\/relationship-123\\//),
+      "notebook-private-test",
+    );
+  });
+
+  it("bloqueia upload de anexo por aluno, tipo não permitido e conteúdo inválido", async () => {
+    const body = Buffer.from("%PDF-1.7 conteúdo");
+
+    await expect(service.createAttachment(relationshipId, studentId, {
+      fileName: "material.pdf",
+      contentType: "application/pdf",
+      body,
+    })).rejects.toMatchObject({ code: "FORBIDDEN", statusCode: 403 });
+
+    await expect(service.createAttachment(relationshipId, teacherId, {
+      fileName: "script.exe",
+      contentType: "application/x-msdownload",
+      body,
+    })).rejects.toThrow("UNSUPPORTED_NOTEBOOK_ATTACHMENT_TYPE");
+
+    await expect(service.createAttachment(relationshipId, teacherId, {
+      fileName: "arquivo.pdf",
+      contentType: "application/pdf",
+      body: Buffer.from("não é PDF"),
+    })).rejects.toThrow("INVALID_NOTEBOOK_ATTACHMENT_CONTENT");
+
+    expect(uploadObject).not.toHaveBeenCalled();
+    expect(repository.createEntry).not.toHaveBeenCalled();
+  });
+
 });
