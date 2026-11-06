@@ -24,7 +24,7 @@ export interface ITeacherStudentRepository {
   findUserRoles(userId: string): Promise<string[]>;
   findActiveRelationshipForStudent(studentId: string): Promise<TeacherStudentRelationship | null>;
   findPendingRelationship(teacherId: string, studentId: string): Promise<TeacherStudentRelationship | null>;
-  createInvitation(teacherId: string, studentId: string): Promise<TeacherStudentRelationship>;
+  createInvitation(teacherId: string, studentId: string, studentLimit: number | null): Promise<TeacherStudentRelationship>;
   findTeacherRelationship(relationshipId: string, teacherId: string): Promise<TeacherStudentRelationship | null>;
   findStudentRelationship(relationshipId: string, studentId: string): Promise<TeacherStudentRelationship | null>;
   save(relationship: TeacherStudentRelationship): Promise<TeacherStudentRelationship>;
