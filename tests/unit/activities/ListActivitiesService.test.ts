@@ -60,6 +60,7 @@ describe("ListActivitiesService", () => {
 
     const activityRepository: IActivityRepository = {
       findById: vi.fn(),
+      listFavoriteIds: vi.fn().mockResolvedValue([]),
       findBySlug: vi.fn(),
       findBySlugWithVersions: vi.fn(),
       findByIdAndTeacherId: vi.fn(),
