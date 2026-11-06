@@ -9,12 +9,38 @@ import {env} from "../../shared/config/env";
 type JwtUser={sub?:string;email?:string};
 const service=()=>new MarketplaceService();
 export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
+ app.get("/seller/oauth/callback",async(req,reply)=>{
+  const query=z.object({code:z.string().min(1).max(2048).optional(),state:z.string().min(1).max(256).optional(),error:z.string().optional()}).safeParse(req.query);
+  const redirect=new URL("/teacher/marketplace",env.FRONTEND_URL);
+  if(!query.success||query.data.error||!query.data.code||!query.data.state){
+   redirect.searchParams.set("mp","error");
+   return reply.redirect(redirect.toString());
+  }
+  try{
+   await service().completeSellerConnection(query.data.code,query.data.state);
+   redirect.searchParams.set("mp","connected");
+  }catch(error:unknown){
+   req.log.error({err:error},"Mercado Pago seller OAuth callback failed");
+   redirect.searchParams.set("mp","error");
+  }
+  return reply.redirect(redirect.toString());
+ });
  app.get("/",async(req,reply)=>{const q=z.object({q:z.string().max(120).default(""),category:z.string().max(40).default(""),page:z.coerce.number().int().min(1).default(1),limit:z.coerce.number().int().min(1).max(48).default(12)}).safeParse(req.query);if(!q.success)return reply.code(400).send({success:false});return reply.send({success:true,data:await service().list(q.data.q,q.data.category,q.data.page,q.data.limit)});});
  app.get("/:slug",async(req,reply)=>{const p=z.object({slug:z.string().min(1).max(180)}).safeParse(req.params);if(!p.success)return reply.code(400).send({success:false});return reply.send({success:true,data:await service().detail(p.data.slug)});});
  app.get("/:slug/preview/:page",async(req,reply)=>{const p=z.object({slug:z.string(),page:z.coerce.number().int().min(1).max(120)}).safeParse(req.params);if(!p.success)return reply.code(400).send({success:false});const image=await service().preview(p.data.slug,p.data.page);return reply.header("Content-Type","image/jpeg").header("Cache-Control","public,max-age=300").header("X-Content-Type-Options","nosniff").send(image);});
  app.post("/checkout",async(req,reply)=>{const p=z.object({slug:z.string(),email:z.string().email()}).safeParse(req.body);if(!p.success)return reply.code(400).send({success:false});if(req.headers.authorization){try{await req.jwtVerify();}catch{return reply.code(401).send({success:false,error:{code:"INVALID_TOKEN"}});}}const user=req.user as JwtUser|undefined;const data=await service().checkout(p.data.slug,user?.sub??null,(user?.email??p.data.email).toLowerCase());return reply.code(201).send({success:true,data});});
  app.register(async auth=>{
   auth.addHook("preHandler",authMiddleware);
+  auth.get("/seller/status",{preHandler:authorizeRoles(RoleCode.TEACHER)},async(req,reply)=>{
+   const user=req.user as JwtUser|undefined;
+   if(!user?.sub)return reply.code(401).send({success:false});
+   return reply.send({success:true,data:await service().sellerConnectionStatus(user.sub)});
+  });
+  auth.post("/seller/connect",{preHandler:authorizeRoles(RoleCode.TEACHER)},async(req,reply)=>{
+   const user=req.user as JwtUser|undefined;
+   if(!user?.sub)return reply.code(401).send({success:false});
+   return reply.send({success:true,data:{authorizationUrl:await service().sellerConnectionUrl(user.sub)}});
+  });
   auth.post("/products",{bodyLimit:40*1024*1024,config:{rateLimit:{max:5,timeWindow:"1 hour"}},preHandler:authorizeRoles(RoleCode.TEACHER)},(req,reply)=>createTeacherProduct(req,reply));
   auth.post("/admin/products",{bodyLimit:40*1024*1024,config:{rateLimit:{max:10,timeWindow:"1 hour"}},preHandler:authorizeRoles(RoleCode.ADMIN)},(req,reply)=>createAdminProduct(req,reply));
   auth.get("/admin/pending",{preHandler:authorizeRoles(RoleCode.ADMIN)},async(_req,reply)=>reply.send({success:true,data:await service().pending()}));
@@ -43,11 +69,11 @@ function decodeHeader(value:string | string[] | undefined):string{const normaliz
 export async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
  app.post("/marketplace",async(req:FastifyRequest,reply:FastifyReply)=>{
   if(env.MERCADO_PAGO_ENABLED!=="true")return reply.code(503).send({success:false});
-  const p=z.object({id:z.union([z.string(),z.number()]).optional(),type:z.string().optional(),action:z.string().optional(),data:z.object({id:z.union([z.string(),z.number()])})}).passthrough().safeParse(req.body);
+  const p=z.object({id:z.union([z.string(),z.number()]).optional(),user_id:z.union([z.string(),z.number()]).optional(),type:z.string().optional(),action:z.string().optional(),data:z.object({id:z.union([z.string(),z.number()])})}).passthrough().safeParse(req.body);
   if(!p.success)return reply.code(400).send({success:false});
   const query=req.query as Record<string,string|undefined>;const id=String(p.data.data.id);const sig=req.headers["x-signature"];const rid=req.headers["x-request-id"];
   if(!new MercadoPagoProvider().validateWebhookSignature(typeof sig==="string"?sig:undefined,typeof rid==="string"?rid:undefined,query["data.id"]??id))return reply.code(401).send({success:false});
   if(p.data.type!=="payment"&&!String(p.data.action??"").startsWith("payment."))return reply.send({success:true,data:{ignored:true}});
-  try{const done=await service().payment(id,String(p.data.id??`${rid??"event"}:${id}`),p.data);return reply.send({success:true,data:{processed:done}});}catch(error:unknown){req.log.error({err:error},"Marketplace webhook error");return reply.code(500).send({success:false});}
+  try{const done=await service().payment(id,String(p.data.id??`${rid??"event"}:${id}`),p.data,p.data.user_id===undefined?undefined:String(p.data.user_id));return reply.send({success:true,data:{processed:done}});}catch(error:unknown){req.log.error({err:error},"Marketplace webhook error");return reply.code(500).send({success:false});}
  });
 }
