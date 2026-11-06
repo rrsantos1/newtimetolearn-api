@@ -29,6 +29,15 @@ export class MediaAsset extends BaseEntity {
   @Column({ name: "size_bytes", type: "integer" })
   sizeBytes!: number;
 
+  @Column({ name: "thumbnail_storage_key", type: "varchar", length: 500, nullable: true })
+  thumbnailStorageKey!: string | null;
+
+  @Column({ name: "thumbnail_public_url", type: "text", nullable: true })
+  thumbnailPublicUrl!: string | null;
+
+  @Column({ name: "thumbnail_size_bytes", type: "integer", nullable: true })
+  thumbnailSizeBytes!: number | null;
+
   @Column({ name: "alt_text", type: "varchar", length: 250, default: "" })
   altText!: string;
 
