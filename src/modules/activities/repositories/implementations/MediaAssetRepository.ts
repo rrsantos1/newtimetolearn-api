@@ -34,13 +34,22 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     return this.repository.findOneBy({ id });
   }
 
-  async updateReview(id: string, status: Exclude<MediaAssetStatus, "PENDING_REVIEW">, storageKey: string, publicUrl: string): Promise<MediaAsset> {
+  async updateReview(
+    id: string,
+    status: Exclude<MediaAssetStatus, "PENDING_REVIEW">,
+    storageKey: string,
+    publicUrl: string,
+    thumbnail?: { storageKey: string; publicUrl: string; sizeBytes: number } | null,
+  ): Promise<MediaAsset> {
     const asset = await this.repository.findOneBy({ id });
     if (!asset) throw new Error("MEDIA_ASSET_NOT_FOUND");
     if (asset.status !== "PENDING_REVIEW") throw new Error("MEDIA_ASSET_ALREADY_REVIEWED");
     asset.status = status;
     asset.storageKey = storageKey;
     asset.publicUrl = publicUrl;
+    asset.thumbnailStorageKey = thumbnail?.storageKey ?? null;
+    asset.thumbnailPublicUrl = thumbnail?.publicUrl ?? null;
+    asset.thumbnailSizeBytes = thumbnail?.sizeBytes ?? null;
     return this.repository.save(asset);
   }
 }
