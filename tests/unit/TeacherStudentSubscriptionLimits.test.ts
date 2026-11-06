@@ -13,7 +13,7 @@ describe("TeacherStudentService subscription limits", () => {
     id: "invitation-123",
     status: "PENDING",
     invitedAt: new Date("2026-11-01T12:00:00.000Z"),
-  } as TeacherStudentRelationship;
+  } as unknown as TeacherStudentRelationship;
 
   let repository: Record<string, ReturnType<typeof vi.fn>>;
   let notifications: { create: ReturnType<typeof vi.fn> };
