@@ -3,6 +3,7 @@ import type { EmailService } from "../../../shared/email/EmailService";
 import type { NotificationService } from "../../notifications/services/NotificationService";
 import { NotificationType } from "../../notifications/types/NotificationType";
 import type { ITeacherStudentRepository } from "../repositories/interfaces/ITeacherStudentRepository";
+import type { TeacherStudentRelationship } from "../entities/TeacherStudentRelationship";
 import { TeacherStudentStatus } from "../types/TeacherStudentStatus";
 import type { TeacherEntitlementsService } from "../../subscriptions/services/TeacherEntitlementsService";
 
@@ -44,7 +45,7 @@ export class TeacherStudentService {
     if (pending) throw new AuthError("INVITATION_ALREADY_PENDING", 409, "Já existe um convite pendente para este aluno.");
 
     const entitlements = await this.entitlementsService.getForTeacher(teacherId);
-    let invitation;
+    let invitation: TeacherStudentRelationship;
     try {
       invitation = await this.repository.createInvitation(
         teacherId,
