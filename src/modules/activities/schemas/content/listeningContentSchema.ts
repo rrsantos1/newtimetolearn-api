@@ -18,6 +18,7 @@ const listeningAudioSchema = z.object({
   voice: z.string().trim().max(100).nullable().optional().default(null),
   textHash: z.string().trim().max(128).nullable().optional().default(null),
   durationSeconds: z.number().nonnegative().nullable().optional().default(null),
+  sizeBytes: z.number().int().nonnegative().nullable().optional().default(null),
 });
 
 const listeningPassageSchema = z.object({
@@ -34,6 +35,7 @@ const listeningPassageSchema = z.object({
     voice: null,
     textHash: null,
     durationSeconds: null,
+    sizeBytes: null,
   }),
 }).superRefine((passage, context) => {
   const blankIds = new Set<string>();
