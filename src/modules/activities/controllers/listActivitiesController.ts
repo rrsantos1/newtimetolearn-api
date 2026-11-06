@@ -57,7 +57,7 @@ export async function listActivitiesController(
       ...parsedQuery.data,
       scope,
       teacherId: request.user.sub,
-      favoriteIds: favoriteIds.length > 0 || parsedQuery.data.favoritesOnly ? favoriteIds : undefined,
+      favoriteIds,
     });
 
     return reply.status(200).send({
