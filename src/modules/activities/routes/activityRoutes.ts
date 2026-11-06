@@ -18,6 +18,10 @@ import { editQuizActivityController } from "../controllers/editQuizActivityContr
 import { editCrosswordActivityController } from "../controllers/editCrosswordActivityController";
 import { getActivityBySlugController } from "../controllers/getActivityBySlugController";
 import { listActivitiesController } from "../controllers/listActivitiesController";
+import { setActivityFavoriteController } from "../controllers/setActivityFavoriteController";
+import { updateActivityVisibilityController } from "../controllers/updateActivityVisibilityController";
+import { listPublicActivitiesController } from "../controllers/listPublicActivitiesController";
+import { getPublicActivityBySlugController } from "../controllers/getPublicActivityBySlugController";
 import { updateWordSearchActivityController } from "../controllers/updateWordSearchActivityController";
 import { approveActivityVersionController } from "../controllers/approveActivityVersionController";
 import { reviewActivityVersionController } from "../controllers/reviewActivityVersionController";
@@ -43,6 +47,10 @@ import { createActivityCoverGenerationController } from "../controllers/createAc
 import { getActivityCoverGenerationController } from "../controllers/getActivityCoverGenerationController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
+  app.get("/public", listPublicActivitiesController);
+  app.get("/public/:slug", getPublicActivityBySlugController);
+  app.put("/:slug/favorite", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, setActivityFavoriteController);
+  app.patch("/:slug/visibility", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, updateActivityVisibilityController);
   app.post("/ai/suggestions", { config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateAiActivitySuggestionsController);
   app.post("/ai/listening-audio", { config: { rateLimit: { max: 5, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, generateListeningAudioPreviewController);
   app.post("/", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createWordSearchActivityController);
