@@ -5,6 +5,7 @@ import {authorizeRoles} from "../../shared/http/middlewares/authorizeRoles";
 import {RoleCode} from "../users/types/RoleCode";
 import {MercadoPagoProvider} from "../subscriptions/providers/MercadoPagoProvider";
 import {MarketplaceService} from "./MarketplaceService";
+import {env} from "../../shared/config/env";
 type JwtUser={sub?:string;email?:string};
 const service=()=>new MarketplaceService();
 export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
@@ -44,4 +45,3 @@ export async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void
   try{const done=await service().payment(id,String(p.data.id??`${rid??"event"}:${id}`),p.data);return reply.send({success:true,data:{processed:done}});}catch(error:unknown){req.log.error({err:error},"Marketplace webhook error");return reply.code(500).send({success:false});}
  });
 }
-import {env} from "../../shared/config/env";
