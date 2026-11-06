@@ -1,5 +1,6 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { makeCreateMediaAssetService } from "../factories/make-media-asset-services";
+import { RoleCode } from "../../users/types/RoleCode";
 
 const maxFileSizeBytes = 5 * 1024 * 1024;
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
@@ -45,12 +46,16 @@ export async function createMediaAssetController(request: FastifyRequest, reply:
       sizeBytes: imageBuffer.byteLength,
       altText,
       imageBuffer,
+      isAdmin: request.user.roles.includes(RoleCode.ADMIN),
     });
     if (asset.status === "PENDING_REVIEW") {
       return reply.status(202).send({ success: true, data: { ...asset, message: "A imagem foi guardada em quarentena privada e aguarda revisão administrativa." } });
     }
     return reply.status(201).send({ success: true, data: asset });
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "STORAGE_QUOTA_EXCEEDED") {
+      return reply.status(413).send({ success: false, error: { code: error.message, message: "Você atingiu o limite de 1 GB de armazenamento. Remova arquivos da biblioteca para liberar espaço." }, requestId: request.id });
+    }
     if (error instanceof Error && error.message === "IMAGE_REJECTED_BY_MODERATION") {
       return reply.status(422).send({ success: false, error: { code: error.message, message: "A imagem foi recusada pela validação automática de conteúdo." }, requestId: request.id });
     }
