@@ -32,6 +32,16 @@ export class MarketplaceRepository {
    return true;
   });
  }
+ async review(id:string,approved:boolean,note:string):Promise<boolean>{
+  const rows=await AppDataSource.query<Array<{id:string}>>(
+   "UPDATE marketplace_products SET status=$2,moderation_note=$3,published_at=CASE WHEN $2='PUBLISHED' THEN CURRENT_TIMESTAMP ELSE NULL END,updated_at=CURRENT_TIMESTAMP WHERE id=$1 AND status='PENDING_REVIEW' RETURNING id",
+   [id,approved?"PUBLISHED":"REJECTED",note],
+  );
+  return rows.length>0;
+ }
+ async pending():Promise<Array<{id:string;title:string;description:string;category:string;price_cents:number;author_name:string;created_at:string}>>{
+  return AppDataSource.query("SELECT p.id,p.title,p.description,p.category,p.price_cents,u.name AS author_name,p.created_at FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id WHERE p.status='PENDING_REVIEW' ORDER BY p.created_at ASC");
+ }
  async purchases(userId:string){return AppDataSource.query("SELECT o.id,p.title,p.original_file_name,o.paid_at FROM marketplace_orders o JOIN marketplace_products p ON p.id=o.product_id WHERE o.buyer_user_id=$1 AND o.status='APPROVED' ORDER BY o.paid_at DESC",[userId]);}
  async download(orderId:string,userId:string):Promise<{key:string}|null>{const rows=await AppDataSource.query<Array<{key:string}>>("SELECT p.original_key AS key FROM marketplace_orders o JOIN marketplace_products p ON p.id=o.product_id WHERE o.id=$1 AND o.buyer_user_id=$2 AND o.status='APPROVED' AND p.status='PUBLISHED'",[orderId,userId]);return rows[0]??null;}
 }
