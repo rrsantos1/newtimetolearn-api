@@ -57,8 +57,17 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
 }
 async function createTeacherProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"teacher");}
 async function createAdminProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"admin");}
-async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
- const user=req.user as JwtUser|undefined;if(!user?.sub||!Buffer.isBuffer(req.body))return reply.code(400).send({success:false});
+async async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
+ const user=req.user as JwtUser|undefined;
+ if(!user?.sub)return reply.code(401).send({success:false});
+ if(req.isJson()) {
+  const body=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),priceCents:z.number().int().min(100).max(1000000),externalUrl:z.string().url().max(2048)}).safeParse(req.body);
+  if(!body.success)return reply.code(400).send({success:false,error:{code:"INVALID_EXTERNAL_PRODUCT"}});
+  const input={seller:user.sub,title:body.data.title,description:body.data.description,category:body.data.category,price:body.data.priceCents,externalUrl:body.data.externalUrl};
+  const id=publisher==="admin"?await service().createAdminExternal(input):await service().createTeacherExternal(input);
+  return reply.code(201).send({success:true,data:{id,status:publisher==="admin"?"PUBLISHED":"PENDING_REVIEW"}});
+ }
+ if(!Buffer.isBuffer(req.body))return reply.code(400).send({success:false});
  const metadata=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),price:z.coerce.number().int().min(100).max(1000000),fileName:z.string().min(1).max(180)}).safeParse({title:decodeHeader(req.headers["x-marketplace-title"]),description:decodeHeader(req.headers["x-marketplace-description"]),category:decodeHeader(req.headers["x-marketplace-category"]),price:req.headers["x-marketplace-price-cents"],fileName:decodeHeader(req.headers["x-file-name"])});
  if(!metadata.success)return reply.code(400).send({success:false,error:{code:"INVALID_METADATA"}});
  const input={seller:user.sub,...metadata.data,type:String(req.headers["content-type"]??"").split(";")[0]??"",file:req.body};
