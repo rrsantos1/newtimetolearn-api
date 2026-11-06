@@ -17,7 +17,6 @@ const EXT: Record<string, string> = {
   "application/vnd.ms-powerpoint": "ppt",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation": "pptx",
 };
-const MARKETPLACE_COMMISSION_PERCENT = 20;
 
 interface CreateProductInput {
   seller: string;
@@ -150,9 +149,9 @@ export class MarketplaceService {
       ? await this.sellerAccounts.getAccessTokenForTeacher(product.seller_user_id)
       : env.MERCADO_PAGO_ACCESS_TOKEN;
     const marketplaceFeeCents = isTeacherSale
-      ? Math.round((amountCents * MARKETPLACE_COMMISSION_PERCENT) / 100)
+      ? Math.round((amountCents * env.MARKETPLACE_COMMISSION_PERCENT) / 100)
       : 0;
-    const orderId = await this.repo.createOrder(product.id, buyerId, email, amountCents);
+    const orderId = await this.repo.createOrder(product.id, buyerId, email, amountCents, marketplaceFeeCents);
 
     const preferenceBody: Record<string, unknown> = {
       items: [{
