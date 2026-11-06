@@ -81,7 +81,7 @@ export class ListActivitiesService {
       );
     }
 
-    if (input.scope !== "all" && !input.teacherId) {
+    if (input.scope !== "all" && input.scope !== "public" && !input.teacherId) {
       throw new AppError(
         "TEACHER_ID_REQUIRED",
         400,
