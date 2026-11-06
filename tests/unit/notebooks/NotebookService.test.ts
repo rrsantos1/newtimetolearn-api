@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NotebookRepository } from "../../../src/modules/notebooks/repositories/NotebookRepository";
 import type { NotificationService } from "../../../src/modules/notifications/services/NotificationService";
 import { NotebookService } from "../../../src/modules/notebooks/services/NotebookService";
+import type { StorageUsageRepository } from "../../../src/shared/storage/repositories/StorageUsageRepository";
 
 const { safeSearchDetection, uploadObject, deleteObject, downloadObject } = vi.hoisted(() => ({
   safeSearchDetection: vi.fn(),
@@ -51,6 +52,7 @@ describe("NotebookService", () => {
     createNote: ReturnType<typeof vi.fn>;
   };
   let notifications: { create: ReturnType<typeof vi.fn> };
+  let storageUsage: { getUsageByTeacherId: ReturnType<typeof vi.fn> };
   let service: NotebookService;
 
   const relationship = {
@@ -81,6 +83,9 @@ describe("NotebookService", () => {
     notifications = {
       create: vi.fn().mockResolvedValue({ id: "notification-123" }),
     };
+    storageUsage = {
+      getUsageByTeacherId: vi.fn().mockResolvedValue(0),
+    };
 
     uploadObject.mockResolvedValue(undefined);
     deleteObject.mockResolvedValue(undefined);
@@ -92,6 +97,7 @@ describe("NotebookService", () => {
     service = new NotebookService(
       repository as unknown as NotebookRepository,
       notifications as unknown as NotificationService,
+      storageUsage as unknown as StorageUsageRepository,
     );
   });
 
