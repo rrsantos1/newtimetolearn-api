@@ -30,6 +30,7 @@ ALTER TABLE marketplace_products
       AND original_content_type IS NOT NULL
       AND original_size_bytes IS NOT NULL
       AND cover_key IS NOT NULL
+      AND preview_pages IS NOT NULL
       AND preview_pages BETWEEN 1 AND 120
       AND external_url IS NULL)
     OR
