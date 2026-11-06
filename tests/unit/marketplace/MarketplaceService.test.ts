@@ -1,0 +1,51 @@
+import {beforeEach,describe,expect,it,vi} from "vitest";
+import {MarketplaceService} from "../../../src/modules/marketplace/MarketplaceService";
+import {MarketplaceRepository} from "../../../src/modules/marketplace/MarketplaceRepository";
+import {BackblazeStorageProvider} from "../../../src/shared/storage/providers/BackblazeStorageProvider";
+import {PresentationPreviewGenerator} from "../../../src/modules/marketplace/PresentationPreviewGenerator";
+import {TeacherEntitlementsRepository} from "../../../src/modules/subscriptions/repositories/TeacherEntitlementsRepository";
+
+const create=vi.fn();
+const uploadObject=vi.fn();
+const deleteObject=vi.fn();
+const generate=vi.fn();
+const findByTeacherId=vi.fn();
+
+const input={seller:"teacher-1",title:"Material de teste",description:"Descrição de material para teste.",category:"Apresentação",price:1990,fileName:"material.pdf",type:"application/pdf",file:Buffer.from("pdf-content")};
+
+function makeService():MarketplaceService{
+ const repository={create} as unknown as MarketplaceRepository;
+ const storage={uploadObject,deleteObject} as unknown as BackblazeStorageProvider;
+ const generator={generate} as unknown as PresentationPreviewGenerator;
+ const entitlements={findByTeacherId} as unknown as TeacherEntitlementsRepository;
+ return new MarketplaceService(repository,storage,generator,entitlements);
+}
+
+describe("MarketplaceService publishing permissions",()=>{
+ beforeEach(()=>{
+  vi.clearAllMocks();
+  create.mockResolvedValue("product-1");
+  uploadObject.mockResolvedValue(undefined);
+  deleteObject.mockResolvedValue(undefined);
+  generate.mockResolvedValue([{pageNumber:1,buffer:Buffer.from("preview")}]);
+ });
+
+ it("allows active subscribers to submit products for admin review",async()=>{
+  findByTeacherId.mockResolvedValue({planCode:"TEACHER_MONTHLY",subscriptionStatus:"ACTIVE"});
+  await expect(makeService().createTeacher(input)).resolves.toBe("product-1");
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PENDING_REVIEW",seller:"teacher-1"}));
+ });
+
+ it("blocks teachers without an active paid subscription",async()=>{
+  findByTeacherId.mockResolvedValue({planCode:"FREE",subscriptionStatus:"FREE"});
+  await expect(makeService().createTeacher(input)).rejects.toThrow("assinatura ativa");
+  expect(generate).not.toHaveBeenCalled();
+  expect(create).not.toHaveBeenCalled();
+ });
+
+ it("publishes admin products immediately without checking a teacher subscription",async()=>{
+  await expect(makeService().createAdmin(input)).resolves.toBe("product-1");
+  expect(findByTeacherId).not.toHaveBeenCalled();
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PUBLISHED",seller:"teacher-1"}));
+ });
+});
