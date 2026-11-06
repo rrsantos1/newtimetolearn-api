@@ -39,17 +39,6 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     return new StorageUsageRepository().getUsageByTeacherId(uploadedBy);
   }
 
-  async listStoredKeys(): Promise<string[]> {
-    const assets = await this.repository.createQueryBuilder("asset")
-      .select(["asset.storage_key", "asset.thumbnail_storage_key"])
-      .where("asset.status IN (:...statuses)", { statuses: ["APPROVED", "PENDING_REVIEW"] })
-      .getMany();
-    return assets.flatMap((asset) => [
-      asset.storageKey,
-      ...(asset.thumbnailStorageKey ? [asset.thumbnailStorageKey] : []),
-    ]);
-  }
-
   async updateReview(
     id: string,
     status: Exclude<MediaAssetStatus, "PENDING_REVIEW">,
