@@ -4,6 +4,7 @@ import type { NotificationService } from "../../notifications/services/Notificat
 import { NotificationType } from "../../notifications/types/NotificationType";
 import type { ITeacherStudentRepository } from "../repositories/interfaces/ITeacherStudentRepository";
 import { TeacherStudentStatus } from "../types/TeacherStudentStatus";
+import type { TeacherEntitlementsService } from "../../subscriptions/services/TeacherEntitlementsService";
 
 export class TeacherStudentService {
   constructor(
@@ -11,6 +12,7 @@ export class TeacherStudentService {
     private readonly notificationService: NotificationService,
     private readonly emailService: EmailService,
     private readonly onDeliveryError: (error: unknown, channel: "notification" | "email") => void,
+    private readonly entitlementsService: TeacherEntitlementsService,
   ) {}
 
   async searchStudentByEmail(email: string) {
@@ -41,7 +43,24 @@ export class TeacherStudentService {
     const pending = await this.repository.findPendingRelationship(teacherId, student.id);
     if (pending) throw new AuthError("INVITATION_ALREADY_PENDING", 409, "Já existe um convite pendente para este aluno.");
 
-    const invitation = await this.repository.createInvitation(teacherId, student.id);
+    const entitlements = await this.entitlementsService.getForTeacher(teacherId);
+    let invitation;
+    try {
+      invitation = await this.repository.createInvitation(
+        teacherId,
+        student.id,
+        entitlements.studentLimit,
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error && error.message === "STUDENT_LIMIT_REACHED") {
+        throw new AuthError(
+          "STUDENT_LIMIT_REACHED",
+          403,
+          "Você atingiu o limite de alunos do seu plano. Faça upgrade para vincular mais alunos.",
+        );
+      }
+      throw error;
+    }
 
     try {
       await this.notificationService.create({
