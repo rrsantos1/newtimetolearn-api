@@ -34,14 +34,15 @@ export class CleanupOrphanMediaFilesService {
     ]);
 
     const objects = [
-      ...publicObjects.flat(),
-      ...privateObjects.flat(),
-    ].map((object) => ({
-      ...object,
-      bucketName: publicObjects.flat().some((item) => item.key === object.key)
-        ? env.B2_BUCKET_NAME
-        : env.B2_QUARANTINE_BUCKET_NAME,
-    }));
+      ...publicObjects.flat().map((object) => ({
+        ...object,
+        bucketName: env.B2_BUCKET_NAME,
+      })),
+      ...privateObjects.flat().map((object) => ({
+        ...object,
+        bucketName: env.B2_QUARANTINE_BUCKET_NAME,
+      })),
+    ];
     const referencedKeys = new Set(
       referencedObjects.map((object) => `${object.bucketName}:${object.storageKey}`),
     );
