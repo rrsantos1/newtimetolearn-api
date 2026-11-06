@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { AppError } from "../../../shared/errors/AppError";
+import { RoleCode } from "../../users/types/RoleCode";
 import { makeGenerateListeningAudioService } from "../factories/make-generate-listening-audio-service";
 
 const paramsSchema = z.object({
@@ -37,6 +38,7 @@ export async function generateListeningAudioController(request: FastifyRequest, 
     const result = await makeGenerateListeningAudioService().execute({
       ...params.data,
       teacherId: request.user.sub,
+      isAdmin: request.user.roles.includes(RoleCode.ADMIN),
       ...body.data,
     });
     return reply.status(200).send({ success: true, data: result });
