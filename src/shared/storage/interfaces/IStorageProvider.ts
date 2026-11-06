@@ -16,6 +16,7 @@ export interface UploadObjectInput {
   storageKey: string;
   contentType: string;
   body: Buffer;
+  cacheControl?: string;
 }
 
 export interface DownloadObjectResult {
