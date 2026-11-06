@@ -226,12 +226,15 @@ export class ReviewMediaAssetService {
 
     const imageBuffer = Buffer.from(await response.Body.transformToByteArray());
     const optimized = await optimizeImage(imageBuffer, asset.contentType);
-    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(asset.uploadedBy);
-    const projectedUsage = currentUsage - asset.sizeBytes
-      + optimized.imageBuffer.byteLength
-      + optimized.thumbnailBuffer.byteLength;
-    if (projectedUsage > env.TEACHER_STORAGE_LIMIT_BYTES) {
-      throw new Error("STORAGE_QUOTA_EXCEEDED");
+    const isAdminUploader = await this.storageUsageRepository.isAdminUser(asset.uploadedBy);
+    if (!isAdminUploader) {
+      const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(asset.uploadedBy);
+      const projectedUsage = currentUsage - asset.sizeBytes
+        + optimized.imageBuffer.byteLength
+        + optimized.thumbnailBuffer.byteLength;
+      if (projectedUsage > env.TEACHER_STORAGE_LIMIT_BYTES) {
+        throw new Error("STORAGE_QUOTA_EXCEEDED");
+      }
     }
     const date = new Date().toISOString().slice(0, 10);
     const idSuffix = randomUUID();
