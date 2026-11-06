@@ -224,7 +224,7 @@ export class NotebookService {
     }
   }
 
-  async getAttachment(relationshipId: string, entryId: string, userId: string) {
+  async getAttachment(relationshipId: string, entryId: string, userId: string, range?: string) {
     await this.getAuthorizedRelationship(relationshipId, userId);
     const entry = await this.repository.findAttachmentEntry(relationshipId, entryId);
     if (!entry) throw new AuthError("NOTEBOOK_ATTACHMENT_NOT_FOUND", 404, "Anexo não encontrado.");
@@ -236,7 +236,7 @@ export class NotebookService {
     }
     const bucketName = env.B2_QUARANTINE_BUCKET_NAME;
     if (!bucketName) throw new Error("PRIVATE_STORAGE_NOT_CONFIGURED");
-    const file = await makeStorageProvider().downloadObject(storageKey, bucketName);
+    const file = await makeStorageProvider().downloadObject(storageKey, bucketName, range);
     return { ...file, fileName, contentType };
   }
 
