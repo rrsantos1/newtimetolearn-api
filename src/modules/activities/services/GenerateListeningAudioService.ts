@@ -2,7 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { AppDataSource } from "../../../shared/database/data-source";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
-import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import { AppError } from "../../../shared/errors/AppError";
 import { ActivityVersion } from "../entities/ActivityVersion";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
