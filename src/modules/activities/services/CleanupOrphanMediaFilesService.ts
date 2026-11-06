@@ -10,12 +10,13 @@ export interface CleanupOrphanMediaFilesResult {
   referenced: number;
   deleted: number;
   skippedRecent: number;
+  dryRun: boolean;
 }
 
 export class CleanupOrphanMediaFilesService {
   constructor(private readonly repository: StorageUsageRepository) {}
 
-  async execute(): Promise<CleanupOrphanMediaFilesResult> {
+  async execute(dryRun = true): Promise<CleanupOrphanMediaFilesResult> {
     if (!env.B2_BUCKET_NAME || !env.B2_QUARANTINE_BUCKET_NAME) {
       throw new Error("STORAGE_NOT_CONFIGURED");
     }
@@ -58,9 +59,11 @@ export class CleanupOrphanMediaFilesService {
     ).length;
 
     let deleted = 0;
-    for (const object of orphanCandidates) {
-      await storage.deleteObject(object.key, object.bucketName);
-      deleted += 1;
+    if (!dryRun) {
+      for (const object of orphanCandidates) {
+        await storage.deleteObject(object.key, object.bucketName);
+        deleted += 1;
+      }
     }
 
     return {
@@ -70,6 +73,7 @@ export class CleanupOrphanMediaFilesService {
       ).length,
       deleted,
       skippedRecent,
+      dryRun,
     };
   }
 }
