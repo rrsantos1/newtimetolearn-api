@@ -19,7 +19,7 @@ export class PresentationPreviewGenerator {
    await writeFile(input,file,{flag:"wx"});
    const pdf=extension==="pdf"?input:join(dir,"source.pdf");
    if(extension!=="pdf")await run("libreoffice",["--headless","--convert-to","pdf","--outdir",dir,input],{timeout:120000,maxBuffer:4*1024*1024});
-   await run("pdfinfo",[pdf],{timeout:15000,maxBuffer:1024*1024});
+   const pdfInfo=await run("pdfinfo",[pdf],{timeout:15000,maxBuffer:1024*1024});\n   const pageCount=Number(pdfInfo.stdout.match(/^Pages:\\s+(\\d+)$/m)?.[1]??0);\n   if(pageCount<1||pageCount>MAX_PAGES)throw new Error("MARKETPLACE_PAGE_COUNT_INVALID");
    await run("pdftoppm",["-jpeg","-jpegopt","quality=78","-r","105","-f","1","-l",String(MAX_PAGES),pdf,join(dir,"slide")],{timeout:120000,maxBuffer:4*1024*1024});
    const names=(await readdir(dir)).filter(name=>/^slide-\d+\.jpg$/.test(name)).sort((a,b)=>Number(a.match(/\d+/)?.[0]??0)-Number(b.match(/\d+/)?.[0]??0));
    if(names.length===0||names.length>MAX_PAGES)throw new Error("MARKETPLACE_PAGE_COUNT_INVALID");
