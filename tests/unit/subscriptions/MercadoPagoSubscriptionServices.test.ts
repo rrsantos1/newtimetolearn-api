@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CreateTeacherSubscriptionService } from "../../../src/modules/subscriptions/services/CreateTeacherSubscriptionService";
+import { CancelTeacherSubscriptionService } from "../../../src/modules/subscriptions/services/CancelTeacherSubscriptionService";
 import { ProcessMercadoPagoWebhookService } from "../../../src/modules/subscriptions/services/ProcessMercadoPagoWebhookService";
 import type { MercadoPagoProvider } from "../../../src/modules/subscriptions/providers/MercadoPagoProvider";
 import type { SubscriptionPaymentRepository } from "../../../src/modules/subscriptions/repositories/SubscriptionPaymentRepository";
@@ -16,6 +17,12 @@ describe("Mercado Pago subscription services", () => {
       createPendingSubscription: vi.fn().mockResolvedValue("local-subscription-1"),
       setProviderSubscriptionId: vi.fn().mockResolvedValue(undefined),
       markSubscriptionCancelled: vi.fn().mockResolvedValue(undefined),
+      findCurrentSubscription: vi.fn().mockResolvedValue({
+        id: "local-subscription-1",
+        provider_subscription_id: "mp-subscription-1",
+        status: "ACTIVE",
+      }),
+      markCurrentSubscriptionCancelled: vi.fn().mockResolvedValue(undefined),
       applyWebhookUpdate: vi.fn().mockResolvedValue(true),
     };
     provider = {
@@ -24,6 +31,7 @@ describe("Mercado Pago subscription services", () => {
         init_point: "https://checkout.mercadopago.com/test",
       }),
       getSubscription: vi.fn().mockResolvedValue({ id: "mp-subscription-1", status: "authorized" }),
+      cancelSubscription: vi.fn().mockResolvedValue(undefined),
       getAuthorizedPayment: vi.fn().mockResolvedValue({
         id: "invoice-1",
         preapproval_id: "mp-subscription-1",
