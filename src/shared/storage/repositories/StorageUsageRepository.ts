@@ -16,6 +16,19 @@ interface ReferencedStorageObjectRow {
 }
 
 export class StorageUsageRepository {
+  async isAdminUser(userId: string): Promise<boolean> {
+    const rows = await AppDataSource.query<Array<{ is_admin: boolean }>>(
+      `SELECT EXISTS (
+        SELECT 1
+        FROM public.user_roles user_role
+        INNER JOIN public.roles role ON role.id = user_role.role_id
+        WHERE user_role.user_id = $1 AND role.code = 'ADMIN'
+      ) AS is_admin`,
+      [userId],
+    );
+    return rows[0]?.is_admin ?? false;
+  }
+
   async getUsageByTeacherId(teacherId: string): Promise<number> {
     const rows = await AppDataSource.query<StorageUsageRow[]>(
       `WITH referenced_objects AS (
