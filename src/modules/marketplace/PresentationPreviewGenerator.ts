@@ -77,7 +77,7 @@ export class PresentationPreviewGenerator {
         timeout: 15000,
         maxBuffer: 1024 * 1024,
       });
-      const pageCount = Number(pdfInfo.stdout.match(/^Pages:\\s+(\\d+)$/m)?.[1] ?? 0);
+      const pageCount = Number(pdfInfo.stdout.match(/^Pages:\s+(\d+)$/m)?.[1] ?? 0);
 
       if (pageCount < 1 || pageCount > MAX_PAGES) {
         throw new Error("MARKETPLACE_PAGE_COUNT_INVALID");
@@ -90,8 +90,8 @@ export class PresentationPreviewGenerator {
       );
 
       const names = (await readdir(dir))
-        .filter((name) => /^slide-\\d+\\.jpg$/.test(name))
-        .sort((a, b) => Number(a.match(/\\d+/)?.[0] ?? 0) - Number(b.match(/\\d+/)?.[0] ?? 0));
+        .filter((name) => /^slide-\d+\.jpg$/.test(name))
+        .sort((a, b) => Number(a.match(/\d+/)?.[0] ?? 0) - Number(b.match(/\d+/)?.[0] ?? 0));
 
       if (names.length === 0 || names.length > MAX_PAGES) {
         throw new Error("MARKETPLACE_PAGE_COUNT_INVALID");
