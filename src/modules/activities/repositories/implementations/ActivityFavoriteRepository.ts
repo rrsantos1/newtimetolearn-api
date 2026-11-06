@@ -7,7 +7,7 @@ export class ActivityFavoriteRepository implements IActivityFavoriteRepository {
   private readonly repository = AppDataSource.getRepository(ActivityFavorite);
 
   async isFavorite(userId: string, activityId: string): Promise<boolean> {
-    return this.repository.exist({ where: { userId, activityId } });
+    return this.repository.exists({ where: { userId, activityId } });
   }
 
   async listActivityIdsByUser(userId: string): Promise<string[]> {
