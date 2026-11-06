@@ -150,6 +150,7 @@ export class GenerateListeningAudioService {
       storageKey,
       contentType: "audio/mpeg",
       body: audioBuffer,
+      cacheControl: "public, max-age=31536000, immutable",
     });
 
     const publicBaseUrl = env.B2_PUBLIC_BASE_URL.endsWith("/") ? env.B2_PUBLIC_BASE_URL.slice(0, -1) : env.B2_PUBLIC_BASE_URL;
