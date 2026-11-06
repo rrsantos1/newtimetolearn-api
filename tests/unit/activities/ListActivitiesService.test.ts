@@ -92,4 +92,108 @@ describe("ListActivitiesService", () => {
       ActivityVersionStatus.PUBLISHED,
     );
   });
+
+  it("deve listar somente atividades públicas com versão aprovada", async () => {
+    const publishedVersion = createVersion(
+      "version-public",
+      1,
+      "Atividade pública",
+      ActivityVersionStatus.PUBLISHED,
+    );
+    const activity = new Activity();
+    activity.id = "activity-public";
+    activity.teacherId = "another-teacher";
+    activity.slug = "atividade-publica";
+    activity.type = ActivityType.QUIZ;
+    activity.status = ActivityStatus.PUBLISHED;
+    activity.visibility = ActivityVisibility.PUBLIC;
+    activity.executionCount = 3;
+    activity.createdAt = new Date();
+    activity.currentPublishedVersionId = publishedVersion.id;
+    activity.deletedAt = null;
+    activity.versions = [publishedVersion];
+
+    const activityRepository: IActivityRepository = {
+      findById: vi.fn(),
+      listFavoriteIds: vi.fn().mockResolvedValue([]),
+      findBySlug: vi.fn(),
+      findBySlugWithVersions: vi.fn(),
+      findByIdAndTeacherId: vi.fn(),
+      findBySlugAndTeacherId: vi.fn(),
+      list: vi.fn().mockResolvedValue({ items: [activity], total: 1 }),
+      save: vi.fn(),
+      updatePublishedVersion: vi.fn(),
+    };
+
+    const service = new ListActivitiesService(activityRepository);
+    const result = await service.execute({
+      page: 1,
+      limit: 12,
+      scope: "public",
+    });
+
+    expect(activityRepository.list).toHaveBeenCalledWith({
+      page: 1,
+      limit: 12,
+      scope: "public",
+    });
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].latestVersion?.name).toBe("Atividade pública");
+    expect(result.items[0].isFavorite).toBe(false);
+  });
+
+  it("deve marcar como favorita uma atividade presente na lista de favoritos", async () => {
+    const publishedVersion = createVersion(
+      "version-public",
+      1,
+      "Atividade favorita",
+      ActivityVersionStatus.PUBLISHED,
+    );
+    const activity = new Activity();
+    activity.id = "activity-favorite";
+    activity.teacherId = "another-teacher";
+    activity.slug = "atividade-favorita";
+    activity.type = ActivityType.QUIZ;
+    activity.status = ActivityStatus.PUBLISHED;
+    activity.visibility = ActivityVisibility.AUTHENTICATED;
+    activity.executionCount = 0;
+    activity.createdAt = new Date();
+    activity.currentPublishedVersionId = publishedVersion.id;
+    activity.deletedAt = null;
+    activity.versions = [publishedVersion];
+
+    const activityRepository: IActivityRepository = {
+      findById: vi.fn(),
+      listFavoriteIds: vi.fn().mockResolvedValue(["activity-favorite"]),
+      findBySlug: vi.fn(),
+      findBySlugWithVersions: vi.fn(),
+      findByIdAndTeacherId: vi.fn(),
+      findBySlugAndTeacherId: vi.fn(),
+      list: vi.fn().mockResolvedValue({ items: [activity], total: 1 }),
+      save: vi.fn(),
+      updatePublishedVersion: vi.fn(),
+    };
+
+    const service = new ListActivitiesService(activityRepository);
+    const favoriteIds = await service.getFavoriteIds("teacher-123");
+    const result = await service.execute({
+      page: 1,
+      limit: 20,
+      teacherId: "teacher-123",
+      scope: "explore",
+      favoriteIds,
+      favoritesOnly: true,
+    });
+
+    expect(activityRepository.listFavoriteIds).toHaveBeenCalledWith("teacher-123");
+    expect(activityRepository.list).toHaveBeenCalledWith({
+      page: 1,
+      limit: 20,
+      teacherId: "teacher-123",
+      scope: "explore",
+      favoriteIds: ["activity-favorite"],
+      favoritesOnly: true,
+    });
+    expect(result.items[0].isFavorite).toBe(true);
+  });
 });
