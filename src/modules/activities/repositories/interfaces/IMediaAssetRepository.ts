@@ -8,6 +8,9 @@ export interface CreateMediaAssetInput {
   fileName: string;
   contentType: string;
   sizeBytes: number;
+  thumbnailStorageKey?: string | null;
+  thumbnailPublicUrl?: string | null;
+  thumbnailSizeBytes?: number | null;
   altText: string;
   status?: MediaAssetStatus;
 }
@@ -18,5 +21,11 @@ export interface IMediaAssetRepository {
   list(filters: ListMediaAssetsFilters): Promise<ListMediaAssetsResult>;
   listPending(filters: ListMediaAssetsFilters): Promise<ListMediaAssetsResult>;
   findById(id: string): Promise<MediaAsset | null>;
-  updateReview(id: string, status: Exclude<MediaAssetStatus, "PENDING_REVIEW">, storageKey: string, publicUrl: string): Promise<MediaAsset>;
+  updateReview(
+    id: string,
+    status: Exclude<MediaAssetStatus, "PENDING_REVIEW">,
+    storageKey: string,
+    publicUrl: string,
+    thumbnail?: { storageKey: string; publicUrl: string; sizeBytes: number } | null,
+  ): Promise<MediaAsset>;
 }
