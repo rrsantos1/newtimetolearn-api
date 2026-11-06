@@ -1,12 +1,13 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { makeListActivitiesService } from "../factories/make-list-activities-service";
+import { ActivityType } from "../types/ActivityType";
 
 const querySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(12),
   search: z.string().trim().max(120).optional(),
-  type: z.string().trim().max(50).optional(),
+  type: z.nativeEnum(ActivityType).optional(),
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).optional(),
 });
 
