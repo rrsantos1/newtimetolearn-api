@@ -89,6 +89,7 @@ export interface UploadMediaAssetInput {
   sizeBytes: number;
   altText: string;
   imageBuffer: Buffer;
+  isAdmin?: boolean;
 }
 
 export class CreateMediaAssetService {
@@ -115,6 +116,14 @@ export class CreateMediaAssetService {
     const optimized = isPending
       ? null
       : await optimizeImage(input.imageBuffer, input.contentType);
+    const accountedBytes = (optimized?.imageBuffer.byteLength ?? input.sizeBytes)
+      + (optimized?.thumbnailBuffer.byteLength ?? 0);
+    if (!input.isAdmin) {
+      const currentUsage = await this.repository.getStorageUsage(input.uploadedBy);
+      if (currentUsage + accountedBytes > env.TEACHER_STORAGE_LIMIT_BYTES) {
+        throw new Error("STORAGE_QUOTA_EXCEEDED");
+      }
+    }
     const finalContentType = optimized?.contentType ?? input.contentType;
     const extension = extensionByType[finalContentType];
     const storageKey = isPending
