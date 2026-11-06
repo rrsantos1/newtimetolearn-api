@@ -143,6 +143,7 @@ describe("GenerateListeningAudioService", () => {
       activityRepository,
       versionRepository,
       storageUsageRepository,
+      { getForTeacher: vi.fn().mockResolvedValue({ storageLimitBytes: 1024 }) } as never,
     );
   });
 
