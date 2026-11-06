@@ -51,16 +51,37 @@ export class TeacherStudentRepository implements ITeacherStudentRepository {
     });
   }
 
-  async createInvitation(teacherId: string, studentId: string): Promise<TeacherStudentRelationship> {
-    const invitation = this.relationshipRepository.create({
-      teacherId,
-      studentId,
-      status: TeacherStudentStatus.PENDING,
-      invitedAt: new Date(),
-      respondedAt: null,
-      endedAt: null,
+  async createInvitation(
+    teacherId: string,
+    studentId: string,
+    studentLimit: number | null,
+  ): Promise<TeacherStudentRelationship> {
+    return AppDataSource.transaction(async (manager) => {
+      await manager.query(
+        "SELECT id FROM public.users WHERE id = $1 FOR UPDATE",
+        [teacherId],
+      );
+
+      if (studentLimit !== null) {
+        const rows = await manager.query<Array<{ total: number | string }>>(
+          "SELECT COUNT(*)::int AS total FROM public.teacher_student_relationships WHERE teacher_id = $1 AND status IN ('ACTIVE', 'PENDING')",
+          [teacherId],
+        );
+        if (Number(rows[0]?.total ?? 0) >= studentLimit) {
+          throw new Error("STUDENT_LIMIT_REACHED");
+        }
+      }
+
+      const invitation = manager.getRepository(TeacherStudentRelationship).create({
+        teacherId,
+        studentId,
+        status: TeacherStudentStatus.PENDING,
+        invitedAt: new Date(),
+        respondedAt: null,
+        endedAt: null,
+      });
+      return manager.getRepository(TeacherStudentRelationship).save(invitation);
     });
-    return this.relationshipRepository.save(invitation);
   }
 
   async findTeacherRelationship(relationshipId: string, teacherId: string): Promise<TeacherStudentRelationship | null> {
