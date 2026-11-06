@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { TeacherEntitlementsService } from "../../subscriptions/services/TeacherEntitlementsService";
 import { optimizeImage } from "./ImageOptimizationService";
 import type { IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
@@ -94,7 +95,10 @@ export interface UploadMediaAssetInput {
 }
 
 export class CreateMediaAssetService {
-  constructor(private readonly repository: IMediaAssetRepository) {}
+  constructor(
+    private readonly repository: IMediaAssetRepository,
+    private readonly entitlementsService: TeacherEntitlementsService,
+  ) {}
 
   async execute(input: UploadMediaAssetInput) {
     if (!allowedContentTypes.has(input.contentType)) throw new Error("UNSUPPORTED_IMAGE_TYPE");
@@ -120,8 +124,11 @@ export class CreateMediaAssetService {
     const accountedBytes = (optimized?.imageBuffer.byteLength ?? input.sizeBytes)
       + (optimized?.thumbnailBuffer.byteLength ?? 0);
     if (!input.isAdmin) {
-      const currentUsage = await this.repository.getStorageUsage(input.uploadedBy);
-      if (currentUsage + accountedBytes > env.TEACHER_STORAGE_LIMIT_BYTES) {
+      const [currentUsage, entitlements] = await Promise.all([
+        this.repository.getStorageUsage(input.uploadedBy),
+        this.entitlementsService.getForTeacher(input.uploadedBy),
+      ]);
+      if (currentUsage + accountedBytes > entitlements.storageLimitBytes) {
         throw new Error("STORAGE_QUOTA_EXCEEDED");
       }
     }
@@ -197,6 +204,7 @@ export class ReviewMediaAssetService {
   constructor(
     private readonly repository: IMediaAssetRepository,
     private readonly storageUsageRepository: StorageUsageRepository,
+    private readonly entitlementsService: TeacherEntitlementsService,
   ) {}
 
   async execute(id: string, decision: "APPROVE" | "REJECT") {
@@ -230,10 +238,11 @@ export class ReviewMediaAssetService {
     const isAdminUploader = await this.storageUsageRepository.isAdminUser(asset.uploadedBy);
     if (!isAdminUploader) {
       const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(asset.uploadedBy);
+      const entitlements = await this.entitlementsService.getForTeacher(asset.uploadedBy);
       const projectedUsage = currentUsage - asset.sizeBytes
         + optimized.imageBuffer.byteLength
         + optimized.thumbnailBuffer.byteLength;
-      if (projectedUsage > env.TEACHER_STORAGE_LIMIT_BYTES) {
+      if (projectedUsage > entitlements.storageLimitBytes) {
         throw new Error("STORAGE_QUOTA_EXCEEDED");
       }
     }
