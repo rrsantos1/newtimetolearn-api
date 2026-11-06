@@ -32,7 +32,7 @@ describe("CleanupOrphanMediaFilesService", () => {
     vi.setSystemTime(now);
     vi.clearAllMocks();
 
-    repository = { listReferencedObjects: vi.fn().mockResolvedValue([]) };
+    repository = {\n      listReferencedObjects: vi.fn().mockResolvedValue([\n        { bucketName: "public-test", storageKey: "media/referenced.webp" },\n      ]),\n    };
     listObjects.mockImplementation(async (bucketName: string, prefix: string) => {
       if (bucketName === "public-test" && prefix === "media/") {
         return [
