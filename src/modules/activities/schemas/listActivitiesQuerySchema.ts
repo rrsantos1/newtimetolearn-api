@@ -6,7 +6,7 @@ export const listActivitiesQuerySchema = z.object({
   search: z.string().trim().max(120, "A busca deve ter no máximo 120 caracteres.").optional(),
   type: z.nativeEnum(ActivityType).optional(),
   difficulty: z.enum(["EASY", "MEDIUM", "HARD"]).optional(),
-  favoritesOnly: z.coerce.boolean().optional(),
+  favoritesOnly: z.enum(["true", "false"]).transform((value) => value === "true").optional(),
   page: z.coerce
     .number()
     .int("A página deve ser um número inteiro.")
