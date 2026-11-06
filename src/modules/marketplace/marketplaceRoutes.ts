@@ -20,6 +20,14 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
    if(!m.success)return reply.code(400).send({success:false,error:{code:"INVALID_METADATA"}});
    const id=await service().create({seller:user.sub,...m.data,type:String(req.headers["content-type"]??"").split(";")[0]??"",file:req.body});return reply.code(201).send({success:true,data:{id,status:"PENDING_REVIEW"}});
   });
+  auth.get("/admin/pending",{preHandler:authorizeRoles(RoleCode.ADMIN)},async(_req,reply)=>reply.send({success:true,data:await service().pending()}));
+  auth.patch("/admin/:productId/review",{preHandler:authorizeRoles(RoleCode.ADMIN)},async(req,reply)=>{
+   const params=z.object({productId:z.string().uuid()}).safeParse(req.params);
+   const body=z.object({approved:z.boolean(),note:z.string().trim().max(1000).default("")}).safeParse(req.body);
+   if(!params.success||!body.success)return reply.code(400).send({success:false,error:{code:"INVALID_REVIEW"}});
+   await service().review(params.data.productId,body.data.approved,body.data.note);
+   return reply.send({success:true});
+  });
   auth.get("/me/purchases",async(req,reply)=>{const user=req.user as JwtUser|undefined;if(!user?.sub)return reply.code(401).send({success:false});return reply.send({success:true,data:await service().purchases(user.sub)});});
   auth.get("/me/orders/:orderId/download",async(req,reply)=>{const p=z.object({orderId:z.string().uuid()}).safeParse(req.params);const user=req.user as JwtUser|undefined;if(!p.success||!user?.sub)return reply.code(400).send({success:false});return reply.send({success:true,data:{downloadUrl:await service().download(p.data.orderId,user.sub),expiresInSeconds:120}});});
  });
