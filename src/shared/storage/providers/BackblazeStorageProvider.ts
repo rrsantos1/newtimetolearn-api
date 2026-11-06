@@ -179,7 +179,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
   }
 
   async createDownloadUrl(storageKey: string, bucketName: string, expiresInSeconds = 300): Promise<string> {
-    if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 60 || expiresInSeconds > 900) {
+    if (!Number.isInteger(expiresInSeconds) || expiresInSeconds < 60 || expiresInSeconds > 1800) {
       throw new Error("INVALID_DOWNLOAD_URL_EXPIRATION");
     }
 
