@@ -1,4 +1,5 @@
 import { AppError } from "../../../shared/errors/AppError";
+import { AppDataSource } from "../../../shared/database/data-source";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
 import type { IActivityFavoriteRepository } from "../repositories/interfaces/IActivityFavoriteRepository";
 import type { Activity } from "../entities/Activity";
@@ -16,7 +17,6 @@ export class SetActivityFavoriteService {
     }
 
     if (input.favorite) {
-      const { AppDataSource } = await import("../../../shared/database/data-source");
       await AppDataSource.transaction((manager) =>
         this.favoriteRepository.add(manager, input.userId, activity.id),
       );
