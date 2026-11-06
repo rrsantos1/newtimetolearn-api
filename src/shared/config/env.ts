@@ -15,6 +15,7 @@ const envSchema = z.object({
   B2_APPLICATION_KEY_ID: z.string().min(1).optional(),
   B2_APPLICATION_KEY: z.string().min(1).optional(),
   B2_PUBLIC_BASE_URL: z.url().optional(),
+  TEACHER_STORAGE_LIMIT_BYTES: z.coerce.number().int().positive().default(1_073_741_824),
 
   EMAIL_FROM: z.string().min(1).default("onboarding@resend.dev"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
