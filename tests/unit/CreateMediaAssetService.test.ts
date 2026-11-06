@@ -75,7 +75,9 @@ describe("CreateMediaAssetService", () => {
       create: repositoryCreate,
       getStorageUsage: vi.fn().mockResolvedValue(0),
     } as unknown as IMediaAssetRepository;
-    service = new CreateMediaAssetService(repository);
+    service = new CreateMediaAssetService(repository, {
+      getForTeacher: vi.fn().mockResolvedValue({ storageLimitBytes: 1024 }),
+    } as never);
   });
 
   it("envia imagem aprovada para o armazenamento público", async () => {
