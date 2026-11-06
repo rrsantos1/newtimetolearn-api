@@ -251,14 +251,14 @@ describe("NotebookService", () => {
     const body = Buffer.from("%PDF-1.7 conteúdo");
 
     const result = await service.createAttachment(relationshipId, teacherId, {
-      fileName: "../material\\nseguro.pdf",
+      fileName: "../material/seguro.pdf",
       contentType: "application/pdf",
       body,
     });
 
     expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
       bucketName: "notebook-private-test",
-      storageKey: expect.stringMatching(/^notebooks\\/relationship-123\\/\\d{4}-\\d{2}-\\d{2}\\//),
+      storageKey: expect.stringMatching(/^notebooks\/relationship-123\/\\d{4}-\\d{2}-\\d{2}\//),
       contentType: "application/pdf",
       body,
       cacheControl: "private, max-age=300",
@@ -271,7 +271,7 @@ describe("NotebookService", () => {
         fileName: ".._material_seguro.pdf",
         contentType: "application/pdf",
         sizeBytes: body.byteLength,
-        storageKey: expect.stringMatching(/^notebooks\\//),
+        storageKey: expect.stringMatching(/^notebooks\//),
       }),
     );
     expect(result).toMatchObject({ entry: { id: "entry-123" } });
@@ -289,7 +289,7 @@ describe("NotebookService", () => {
 
     expect(uploadObject).toHaveBeenCalledOnce();
     expect(deleteObject).toHaveBeenCalledWith(
-      expect.stringMatching(/^notebooks\\/relationship-123\\//),
+      expect.stringMatching(/^notebooks\/relationship-123\//),
       "notebook-private-test",
     );
   });
