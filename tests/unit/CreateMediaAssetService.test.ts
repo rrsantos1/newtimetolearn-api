@@ -23,6 +23,7 @@ vi.mock("../../src/shared/config/env", () => ({
     B2_QUARANTINE_BUCKET_NAME: "quarantine-test",
     B2_BUCKET_NAME: "media-test",
     B2_PUBLIC_BASE_URL: "https://cdn.example.test",
+    TEACHER_STORAGE_LIMIT_BYTES: 1024,
   },
 }));
 
@@ -72,6 +73,7 @@ describe("CreateMediaAssetService", () => {
     }));
     repository = {
       create: repositoryCreate,
+      getStorageUsage: vi.fn().mockResolvedValue(0),
     } as unknown as IMediaAssetRepository;
     service = new CreateMediaAssetService(repository);
   });
