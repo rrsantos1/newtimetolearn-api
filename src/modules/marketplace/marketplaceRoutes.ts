@@ -15,12 +15,8 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
  app.post("/checkout",async(req,reply)=>{const p=z.object({slug:z.string(),email:z.string().email()}).safeParse(req.body);if(!p.success)return reply.code(400).send({success:false});if(req.headers.authorization){try{await req.jwtVerify();}catch{return reply.code(401).send({success:false,error:{code:"INVALID_TOKEN"}});}}const user=req.user as JwtUser|undefined;const data=await service().checkout(p.data.slug,user?.sub??null,(user?.email??p.data.email).toLowerCase());return reply.code(201).send({success:true,data});});
  app.register(async auth=>{
   auth.addHook("preHandler",authMiddleware);
-  auth.post("/products",{bodyLimit:40*1024*1024,preHandler:authorizeRoles(RoleCode.TEACHER,RoleCode.ADMIN)},async(req,reply)=>{
-   const user=req.user as JwtUser|undefined;if(!user?.sub||!Buffer.isBuffer(req.body))return reply.code(400).send({success:false});
-   const m=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),price:z.coerce.number().int().min(100).max(1000000),fileName:z.string().min(1).max(180)}).safeParse({title:decodeHeader(req.headers["x-marketplace-title"]),description:decodeHeader(req.headers["x-marketplace-description"]),category:decodeHeader(req.headers["x-marketplace-category"]),price:req.headers["x-marketplace-price-cents"],fileName:decodeHeader(req.headers["x-file-name"])});
-   if(!m.success)return reply.code(400).send({success:false,error:{code:"INVALID_METADATA"}});
-   const id=await service().create({seller:user.sub,...m.data,type:String(req.headers["content-type"]??"").split(";")[0]??"",file:req.body});return reply.code(201).send({success:true,data:{id,status:"PENDING_REVIEW"}});
-  });
+  auth.post("/products",{bodyLimit:40*1024*1024,config:{rateLimit:{max:5,timeWindow:"1 hour"}},preHandler:authorizeRoles(RoleCode.TEACHER)},(req,reply)=>createTeacherProduct(req,reply));
+  auth.post("/admin/products",{bodyLimit:40*1024*1024,config:{rateLimit:{max:10,timeWindow:"1 hour"}},preHandler:authorizeRoles(RoleCode.ADMIN)},(req,reply)=>createAdminProduct(req,reply));
   auth.get("/admin/pending",{preHandler:authorizeRoles(RoleCode.ADMIN)},async(_req,reply)=>reply.send({success:true,data:await service().pending()}));
   auth.patch("/admin/:productId/review",{preHandler:authorizeRoles(RoleCode.ADMIN)},async(req,reply)=>{
    const params=z.object({productId:z.string().uuid()}).safeParse(req.params);
@@ -32,6 +28,16 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
   auth.get("/me/purchases",async(req,reply)=>{const user=req.user as JwtUser|undefined;if(!user?.sub)return reply.code(401).send({success:false});return reply.send({success:true,data:await service().purchases(user.sub)});});
   auth.get("/me/orders/:orderId/download",async(req,reply)=>{const p=z.object({orderId:z.string().uuid()}).safeParse(req.params);const user=req.user as JwtUser|undefined;if(!p.success||!user?.sub)return reply.code(400).send({success:false});return reply.send({success:true,data:{downloadUrl:await service().download(p.data.orderId,user.sub),expiresInSeconds:120}});});
  });
+}
+async function createTeacherProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"teacher");}
+async function createAdminProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"admin");}
+async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
+ const user=req.user as JwtUser|undefined;if(!user?.sub||!Buffer.isBuffer(req.body))return reply.code(400).send({success:false});
+ const metadata=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),price:z.coerce.number().int().min(100).max(1000000),fileName:z.string().min(1).max(180)}).safeParse({title:decodeHeader(req.headers["x-marketplace-title"]),description:decodeHeader(req.headers["x-marketplace-description"]),category:decodeHeader(req.headers["x-marketplace-category"]),price:req.headers["x-marketplace-price-cents"],fileName:decodeHeader(req.headers["x-file-name"])});
+ if(!metadata.success)return reply.code(400).send({success:false,error:{code:"INVALID_METADATA"}});
+ const input={seller:user.sub,...metadata.data,type:String(req.headers["content-type"]??"").split(";")[0]??"",file:req.body};
+ const id=publisher==="admin"?await service().createAdmin(input):await service().createTeacher(input);
+ return reply.code(201).send({success:true,data:{id,status:publisher==="admin"?"PUBLISHED":"PENDING_REVIEW"}});
 }
 function decodeHeader(value:string | string[] | undefined):string{const normalized=Array.isArray(value)?value[0]??"":value??"";try{return decodeURIComponent(normalized);}catch{return "";}}
 export async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
