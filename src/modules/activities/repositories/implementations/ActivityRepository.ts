@@ -1,12 +1,19 @@
 import type { EntityManager } from "typeorm";
 import { AppDataSource } from "../../../../shared/database/data-source";
 import { Activity } from "../../entities/Activity";
+import { ActivityFavorite } from "../../entities/ActivityFavorite";
+import { ActivityVisibility } from "../../types/ActivityVisibility";
 import { IActivityRepository, ListActivitiesFilters, ListActivitiesResult } from "../interfaces/IActivityRepository";
 import { ActivityStatus } from "../../types/ActivityStatus";
 import { ActivityVersionStatus } from "../../types/ActivityVersionStatus";
 
 export class ActivityRepository implements IActivityRepository {
   private readonly repository = AppDataSource.getRepository(Activity);
+
+  async listFavoriteIds(userId: string): Promise<string[]> {
+    const favorites = await AppDataSource.getRepository(ActivityFavorite).find({ where: { userId }, select: { activityId: true } });
+    return favorites.map((favorite) => favorite.activityId);
+  }
 
   async findById(id: string): Promise<Activity | null> {
     return this.repository.findOne({ where: { id } });
@@ -62,7 +69,7 @@ export class ActivityRepository implements IActivityRepository {
   async list(
     filters: ListActivitiesFilters,
   ): Promise<ListActivitiesResult> {
-    const { page, limit, teacherId, scope, search, type, difficulty } = filters;
+    const { page, limit, teacherId, scope, search, type, difficulty, favoriteIds, favoritesOnly } = filters;
 
     const query = this.repository
       .createQueryBuilder("activity")
@@ -78,6 +85,13 @@ export class ActivityRepository implements IActivityRepository {
       }
 
       query.andWhere("activity.teacher_id = :teacherId", { teacherId });
+    }
+
+    if (scope === "public") {
+      query.andWhere("activity.status = :publicPublishedStatus", { publicPublishedStatus: ActivityStatus.PUBLISHED })
+        .andWhere("activity.visibility = :publicVisibility", { publicVisibility: ActivityVisibility.PUBLIC })
+        .andWhere("activity.current_published_version_id IS NOT NULL")
+        .andWhere(`EXISTS (SELECT 1 FROM activity_versions public_version WHERE public_version.id = activity.current_published_version_id AND public_version.activity_id = activity.id AND public_version.status = :publicVersionStatus)`, { publicVersionStatus: ActivityVersionStatus.PUBLISHED });
     }
 
     if (scope === "explore") {
@@ -105,13 +119,19 @@ export class ActivityRepository implements IActivityRepository {
         );
     }
 
+    if (favoritesOnly) {
+      const ids = favoriteIds ?? [];
+      if (ids.length === 0) query.andWhere("1 = 0");
+      else query.andWhere("activity.id IN (:...favoriteIds)", { favoriteIds: ids });
+    }
+
     if (type) {
       query.andWhere("activity.type = :activityType", { activityType: type });
     }
 
     if (difficulty) {
       const difficultyVersionCondition =
-        scope === "explore"
+        (scope === "explore" || scope === "public")
           ? "filter_version.id = activity.current_published_version_id"
           : "filter_version.activity_id = activity.id";
 
@@ -128,7 +148,7 @@ export class ActivityRepository implements IActivityRepository {
 
     if (search) {
       const searchVersionCondition =
-        scope === "explore"
+        (scope === "explore" || scope === "public")
           ? "search_version.id = activity.current_published_version_id"
           : "search_version.activity_id = activity.id";
 
