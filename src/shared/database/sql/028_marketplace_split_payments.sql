@@ -7,12 +7,13 @@ ALTER TABLE marketplace_products
 ALTER TABLE marketplace_orders
   ADD COLUMN IF NOT EXISTS marketplace_fee_cents INTEGER NOT NULL DEFAULT 0;
 
-DO $ BEGIN
+DO $$ 
+BEGIN
   ALTER TABLE marketplace_orders
     ADD CONSTRAINT chk_marketplace_order_fee
     CHECK (marketplace_fee_cents >= 0 AND marketplace_fee_cents <= amount_cents);
 EXCEPTION WHEN duplicate_object THEN NULL;
-END $;
+END $$;
 
 CREATE TABLE IF NOT EXISTS marketplace_seller_accounts (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
