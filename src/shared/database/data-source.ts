@@ -8,6 +8,7 @@ import { EmailVerificationToken } from "../../modules/users/entities/EmailVerifi
 import { PasswordResetToken } from "../../modules/auth/entities/PasswordResetToken";
 import { EmailChangeRequest } from "../../modules/auth/entities/EmailChangeRequest";
 import { Activity } from "../../modules/activities/entities/Activity";
+import { ActivityFavorite } from "../../modules/activities/entities/ActivityFavorite";
 import { ActivityVersion } from "../../modules/activities/entities/ActivityVersion";
 import { ActivityAttempt } from "../../modules/activities/entities/ActivityAttempt";
 import { ListeningAttempt } from "../../modules/activities/entities/ListeningAttempt";
@@ -36,6 +37,7 @@ export const AppDataSource = new DataSource({
     PasswordResetToken,
     EmailChangeRequest,
     Activity,
+    ActivityFavorite,
     ActivityVersion,
     ActivityAttempt,
     ListeningAttempt,
