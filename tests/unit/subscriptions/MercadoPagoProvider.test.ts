@@ -49,11 +49,28 @@ describe("MercadoPagoProvider webhook signature", () => {
     expect(provider.validateWebhookSignature("ts=1,v1=abc", "request-123", undefined)).toBe(false);
   });
 
-  it("rejects malformed or incomplete signature fields", () => {
+  it("rejects malformed, incomplete, or non-hex signature fields", () => {
     env.MERCADO_PAGO_WEBHOOK_SECRET = "webhook-test-secret";
+    const valid = createSignature("webhook-test-secret", "request-123", "123", "1793986501");
+    const hash = valid.split("v1=")[1];
 
     expect(provider.validateWebhookSignature("invalid-signature", "request-123", "123")).toBe(false);
     expect(provider.validateWebhookSignature("ts=1", "request-123", "123")).toBe(false);
     expect(provider.validateWebhookSignature("ts=1,v1=not-hex", "request-123", "123")).toBe(false);
+    expect(provider.validateWebhookSignature(
+      `ts=1793986501,v1=${hash}Z`,
+      "request-123",
+      "123",
+    )).toBe(false);
+  });
+
+  it("rejects a non-numeric timestamp", () => {
+    env.MERCADO_PAGO_WEBHOOK_SECRET = "webhook-test-secret";
+
+    expect(provider.validateWebhookSignature(
+      "ts=invalid,v1=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "request-123",
+      "123",
+    )).toBe(false);
   });
 });
