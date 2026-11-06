@@ -239,7 +239,8 @@ export async function getNotebookAttachmentUrlController(
       request.user.sub,
     );
     return reply
-      .header("Cache-Control", "private, no-store")
+      .header("Cache-Control", "private, max-age=300, must-revalidate")
+      .header("Vary", "Authorization")
       .send({ success: true, data });
   } catch (error: unknown) {
     return sendError(error, request, reply, "Falha ao gerar endereço temporário do anexo.");
