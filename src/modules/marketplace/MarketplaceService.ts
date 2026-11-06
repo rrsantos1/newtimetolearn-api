@@ -120,7 +120,7 @@ export class MarketplaceService {
     const match = url.hostname === "docs.google.com"
       ? url.pathname.match(/^\\/presentation\\/d\\/([a-zA-Z0-9_-]+)\\/(?:edit|copy|present)$/)
       : null;
-    if (url.protocol !== "https:" || !match?.[1] || url.username || url.password) {
+    if (url.protocol !== "https:" || (url.port !== "" && url.port !== "443") || !match?.[1] || url.username || url.password) {
       throw new AppError("UNSUPPORTED_EXTERNAL_URL", 400, "Por enquanto, aceitamos somente links do Google Slides.");
     }
     return `https://docs.google.com/presentation/d/${match[1]}/copy`;
