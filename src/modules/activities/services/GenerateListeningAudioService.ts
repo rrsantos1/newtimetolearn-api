@@ -25,6 +25,7 @@ export interface GenerateListeningAudioInput {
   voice: ListeningVoice;
   instructions?: string;
   audioBase64?: string;
+  isAdmin?: boolean;
 }
 
 export class GenerateListeningAudioService {
@@ -146,7 +147,7 @@ export class GenerateListeningAudioService {
     }
 
     const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(input.teacherId);
-    if (currentUsage + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+    if (!input.isAdmin && currentUsage + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
       throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento de 1 GB. Remova arquivos da biblioteca ou anexos para liberar espaço.");
     }
 
