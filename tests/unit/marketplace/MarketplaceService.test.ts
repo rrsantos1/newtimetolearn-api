@@ -57,7 +57,6 @@ describe("MarketplaceService publishing permissions",()=>{
    deliveryType:"EXTERNAL_URL",
    externalUrl:"https://docs.google.com/presentation/d/abc_123/copy",
    previewKeys:[],
-   previewKeys:[],
    status:"PUBLISHED",
    originalKey:null,
   }));
