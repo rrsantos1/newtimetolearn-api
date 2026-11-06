@@ -18,7 +18,7 @@ interface ReferencedStorageObjectRow {
 export class StorageUsageRepository {
   async getUsageByTeacherId(teacherId: string): Promise<number> {
     const rows = await AppDataSource.query<StorageUsageRow[]>(
-      \`WITH referenced_objects AS (
+      `WITH referenced_objects AS (
         SELECT
           CASE WHEN asset.status = 'PENDING_REVIEW' THEN $2 ELSE $3 END AS bucket_name,
           asset.storage_key,
@@ -64,7 +64,7 @@ export class StorageUsageRepository {
         GROUP BY bucket_name, storage_key
       )
       SELECT COALESCE(SUM(size_bytes), 0)::bigint AS total
-      FROM unique_objects\`,
+      FROM unique_objects`,
       [teacherId, env.B2_QUARANTINE_BUCKET_NAME, env.B2_BUCKET_NAME],
     );
     return Number(rows[0]?.total ?? 0);
@@ -72,7 +72,7 @@ export class StorageUsageRepository {
 
   async listReferencedObjects(): Promise<ReferencedStorageObject[]> {
     const rows = await AppDataSource.query<ReferencedStorageObjectRow[]>(
-      \`SELECT DISTINCT bucket_name AS "bucketName", storage_key AS "storageKey"
+      `SELECT DISTINCT bucket_name AS "bucketName", storage_key AS "storageKey"
       FROM (
         SELECT
           CASE WHEN status = 'PENDING_REVIEW' THEN $1 ELSE $2 END AS bucket_name,
@@ -97,7 +97,7 @@ export class StorageUsageRepository {
         ) AS passage
         WHERE NULLIF(passage->'audio'->>'storageKey', '') IS NOT NULL
       ) objects
-      WHERE storage_key IS NOT NULL\`,
+      WHERE storage_key IS NOT NULL`,
       [env.B2_QUARANTINE_BUCKET_NAME, env.B2_BUCKET_NAME],
     );
     return rows;
