@@ -54,7 +54,7 @@ export async function createMediaAssetController(request: FastifyRequest, reply:
     return reply.status(201).send({ success: true, data: asset });
   } catch (error: unknown) {
     if (error instanceof Error && error.message === "STORAGE_QUOTA_EXCEEDED") {
-      return reply.status(413).send({ success: false, error: { code: error.message, message: "Você atingiu o limite de 1 GB de armazenamento. Remova arquivos da biblioteca para liberar espaço." }, requestId: request.id });
+      return reply.status(413).send({ success: false, error: { code: error.message, message: "Você atingiu o limite de armazenamento da conta. Remova arquivos da biblioteca para liberar espaço." }, requestId: request.id });
     }
     if (error instanceof Error && error.message === "IMAGE_REJECTED_BY_MODERATION") {
       return reply.status(422).send({ success: false, error: { code: error.message, message: "A imagem foi recusada pela validação automática de conteúdo." }, requestId: request.id });
