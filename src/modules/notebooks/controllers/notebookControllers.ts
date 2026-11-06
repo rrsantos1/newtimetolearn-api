@@ -233,18 +233,38 @@ export async function getNotebookAttachmentController(
   reply: FastifyReply,
 ): Promise<FastifyReply> {
   try {
+    const rangeHeader = request.headers.range;
+    if (rangeHeader && !/^bytes=(?:\\d+-\\d*|-\\d+)$/.test(rangeHeader)) {
+      return reply
+        .status(416)
+        .header("Accept-Ranges", "bytes")
+        .header("Content-Range", "bytes */*")
+        .send();
+    }
+
     const file = await makeNotebookService().getAttachment(
       request.params.relationshipId,
       request.params.entryId,
       request.user.sub,
+      rangeHeader,
     );
     const encodedFileName = encodeURIComponent(file.fileName).replace(/[!'()*]/g, (character) => "%" + character.charCodeAt(0).toString(16).toUpperCase());
-    return reply
-      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedFileName}`)
-      .header("Cache-Control", "private, no-store")
+    const response = reply
+      .header("Content-Disposition", `inline; filename*=UTF-8''${encodedFileName}`)
+      .header("Cache-Control", "private, max-age=300, must-revalidate")
+      .header("Vary", "Authorization")
+      .header("Accept-Ranges", "bytes")
+      .header("Content-Length", String(file.contentLength))
       .header("X-Content-Type-Options", "nosniff")
-      .type(file.contentType)
-      .send(file.body);
+      .type(file.contentType);
+
+    if (file.contentRange) {
+      response
+        .status(206)
+        .header("Content-Range", file.contentRange);
+    }
+
+    return response.send(file.body);
   } catch (error: unknown) {
     return sendError(error, request, reply, "Falha ao baixar anexo do caderno.");
   }
