@@ -167,6 +167,7 @@ export class ActivityRepository implements IActivityRepository {
     }
 
     const [items, total] = await query
+      .distinct(true)
       .orderBy("activity.created_at", "DESC")
       .addOrderBy("version.version_number", "DESC")
       .skip((page - 1) * limit)
