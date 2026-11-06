@@ -9,10 +9,10 @@ export class MarketplaceRepository {
  }
  async detail(slug:string):Promise<ProductRow|null>{const rows=await AppDataSource.query<ProductRow[]>("SELECT p.id,p.slug,p.title,p.description,p.category,p.price_cents,p.currency,u.name AS author_name,p.preview_pages,p.cover_key FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id WHERE p.slug=$1 AND p.status='PUBLISHED'",[slug]);return rows[0]??null;}
  async previews(id:string):Promise<Array<{page_number:number;preview_key:string}>>{return AppDataSource.query("SELECT page_number,preview_key FROM marketplace_product_previews WHERE product_id=$1 ORDER BY page_number",[id]);}
- async create(input:{seller:string;title:string;description:string;category:string;price:number;originalKey:string;fileName:string;type:string;size:number;coverKey:string;previewKeys:string[]}):Promise<string>{
+ async create(input:{seller:string;title:string;description:string;category:string;price:number;originalKey:string;fileName:string;type:string;size:number;coverKey:string;previewKeys:string[];status:"PENDING_REVIEW"|"PUBLISHED"}):Promise<string>{
   return AppDataSource.transaction(async manager=>{
    const id=randomUUID();
-   await manager.query("INSERT INTO marketplace_products(id,seller_user_id,title,description,category,price_cents,original_key,original_file_name,original_content_type,original_size_bytes,cover_key,preview_pages,status) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,'PENDING_REVIEW')",[id,input.seller,input.title,input.description,input.category,input.price,input.originalKey,input.fileName,input.type,input.size,input.coverKey,input.previewKeys.length]);
+   await manager.query("INSERT INTO marketplace_products(id,seller_user_id,title,description,category,price_cents,original_key,original_file_name,original_content_type,original_size_bytes,cover_key,preview_pages,status,published_at) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,CASE WHEN $13='PUBLISHED' THEN CURRENT_TIMESTAMP ELSE NULL END)",[id,input.seller,input.title,input.description,input.category,input.price,input.originalKey,input.fileName,input.type,input.size,input.coverKey,input.previewKeys.length,input.status]);
    for(let i=0;i<input.previewKeys.length;i+=1)await manager.query("INSERT INTO marketplace_product_previews(product_id,page_number,preview_key) VALUES($1,$2,$3)",[id,i+1,input.previewKeys[i]]);
    return id;
   });
