@@ -9,6 +9,7 @@ import {
   createNotebookNoteController,
   createNotebookAttachmentController,
   getNotebookAttachmentController,
+  getNotebookAttachmentUrlController,
   getNotebookController,
   listNotebookNotesController,
   reorderNotebookEntriesController,
@@ -42,6 +43,11 @@ export async function notebookRoutes(app: FastifyInstance): Promise<void> {
     "/:relationshipId/attachments",
     { bodyLimit: 50 * 1024 * 1024, config: { rateLimit: { max: 10, timeWindow: "1 minute" } }, preHandler: authorizeRoles(RoleCode.TEACHER) },
     createNotebookAttachmentController,
+  );
+  app.get<{ Params: { relationshipId: string; entryId: string } }>(
+    "/:relationshipId/entries/:entryId/file-url",
+    { preHandler: authorizeRoles(...roles) },
+    getNotebookAttachmentUrlController,
   );
   app.get<{ Params: { relationshipId: string; entryId: string } }>(
     "/:relationshipId/entries/:entryId/file",
