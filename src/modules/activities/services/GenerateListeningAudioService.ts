@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { AppDataSource } from "../../../shared/database/data-source";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
+import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import { AppError } from "../../../shared/errors/AppError";
 import { ActivityVersion } from "../entities/ActivityVersion";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
@@ -30,6 +31,7 @@ export class GenerateListeningAudioService {
   constructor(
     private readonly activityRepository: IActivityRepository,
     private readonly activityVersionRepository: IActivityVersionRepository,
+    private readonly storageUsageRepository: StorageUsageRepository,
   ) {}
 
   async execute(input: GenerateListeningAudioInput) {
@@ -143,6 +145,11 @@ export class GenerateListeningAudioService {
       }
     }
 
+    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(input.teacherId);
+    if (currentUsage + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+      throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento de 1 GB. Remova arquivos da biblioteca ou anexos para liberar espaço.");
+    }
+
     const storage = makeStorageProvider();
     const storageKey = `audio/listening/${new Date().toISOString().slice(0, 10)}/${randomUUID()}.mp3`;
     await storage.uploadObject({
@@ -191,6 +198,7 @@ export class GenerateListeningAudioService {
             voice: input.voice,
             textHash,
             durationSeconds: null,
+            sizeBytes: audioBuffer.byteLength,
           },
         };
         currentVersion.content = { ...currentContent.data, passages };
