@@ -121,6 +121,9 @@ function sendError(error: unknown, request: FastifyRequest, reply: FastifyReply,
   if (error instanceof Error && error.message === "NOTEBOOK_DAY_NOT_FOUND") {
     return reply.status(404).send({ success: false, error: { code: error.message, message: "Dia do caderno não encontrado." }, requestId: request.id });
   }
+  if (error instanceof Error && error.message === "STORAGE_QUOTA_EXCEEDED") {
+    return reply.status(413).send({ success: false, error: { code: error.message, message: "Você atingiu o limite de 1 GB de armazenamento. Remova arquivos ou anexos para liberar espaço." }, requestId: request.id });
+  }
   if (error instanceof Error && error.message === "IMAGE_REJECTED_BY_MODERATION") {
     return reply.status(422).send({ success: false, error: { code: error.message, message: "A imagem não passou pela validação automática de conteúdo." }, requestId: request.id });
   }
