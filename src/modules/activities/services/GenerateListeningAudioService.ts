@@ -3,6 +3,7 @@ import { AppDataSource } from "../../../shared/database/data-source";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { TeacherEntitlementsService } from "../../subscriptions/services/TeacherEntitlementsService";
 import { AppError } from "../../../shared/errors/AppError";
 import { ActivityVersion } from "../entities/ActivityVersion";
 import type { IActivityRepository } from "../repositories/interfaces/IActivityRepository";
@@ -33,6 +34,7 @@ export class GenerateListeningAudioService {
     private readonly activityRepository: IActivityRepository,
     private readonly activityVersionRepository: IActivityVersionRepository,
     private readonly storageUsageRepository: StorageUsageRepository,
+    private readonly entitlementsService: TeacherEntitlementsService,
   ) {}
 
   async execute(input: GenerateListeningAudioInput) {
@@ -153,8 +155,11 @@ export class GenerateListeningAudioService {
     const reclaimableBytes = previousStorageKey && !previousAudioIsShared
       ? passage.audio.sizeBytes ?? 0
       : 0;
-    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(input.teacherId);
-    if (!input.isAdmin && currentUsage - reclaimableBytes + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+    const [currentUsage, entitlements] = await Promise.all([
+      this.storageUsageRepository.getUsageByTeacherId(input.teacherId),
+      input.isAdmin ? Promise.resolve(null) : this.entitlementsService.getForTeacher(input.teacherId),
+    ]);
+    if (entitlements && currentUsage - reclaimableBytes + audioBuffer.byteLength > entitlements.storageLimitBytes) {
       throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento da conta. Remova arquivos ou anexos para liberar espaço.");
     }
 
