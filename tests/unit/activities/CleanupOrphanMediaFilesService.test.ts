@@ -27,12 +27,20 @@ describe("CleanupOrphanMediaFilesService", () => {
   let repository: { listReferencedObjects: ReturnType<typeof vi.fn> };
   let service: CleanupOrphanMediaFilesService;
 
-  afterEach(() => {\n    vi.useRealTimers();\n  });\n\n  beforeEach(() => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
     vi.clearAllMocks();
 
-    repository = {\n      listReferencedObjects: vi.fn().mockResolvedValue([\n        { bucketName: "public-test", storageKey: "media/referenced.webp" },\n      ]),\n    };
+    repository = {
+      listReferencedObjects: vi.fn().mockResolvedValue([
+        { bucketName: "public-test", storageKey: "media/referenced.webp" },
+      ]),
+    };
     listObjects.mockImplementation(async (bucketName: string, prefix: string) => {
       if (bucketName === "public-test" && prefix === "media/") {
         return [
