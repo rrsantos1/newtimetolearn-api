@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { NotebookRepository } from "../../src/modules/notebooks/repositories/NotebookRepository";
-import type { NotificationService } from "../../src/modules/notifications/services/NotificationService";
-import { NotebookService } from "../../src/modules/notebooks/services/NotebookService";
+import type { NotebookRepository } from "../../../src/modules/notebooks/repositories/NotebookRepository";
+import type { NotificationService } from "../../../src/modules/notifications/services/NotificationService";
+import { NotebookService } from "../../../src/modules/notebooks/services/NotebookService";
 
 const { safeSearchDetection, uploadObject, deleteObject, downloadObject } = vi.hoisted(() => ({
   safeSearchDetection: vi.fn(),
@@ -18,14 +18,14 @@ vi.mock("@google-cloud/vision", () => ({
   },
 }));
 
-vi.mock("../../src/shared/config/env", () => ({
+vi.mock("../../../src/shared/config/env", () => ({
   env: {
     GOOGLE_APPLICATION_CREDENTIALS: "test-credentials.json",
     B2_QUARANTINE_BUCKET_NAME: "notebook-private-test",
   },
 }));
 
-vi.mock("../../src/shared/storage/storageFactory", () => ({
+vi.mock("../../../src/shared/storage/storageFactory", () => ({
   makeStorageProvider: () => ({
     uploadObject,
     deleteObject,
