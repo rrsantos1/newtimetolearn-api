@@ -21,6 +21,8 @@ export interface IMediaAssetRepository {
   list(filters: ListMediaAssetsFilters): Promise<ListMediaAssetsResult>;
   listPending(filters: ListMediaAssetsFilters): Promise<ListMediaAssetsResult>;
   findById(id: string): Promise<MediaAsset | null>;
+  getStorageUsage(uploadedBy: string): Promise<number>;
+  listStoredKeys(): Promise<string[]>;
   updateReview(
     id: string,
     status: Exclude<MediaAssetStatus, "PENDING_REVIEW">,
