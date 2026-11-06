@@ -78,12 +78,12 @@ describe("Mercado Pago subscription services", () => {
       provider as unknown as MercadoPagoProvider,
     );
 
-    await service.execute({
+    await expect(service.execute({
       eventId: "event-1",
       eventType: "subscription_preapproval",
       dataId: "mp-subscription-1",
       payload: { type: "subscription_preapproval" },
-    });
+    })).resolves.toBe(true);
 
     expect(provider.getSubscription).toHaveBeenCalledWith("mp-subscription-1");
     expect(repository.applyWebhookUpdate).toHaveBeenCalledWith(expect.objectContaining({
@@ -92,7 +92,47 @@ describe("Mercado Pago subscription services", () => {
     }));
   });
 
-  it("marks the subscription as past due when an authorized recurring payment is rejected", async () => {
+  it("does not expire a subscription when Mercado Pago returns an unknown status", async () => {
+    provider.getSubscription.mockResolvedValue({
+      id: "mp-subscription-1",
+      status: "new_provider_status",
+    });
+    const service = new ProcessMercadoPagoWebhookService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute({
+      eventId: "event-unknown",
+      eventType: "subscription_preapproval",
+      dataId: "mp-subscription-1",
+      payload: { type: "subscription_preapproval" },
+    })).resolves.toBe(false);
+
+    expect(repository.applyWebhookUpdate).not.toHaveBeenCalled();
+  });
+
+  it("does not update an authorized payment when its subscription status is unknown", async () => {
+    provider.getSubscription.mockResolvedValue({
+      id: "mp-subscription-1",
+      status: "new_provider_status",
+    });
+    const service = new ProcessMercadoPagoWebhookService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute({
+      eventId: "event-unknown-payment",
+      eventType: "subscription_authorized_payment",
+      dataId: "invoice-1",
+      payload: { type: "subscription_authorized_payment" },
+    })).resolves.toBe(false);
+
+    expect(repository.applyWebhookUpdate).not.toHaveBeenCalled();
+  });
+
+  it("marks a rejected recurring payment as past due", async () => {
     provider.getAuthorizedPayment.mockResolvedValue({
       id: "invoice-1",
       preapproval_id: "mp-subscription-1",
@@ -117,6 +157,35 @@ describe("Mercado Pago subscription services", () => {
       status: "PAST_DUE",
     }));
   });
+
+  it("keeps a cancelled subscription cancelled when its last payment was rejected", async () => {
+    provider.getAuthorizedPayment.mockResolvedValue({
+      id: "invoice-1",
+      preapproval_id: "mp-subscription-1",
+      summarized: "recycling",
+      payment: { status: "rejected" },
+    });
+    provider.getSubscription.mockResolvedValue({
+      id: "mp-subscription-1",
+      status: "cancelled",
+    });
+    const service = new ProcessMercadoPagoWebhookService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await service.execute({
+      eventId: "event-3",
+      eventType: "subscription_authorized_payment",
+      dataId: "invoice-1",
+      payload: { type: "subscription_authorized_payment" },
+    });
+
+    expect(repository.applyWebhookUpdate).toHaveBeenCalledWith(expect.objectContaining({
+      status: "CANCELLED",
+    }));
+  });
+
   it("cancels the provider subscription before updating the local record", async () => {
     const service = new CancelTeacherSubscriptionService(
       repository as unknown as SubscriptionPaymentRepository,
