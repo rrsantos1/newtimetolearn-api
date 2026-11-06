@@ -50,18 +50,19 @@ describe("Marketplace Split Payments", () => {
     env.MERCADO_PAGO_ENABLED = "true";
     env.MERCADO_PAGO_ACCESS_TOKEN = "platform-access-token";
     env.MARKETPLACE_COMMISSION_PERCENT = 20;
-    const fetchMock = vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue({
       ok: true,
       json: async () => ({ id: "preference-1", init_point: "https://checkout.example/test" }),
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    } as Response);
+    globalThis.fetch = fetchMock;
     const { service, createOrder, sellerAccounts } = makeService("TEACHER");
 
     await service.checkout("material", null, "buyer@example.com");
 
     expect(sellerAccounts.getAccessTokenForTeacher).toHaveBeenCalledWith("seller-1");
     expect(createOrder).toHaveBeenCalledWith("product-1", null, "buyer@example.com", 10000, 2000);
-    const request = fetchMock.mock.calls[0]?.[1] as RequestInit;
+    const request = fetchMock.mock.calls[0]?.[1];
+    if (!request) throw new Error("Checkout preference request was not captured.");
     const body = JSON.parse(String(request.body)) as { marketplace_fee?: number };
     expect(request.headers).toMatchObject({ Authorization: "Bearer seller-access-token" });
     expect(body.marketplace_fee).toBe(20);
@@ -71,11 +72,11 @@ describe("Marketplace Split Payments", () => {
     env.MERCADO_PAGO_ENABLED = "true";
     env.MERCADO_PAGO_ACCESS_TOKEN = "platform-access-token";
     env.MARKETPLACE_COMMISSION_PERCENT = 20;
-    const fetchMock = vi.fn().mockResolvedValue({
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue({
       ok: true,
       json: async () => ({ id: "preference-2", init_point: "https://checkout.example/admin" }),
-    });
-    globalThis.fetch = fetchMock as unknown as typeof fetch;
+    } as Response);
+    globalThis.fetch = fetchMock;
     const { service, createOrder, sellerAccounts } = makeService("ADMIN");
 
     await service.checkout("material", null, "buyer@example.com");
