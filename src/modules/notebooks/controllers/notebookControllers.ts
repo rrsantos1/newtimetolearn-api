@@ -228,6 +228,24 @@ export async function createNotebookAttachmentController(
   }
 }
 
+export async function getNotebookAttachmentUrlController(
+  request: FastifyRequest<{ Params: AttachmentParams }>,
+  reply: FastifyReply,
+): Promise<FastifyReply> {
+  try {
+    const data = await makeNotebookService().getAttachmentDownloadUrl(
+      request.params.relationshipId,
+      request.params.entryId,
+      request.user.sub,
+    );
+    return reply
+      .header("Cache-Control", "private, no-store")
+      .send({ success: true, data });
+  } catch (error: unknown) {
+    return sendError(error, request, reply, "Falha ao gerar endereço temporário do anexo.");
+  }
+}
+
 export async function getNotebookAttachmentController(
   request: FastifyRequest<{ Params: AttachmentParams }>,
   reply: FastifyReply,
