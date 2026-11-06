@@ -1,6 +1,11 @@
 import "dotenv/config";
 import { z } from "zod";
 
+const optionalEnvString = z.preprocess(
+  (value: unknown) => typeof value === "string" && value.trim() === "" ? undefined : value,
+  z.string().trim().min(1).optional(),
+);
+
 const envSchema = z.object({
   RESEND_API_KEY: z.string().min(1).optional(),
   OPENAI_API_KEY: z.string().min(1).optional(),
@@ -18,10 +23,16 @@ const envSchema = z.object({
   MERCADO_PAGO_ENABLED: z.enum(["true", "false"]).default("false"),
   MERCADO_PAGO_ACCESS_TOKEN: z.string().min(1).optional(),
   MERCADO_PAGO_WEBHOOK_SECRET: z.string().min(1).optional(),
-  MERCADO_PAGO_CLIENT_ID: z.string().min(1).optional(),
-  MERCADO_PAGO_CLIENT_SECRET: z.string().min(1).optional(),
-  MERCADO_PAGO_OAUTH_REDIRECT_URI: z.url().optional(),
-  MERCADO_PAGO_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i).optional(),
+  MERCADO_PAGO_CLIENT_ID: optionalEnvString,
+  MERCADO_PAGO_CLIENT_SECRET: optionalEnvString,
+  MERCADO_PAGO_OAUTH_REDIRECT_URI: z.preprocess(
+    (value: unknown) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.url().optional(),
+  ),
+  MERCADO_PAGO_TOKEN_ENCRYPTION_KEY: z.preprocess(
+    (value: unknown) => typeof value === "string" && value.trim() === "" ? undefined : value,
+    z.string().regex(/^[a-f0-9]{64}$/i).optional(),
+  ),
   MARKETPLACE_COMMISSION_PERCENT: z.coerce.number().int().min(0).max(100).default(20),
   EMAIL_FROM: z.string().min(1).default("onboarding@resend.dev"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
