@@ -4,6 +4,7 @@ import { AuthError } from "../../auth/errors/AuthError";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
+import type { TeacherEntitlementsService } from "../../subscriptions/services/TeacherEntitlementsService";
 import type { NotificationService } from "../../notifications/services/NotificationService";
 import { NotificationType } from "../../notifications/types/NotificationType";
 import type { NotebookEntryKind } from "../entities/NotebookEntry";
@@ -84,6 +85,7 @@ export class NotebookService {
     private readonly repository: NotebookRepository,
     private readonly notifications: NotificationService,
     private readonly storageUsageRepository: StorageUsageRepository,
+    private readonly entitlementsService: TeacherEntitlementsService,
   ) {}
 
   private async getAuthorizedRelationship(relationshipId: string, userId: string) {
@@ -193,8 +195,11 @@ export class NotebookService {
       await validateNotebookImage(input.body);
     }
 
-    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(relationship.teacherId);
-    if (currentUsage + input.body.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+    const [currentUsage, entitlements] = await Promise.all([
+      this.storageUsageRepository.getUsageByTeacherId(relationship.teacherId),
+      this.entitlementsService.getForTeacher(relationship.teacherId),
+    ]);
+    if (currentUsage + input.body.byteLength > entitlements.storageLimitBytes) {
       throw new Error("STORAGE_QUOTA_EXCEEDED");
     }
 
