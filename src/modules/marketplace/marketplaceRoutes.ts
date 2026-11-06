@@ -32,7 +32,8 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
   auth.get("/me/orders/:orderId/download",async(req,reply)=>{const p=z.object({orderId:z.string().uuid()}).safeParse(req.params);const user=req.user as JwtUser|undefined;if(!p.success||!user?.sub)return reply.code(400).send({success:false});return reply.send({success:true,data:{downloadUrl:await service().download(p.data.orderId,user.sub),expiresInSeconds:120}});});
  });
 }
-function decodeHeader(value:string|string|undefined):string{try{return decodeURIComponent(value??"");}catch{return "";}}\nexport async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
+function decodeHeader(value:string | undefined):string{try{return decodeURIComponent(value??"");}catch{return "";}}
+export async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
  app.post("/marketplace",async(req:FastifyRequest,reply:FastifyReply)=>{
   if(env.MERCADO_PAGO_ENABLED!=="true")return reply.code(503).send({success:false});
   const p=z.object({id:z.union([z.string(),z.number()]).optional(),type:z.string().optional(),action:z.string().optional(),data:z.object({id:z.union([z.string(),z.number()])})}).passthrough().safeParse(req.body);
