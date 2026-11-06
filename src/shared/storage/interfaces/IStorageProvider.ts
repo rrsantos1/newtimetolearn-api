@@ -21,11 +21,13 @@ export interface UploadObjectInput {
 export interface DownloadObjectResult {
   body: Buffer;
   contentType: string;
+  contentLength: number;
+  contentRange?: string;
 }
 
 export interface IStorageProvider {
   createUploadUrl(input: CreateUploadUrlInput): Promise<CreateUploadUrlResult>;
   uploadObject(input: UploadObjectInput): Promise<void>;
-  downloadObject(storageKey: string, bucketName: string): Promise<DownloadObjectResult>;
+  downloadObject(storageKey: string, bucketName: string, range?: string): Promise<DownloadObjectResult>;
   deleteObject(storageKey: string, bucketName?: string): Promise<void>;
 }
