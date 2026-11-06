@@ -15,7 +15,6 @@ import { marketplaceRoutes, marketplaceWebhookRoutes } from "./modules/marketpla
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const marketplaceContentTypes = [
-  "application/pdf",
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ];
