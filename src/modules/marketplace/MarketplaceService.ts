@@ -29,6 +29,15 @@ interface CreateProductInput {
   file: Buffer;
 }
 
+interface CreateExternalProductInput {
+  seller: string;
+  title: string;
+  description: string;
+  category: string;
+  price: number;
+  externalUrl: string;
+}
+
 export class MarketplaceService {
   constructor(
     private readonly repo = new MarketplaceRepository(),
@@ -62,6 +71,59 @@ export class MarketplaceService {
 
   async createAdmin(input: CreateProductInput): Promise<string> {
     return this.create(input, "PUBLISHED", "ADMIN");
+  }
+
+  async createTeacherExternal(input: CreateExternalProductInput): Promise<string> {
+    const entitlements = await this.entitlements.findByTeacherId(input.seller);
+    if (entitlements.subscriptionStatus !== "ACTIVE" || entitlements.planCode !== "TEACHER_MONTHLY") {
+      throw new AppError("ACTIVE_SUBSCRIPTION_REQUIRED", 403, "É necessário ter uma assinatura ativa para publicar materiais à venda.");
+    }
+    return this.createExternal(input, "PENDING_REVIEW", "TEACHER");
+  }
+
+  async createAdminExternal(input: CreateExternalProductInput): Promise<string> {
+    return this.createExternal(input, "PUBLISHED", "ADMIN");
+  }
+
+  private async createExternal(
+    input: CreateExternalProductInput,
+    status: "PENDING_REVIEW" | "PUBLISHED",
+    publisherType: "ADMIN" | "TEACHER",
+  ): Promise<string> {
+    const parsedUrl = this.normalizeGoogleSlidesCopyUrl(input.externalUrl);
+    return this.repo.create({
+      seller: input.seller,
+      publisherType,
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      price: input.price,
+      deliveryType: "EXTERNAL_URL",
+      externalUrl: parsedUrl,
+      originalKey: null,
+      fileName: null,
+      type: null,
+      size: null,
+      coverKey: null,
+      previewKeys: [],
+      status,
+    });
+  }
+
+  private normalizeGoogleSlidesCopyUrl(value: string): string {
+    let url: URL;
+    try {
+      url = new URL(value);
+    } catch {
+      throw new AppError("INVALID_EXTERNAL_URL", 400, "Informe um link válido do Google Slides.");
+    }
+    const match = url.hostname === "docs.google.com"
+      ? url.pathname.match(/^\\/presentation\\/d\\/([a-zA-Z0-9_-]+)\\/(?:edit|copy|present)$/)
+      : null;
+    if (url.protocol !== "https:" || !match?.[1] || url.username || url.password) {
+      throw new AppError("UNSUPPORTED_EXTERNAL_URL", 400, "Por enquanto, aceitamos somente links do Google Slides.");
+    }
+    return `https://docs.google.com/presentation/d/${match[1]}/copy`;
   }
 
   private async create(
@@ -112,6 +174,8 @@ export class MarketplaceService {
         description: input.description,
         category: input.category,
         price: input.price,
+        deliveryType: "FILE",
+        externalUrl: null,
         originalKey,
         fileName: input.fileName.replaceAll("\\", "_").replaceAll("/", "_").replace(/[\\r\\n\\0]/g, "_").slice(0, 180),
         type: input.type,
