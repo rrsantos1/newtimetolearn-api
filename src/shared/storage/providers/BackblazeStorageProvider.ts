@@ -188,14 +188,14 @@ export class BackblazeStorageProvider implements IStorageProvider {
       throw new Error("INVALID_STORAGE_ENDPOINT");
     }
 
-    const canonicalUri = \`/\${encodePath(bucketName)}/\${encodePath(storageKey)}\`;
+    const canonicalUri = "/" + encodePath(bucketName) + "/" + encodePath(storageKey);
     const now = new Date();
     const amzDate = now.toISOString().replace(/[:-]|\\.\\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
-    const credentialScope = \`\${dateStamp}/\${env.B2_REGION}/\${S3_SERVICE}/aws4_request\`;
+    const credentialScope = dateStamp + "/" + env.B2_REGION + "/" + S3_SERVICE + "/aws4_request";
     const queryParameters: Record<string, string> = {
       "X-Amz-Algorithm": AWS_ALGORITHM,
-      "X-Amz-Credential": \`\${env.B2_APPLICATION_KEY_ID}/\${credentialScope}\`,
+      "X-Amz-Credential": env.B2_APPLICATION_KEY_ID! + "/" + credentialScope,
       "X-Amz-Date": amzDate,
       "X-Amz-Expires": String(expiresInSeconds),
       "X-Amz-SignedHeaders": "host",
@@ -203,13 +203,13 @@ export class BackblazeStorageProvider implements IStorageProvider {
     const canonicalQueryString = Object.entries(queryParameters)
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
       .sort(([keyA, valueA], [keyB, valueB]) => keyA === keyB ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) : (keyA < keyB ? -1 : 1))
-      .map(([key, value]) => \`\${key}=\${value}\`).join("&");
-    const canonicalHeaders = \`host:\${endpoint.host}\\n\`;
+      .map(([key, value]) => key + "=" + value).join("&");
+    const canonicalHeaders = "host:" + endpoint.host + "\\n";
     const canonicalRequest = ["GET", canonicalUri, canonicalQueryString, canonicalHeaders, "host", "UNSIGNED-PAYLOAD"].join("\\n");
     const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\\n");
     const signature = hmac(getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!), stringToSign).toString("hex");
 
-    return \`\${endpoint.origin}\${canonicalUri}?\${canonicalQueryString}&X-Amz-Signature=\${signature}\`;
+    return endpoint.origin + canonicalUri + "?" + canonicalQueryString + "&X-Amz-Signature=" + signature;
   }
 
   async deleteObject(storageKey: string, bucketName = env.B2_BUCKET_NAME): Promise<void> {
