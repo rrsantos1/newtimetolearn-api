@@ -33,7 +33,7 @@ describe("MarketplaceService publishing permissions",()=>{
  it("allows active subscribers to submit products for admin review",async()=>{
   findByTeacherId.mockResolvedValue({planCode:"TEACHER_MONTHLY",subscriptionStatus:"ACTIVE"});
   await expect(makeService().createTeacher(input)).resolves.toBe("product-1");
-  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PENDING_REVIEW",seller:"teacher-1"}));
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PENDING_REVIEW",publisherType:"TEACHER",seller:"teacher-1"}));
  });
 
  it("blocks teachers without an active paid subscription",async()=>{
@@ -46,6 +46,6 @@ describe("MarketplaceService publishing permissions",()=>{
  it("publishes admin products immediately without checking a teacher subscription",async()=>{
   await expect(makeService().createAdmin(input)).resolves.toBe("product-1");
   expect(findByTeacherId).not.toHaveBeenCalled();
-  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PUBLISHED",seller:"teacher-1"}));
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PUBLISHED",publisherType:"ADMIN",seller:"teacher-1"}));
  });
 });
