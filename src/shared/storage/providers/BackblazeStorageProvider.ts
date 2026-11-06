@@ -14,6 +14,8 @@ const ALLOWED_OBJECT_TYPES = new Set([
   ...ALLOWED_IMAGE_TYPES,
   "audio/mpeg",
   "application/pdf",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
@@ -124,7 +126,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
 
   async uploadObject(input: UploadObjectInput): Promise<void> {
     if (!ALLOWED_OBJECT_TYPES.has(input.contentType)) throw new Error("UNSUPPORTED_STORAGE_CONTENT_TYPE");
-    const maxSizeBytes = input.contentType.startsWith("video/")
+    const maxSizeBytes = (input.contentType === "application/pdf" || input.contentType.startsWith("application/vnd.")) ? 40 * 1024 * 1024 : input.contentType.startsWith("video/")
       ? 50 * 1024 * 1024
       : input.contentType === "audio/mpeg" ? 20 * 1024 * 1024 : 20 * 1024 * 1024;
     if (input.body.byteLength <= 0 || input.body.byteLength > maxSizeBytes) throw new Error("INVALID_STORAGE_OBJECT_SIZE");

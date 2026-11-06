@@ -11,8 +11,14 @@ import { notificationRoutes } from "./modules/notifications/routes/notificationR
 import { notebookRoutes } from "./modules/notebooks/routes/notebookRoutes";
 import { subscriptionRoutes } from "./modules/subscriptions/routes/subscriptionRoutes";
 import { mercadoPagoWebhookRoutes } from "./modules/subscriptions/routes/mercadoPagoWebhookRoutes";
+import { marketplaceRoutes, marketplaceWebhookRoutes } from "./modules/marketplace/marketplaceRoutes";
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+const marketplaceContentTypes = [
+  "application/pdf",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+];
 const notebookAttachmentContentTypes = [
   "application/pdf",
   "application/msword",
@@ -31,6 +37,9 @@ export function buildApp(): FastifyInstance {
   app.addContentTypeParser(imageContentTypes, { parseAs: "buffer", bodyLimit: 5 * 1024 * 1024 }, (_request, body, done) => {
     done(null, body);
   });
+  app.addContentTypeParser(marketplaceContentTypes, { parseAs: "buffer", bodyLimit: 40 * 1024 * 1024 }, (_request, body, done) => {
+    done(null, body);
+  });
   app.addContentTypeParser(notebookAttachmentContentTypes, { parseAs: "buffer", bodyLimit: 50 * 1024 * 1024 }, (_request, body, done) => {
     done(null, body);
   });
@@ -44,7 +53,7 @@ export function buildApp(): FastifyInstance {
   app.register(cors, {
     origin: ["http://localhost:3000"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id", "x-marketplace-title", "x-marketplace-description", "x-marketplace-category", "x-marketplace-price-cents"],
     credentials: true,
   });
 
@@ -57,5 +66,7 @@ export function buildApp(): FastifyInstance {
   app.register(activityRoutes, { prefix: "/api/v1/activities" });
   app.register(subscriptionRoutes, { prefix: "/api/v1/subscriptions" });
   app.register(mercadoPagoWebhookRoutes, { prefix: "/api/v1/webhooks" });
+  app.register(marketplaceRoutes, { prefix: "/api/v1/marketplace" });
+  app.register(marketplaceWebhookRoutes, { prefix: "/api/v1/webhooks" });
   return app;
 }

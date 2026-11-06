@@ -28,6 +28,7 @@ const envSchema = z.object({
   DATABASE_URL: z.url().optional(),
   DB_SSL: z.enum(["true", "false"]).default("false"),
   FRONTEND_URL: z.url().default("http://localhost:3000"),
+  API_PUBLIC_URL: z.url().default("http://localhost:3000"),
   JWT_SECRET: z.string().min(32),
   JWT_EXPIRES_IN: z.enum(["15m", "30m", "1h", "2h", "4h", "1d"]).default("1h"),
 });
