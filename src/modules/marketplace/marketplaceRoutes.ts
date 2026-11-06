@@ -16,7 +16,7 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
   auth.addHook("preHandler",authMiddleware);
   auth.post("/products",{bodyLimit:40*1024*1024,preHandler:authorizeRoles(RoleCode.TEACHER,RoleCode.ADMIN)},async(req,reply)=>{
    const user=req.user as JwtUser|undefined;if(!user?.sub||!Buffer.isBuffer(req.body))return reply.code(400).send({success:false});
-   const m=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(5000),category:z.string().trim().min(2).max(40),price:z.coerce.number().int().min(100).max(1000000),fileName:z.string().min(1).max(180)}).safeParse({title:req.headers["x-marketplace-title"],description:req.headers["x-marketplace-description"],category:req.headers["x-marketplace-category"],price:req.headers["x-marketplace-price-cents"],fileName:req.headers["x-file-name"]});
+   const m=z.object({title:z.string().trim().min(3).max(180),description:z.string().trim().min(10).max(1000),category:z.string().trim().min(2).max(40),price:z.coerce.number().int().min(100).max(1000000),fileName:z.string().min(1).max(180)}).safeParse({title:decodeHeader(req.headers["x-marketplace-title"]),description:decodeHeader(req.headers["x-marketplace-description"]),category:decodeHeader(req.headers["x-marketplace-category"]),price:req.headers["x-marketplace-price-cents"],fileName:decodeHeader(req.headers["x-file-name"])});
    if(!m.success)return reply.code(400).send({success:false,error:{code:"INVALID_METADATA"}});
    const id=await service().create({seller:user.sub,...m.data,type:String(req.headers["content-type"]??"").split(";")[0]??"",file:req.body});return reply.code(201).send({success:true,data:{id,status:"PENDING_REVIEW"}});
   });
@@ -32,7 +32,7 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
   auth.get("/me/orders/:orderId/download",async(req,reply)=>{const p=z.object({orderId:z.string().uuid()}).safeParse(req.params);const user=req.user as JwtUser|undefined;if(!p.success||!user?.sub)return reply.code(400).send({success:false});return reply.send({success:true,data:{downloadUrl:await service().download(p.data.orderId,user.sub),expiresInSeconds:120}});});
  });
 }
-export async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
+function decodeHeader(value:string|string|undefined):string{try{return decodeURIComponent(value??"");}catch{return "";}}\nexport async function marketplaceWebhookRoutes(app:FastifyInstance):Promise<void>{
  app.post("/marketplace",async(req:FastifyRequest,reply:FastifyReply)=>{
   if(env.MERCADO_PAGO_ENABLED!=="true")return reply.code(503).send({success:false});
   const p=z.object({id:z.union([z.string(),z.number()]).optional(),type:z.string().optional(),action:z.string().optional(),data:z.object({id:z.union([z.string(),z.number()])})}).passthrough().safeParse(req.body);
