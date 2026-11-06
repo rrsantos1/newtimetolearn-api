@@ -123,7 +123,7 @@ export class CreateMediaAssetService {
     const thumbnailStorageKey = optimized
       ? `media/thumbnails/${date}/${id}.webp`
       : null;
-    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "");
+    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "");
     const uploadedKeys: string[] = [];
 
     try {
@@ -219,7 +219,7 @@ export class ReviewMediaAssetService {
     const extension = extensionByType[optimized.contentType];
     const publicStorageKey = `media/${date}/${idSuffix}.${extension}`;
     const thumbnailStorageKey = `media/thumbnails/${date}/${idSuffix}.webp`;
-    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\\/+$/, "");
+    const publicBaseUrl = env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "");
     const uploadedKeys: string[] = [];
 
     try {
