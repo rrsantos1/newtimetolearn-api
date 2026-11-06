@@ -202,6 +202,7 @@ export class NotebookService {
       storageKey,
       contentType: input.contentType,
       body: input.body,
+      cacheControl: "private, max-age=300",
     });
 
     try {
