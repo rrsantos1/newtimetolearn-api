@@ -4,13 +4,20 @@ import { AppError } from "../../shared/errors/AppError";
 import { BackblazeStorageProvider } from "../../shared/storage/providers/BackblazeStorageProvider";
 import { MarketplaceRepository } from "./MarketplaceRepository";
 import { PresentationPreviewGenerator } from "./PresentationPreviewGenerator";
+import { TeacherEntitlementsRepository } from "../subscriptions/repositories/TeacherEntitlementsRepository";
 const TYPES=new Set(["application/pdf","application/vnd.ms-powerpoint","application/vnd.openxmlformats-officedocument.presentationml.presentation"]);
 const EXT:Record<string,string>={"application/pdf":"pdf","application/vnd.ms-powerpoint":"ppt","application/vnd.openxmlformats-officedocument.presentationml.presentation":"pptx"};
 export class MarketplaceService {
- constructor(private readonly repo=new MarketplaceRepository(),private readonly storage=new BackblazeStorageProvider(),private readonly generator=new PresentationPreviewGenerator()){}
+ constructor(private readonly repo=new MarketplaceRepository(),private readonly storage=new BackblazeStorageProvider(),private readonly generator=new PresentationPreviewGenerator(),private readonly entitlements=new TeacherEntitlementsRepository()){}
  async list(q:string,category:string,page:number,limit:number){const data=await this.repo.list(q,category,page,limit);return {...data,page,limit,pages:Math.ceil(data.total/limit)};}
  async detail(slug:string){const product=await this.repo.detail(slug);if(!product)throw new AppError("PRODUCT_NOT_FOUND",404,"Material não encontrado.");return {...product,previews:Array.from({length:product.preview_pages},(_,i)=>({pageNumber:i+1}))};}
- async create(input:{seller:string;title:string;description:string;category:string;price:number;fileName:string;type:string;file:Buffer}):Promise<string>{
+ async createTeacher(input:{seller:string;title:string;description:string;category:string;price:number;fileName:string;type:string;file:Buffer}):Promise<string>{
+  const entitlements=await this.entitlements.findByTeacherId(input.seller);
+  if(entitlements.subscriptionStatus!=="ACTIVE"||entitlements.planCode!=="TEACHER_MONTHLY")throw new AppError("ACTIVE_SUBSCRIPTION_REQUIRED",403,"É necessário ter uma assinatura ativa para publicar materiais à venda.");
+  return this.create(input,"PENDING_REVIEW");
+ }
+ async createAdmin(input:{seller:string;title:string;description:string;category:string;price:number;fileName:string;type:string;file:Buffer}):Promise<string>{return this.create(input,"PUBLISHED");}
+ private async create(input:{seller:string;title:string;description:string;category:string;price:number;fileName:string;type:string;file:Buffer},status:"PENDING_REVIEW"|"PUBLISHED"):Promise<string>{
   if(!TYPES.has(input.type))throw new AppError("INVALID_FILE_TYPE",400,"Envie PDF, PPT ou PPTX.");
   if(input.file.length>40*1024*1024||input.file.length===0)throw new AppError("INVALID_FILE_SIZE",400,"O arquivo deve ter até 40 MB.");
   const pages=await this.generator.generate(input.file,input.type);
@@ -19,7 +26,7 @@ export class MarketplaceService {
   const tasks:Promise<void>[]=[this.storage.uploadObject({bucketName:env.B2_QUARANTINE_BUCKET_NAME!,storageKey:originalKey,contentType:input.type,body:input.file,cacheControl:"private, no-store"}),this.storage.uploadObject({bucketName:env.B2_QUARANTINE_BUCKET_NAME!,storageKey:coverKey,contentType:"image/jpeg",body:pages[0]!.buffer,cacheControl:"private, no-store"})];
   pages.forEach((p,i)=>tasks.push(this.storage.uploadObject({bucketName:env.B2_QUARANTINE_BUCKET_NAME!,storageKey:previewKeys[i]!,contentType:"image/jpeg",body:p.buffer,cacheControl:"private, max-age=300"})));
   await Promise.all(tasks);
-  try{return await this.repo.create({seller:input.seller,title:input.title,description:input.description,category:input.category,price:input.price,originalKey,fileName:input.fileName.replace(/[\\/\r\n\0]/g,"_").slice(0,180),type:input.type,size:input.file.length,coverKey,previewKeys});}
+  try{return await this.repo.create({seller:input.seller,title:input.title,description:input.description,category:input.category,price:input.price,originalKey,fileName:input.fileName.replace(/[\\/\\r\\n\\0]/g,"_").slice(0,180),type:input.type,size:input.file.length,coverKey,previewKeys,status});}
   catch(error:unknown){await Promise.all([originalKey,coverKey,...previewKeys].map(key=>this.storage.deleteObject(key,env.B2_QUARANTINE_BUCKET_NAME!))).catch(()=>undefined);throw error;}
  }
  async preview(slug:string,page:number):Promise<Buffer>{const product=await this.repo.detail(slug);if(!product)throw new AppError("PRODUCT_NOT_FOUND",404,"Material não encontrado.");const item=(await this.repo.previews(product.id)).find(p=>p.page_number===page);if(!item)throw new AppError("PREVIEW_NOT_FOUND",404,"Página não encontrada.");return (await this.storage.downloadObject(item.preview_key,env.B2_QUARANTINE_BUCKET_NAME!)).body;}
