@@ -187,4 +187,24 @@ describe("CreateMediaAssetService", () => {
     expect(uploadObject).not.toHaveBeenCalled();
     expect(repositoryCreate).not.toHaveBeenCalled();
   });
+  it("bloqueia o upload quando a imagem otimizada ultrapassa a cota", async () => {
+    (repository.getStorageUsage as ReturnType<typeof vi.fn>).mockResolvedValue(1_010);
+
+    await expect(service.execute(input)).rejects.toThrow("STORAGE_QUOTA_EXCEEDED");
+
+    expect(repository.getStorageUsage).toHaveBeenCalledWith(input.uploadedBy);
+    expect(uploadObject).not.toHaveBeenCalled();
+    expect(repositoryCreate).not.toHaveBeenCalled();
+  });
+
+  it("permite que administradores façam upload sem consumir a cota do professor", async () => {
+    (repository.getStorageUsage as ReturnType<typeof vi.fn>).mockResolvedValue(10_000);
+
+    const result = await service.execute({ ...input, isAdmin: true });
+
+    expect(repository.getStorageUsage).not.toHaveBeenCalled();
+    expect(uploadObject).toHaveBeenCalledTimes(2);
+    expect(result).toMatchObject({ id: "asset-123", status: "APPROVED" });
+  });
+
 });
