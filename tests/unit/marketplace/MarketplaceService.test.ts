@@ -48,4 +48,29 @@ describe("MarketplaceService publishing permissions",()=>{
   expect(findByTeacherId).not.toHaveBeenCalled();
   expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PUBLISHED",publisherType:"ADMIN",seller:"teacher-1"}));
  });
+ it("stores Google Slides links as copy URLs without generating or uploading files",async()=>{
+  await expect(makeService().createAdminExternal({
+   seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/edit?usp=sharing",
+  })).resolves.toBe("product-1");
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({
+   deliveryType:"EXTERNAL_URL",
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/copy",
+   previewKeys:[],
+   previewKeys:[],
+   status:"PUBLISHED",
+   originalKey:null,
+  }));
+  expect(generate).not.toHaveBeenCalled();
+  expect(uploadObject).not.toHaveBeenCalled();
+ });
+
+ it("rejects URLs outside Google Slides",async()=>{
+  await expect(makeService().createAdminExternal({
+   seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
+   externalUrl:"https://example.com/presentation",
+  })).rejects.toThrow("somente links do Google Slides");
+  expect(create).not.toHaveBeenCalled();
+ });
+
 });
