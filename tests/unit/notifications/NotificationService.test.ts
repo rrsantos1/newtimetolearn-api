@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { Notification } from "../../src/modules/notifications/entities/Notification";
-import type { INotificationRepository } from "../../src/modules/notifications/repositories/interfaces/INotificationRepository";
-import { NotificationService } from "../../src/modules/notifications/services/NotificationService";
+import { Notification } from "../../../src/modules/notifications/entities/Notification";
+import type { INotificationRepository } from "../../../src/modules/notifications/repositories/interfaces/INotificationRepository";
+import { NotificationService } from "../../../src/modules/notifications/services/NotificationService";
 
 describe("NotificationService", () => {
   let service: NotificationService;
