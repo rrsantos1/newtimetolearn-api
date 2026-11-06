@@ -51,9 +51,7 @@ export async function listActivitiesController(
 
     const service = makeListActivitiesService();
 
-    const favoriteIds = scope === "mine" && parsedQuery.data.favoritesOnly
-      ? await service.getFavoriteIds(request.user.sub)
-      : [];
+    const favoriteIds = await service.getFavoriteIds(request.user.sub);
 
     const result = await service.execute({
       ...parsedQuery.data,
