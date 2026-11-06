@@ -45,6 +45,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     storageKey: string,
     publicUrl: string,
     thumbnail?: { storageKey: string; publicUrl: string; sizeBytes: number } | null,
+    optimized?: { contentType: string; sizeBytes: number },
   ): Promise<MediaAsset> {
     const asset = await this.repository.findOneBy({ id });
     if (!asset) throw new Error("MEDIA_ASSET_NOT_FOUND");
@@ -55,6 +56,10 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     asset.thumbnailStorageKey = thumbnail?.storageKey ?? null;
     asset.thumbnailPublicUrl = thumbnail?.publicUrl ?? null;
     asset.thumbnailSizeBytes = thumbnail?.sizeBytes ?? null;
+    if (optimized) {
+      asset.contentType = optimized.contentType;
+      asset.sizeBytes = optimized.sizeBytes;
+    }
     return this.repository.save(asset);
   }
 }
