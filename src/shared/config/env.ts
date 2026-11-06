@@ -15,7 +15,11 @@ const envSchema = z.object({
   B2_APPLICATION_KEY_ID: z.string().min(1).optional(),
   B2_APPLICATION_KEY: z.string().min(1).optional(),
   B2_PUBLIC_BASE_URL: z.url().optional(),
-  TEACHER_STORAGE_LIMIT_BYTES: z.coerce.number().int().positive().default(1_073_741_824),
+  TEACHER_STORAGE_LIMIT_BYTES: z.coerce.number().int().positive().default(524_288_000),
+
+  MERCADO_PAGO_ENABLED: z.enum(["true", "false"]).default("false"),
+  MERCADO_PAGO_ACCESS_TOKEN: z.string().min(1).optional(),
+  MERCADO_PAGO_WEBHOOK_SECRET: z.string().min(1).optional(),
 
   EMAIL_FROM: z.string().min(1).default("onboarding@resend.dev"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
@@ -50,6 +54,14 @@ if (configuredStorageValues.length === storageEnvKeys.length && !parsedEnv.GOOGL
 
 if (configuredStorageValues.length === storageEnvKeys.length && !parsedEnv.B2_QUARANTINE_BUCKET_NAME) {
   throw new Error("B2_QUARANTINE_BUCKET_NAME é obrigatória quando o armazenamento de imagens está configurado.");
+}
+
+if (parsedEnv.MERCADO_PAGO_ENABLED === "true" && !parsedEnv.MERCADO_PAGO_ACCESS_TOKEN) {
+  throw new Error("MERCADO_PAGO_ACCESS_TOKEN é obrigatória quando Mercado Pago está habilitado.");
+}
+
+if (parsedEnv.MERCADO_PAGO_ENABLED === "true" && !parsedEnv.MERCADO_PAGO_WEBHOOK_SECRET) {
+  throw new Error("MERCADO_PAGO_WEBHOOK_SECRET é obrigatória quando Mercado Pago está habilitado.");
 }
 
 export const env = parsedEnv;
