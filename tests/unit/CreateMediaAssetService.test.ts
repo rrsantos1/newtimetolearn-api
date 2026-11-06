@@ -38,7 +38,7 @@ describe("CreateMediaAssetService", () => {
   let repository: IMediaAssetRepository;
   let service: CreateMediaAssetService;
 
-  const imageBuffer = Buffer.from("fake-image-content");
+  const imageBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
   const input = {
     uploadedBy: "teacher-123",
     fileName: "  imagem.png  ",
@@ -73,6 +73,7 @@ describe("CreateMediaAssetService", () => {
       bucketName: "media-test",
       contentType: "image/png",
       body: imageBuffer,
+      cacheControl: "public, max-age=31536000, immutable",
     }));
     expect(repositoryCreate).toHaveBeenCalledWith(expect.objectContaining({
       uploadedBy: input.uploadedBy,
@@ -107,6 +108,18 @@ describe("CreateMediaAssetService", () => {
       ...input,
       contentType: "application/pdf",
     })).rejects.toThrow("UNSUPPORTED_IMAGE_TYPE");
+
+    expect(safeSearchDetection).not.toHaveBeenCalled();
+    expect(uploadObject).not.toHaveBeenCalled();
+    expect(repositoryCreate).not.toHaveBeenCalled();
+  });
+
+  it("rejeita conteúdo que não corresponde ao MIME type declarado", async () => {
+    await expect(service.execute({
+      ...input,
+      imageBuffer: Buffer.from("not-an-image"),
+      sizeBytes: Buffer.byteLength("not-an-image"),
+    })).rejects.toThrow("INVALID_IMAGE_CONTENT");
 
     expect(safeSearchDetection).not.toHaveBeenCalled();
     expect(uploadObject).not.toHaveBeenCalled();
