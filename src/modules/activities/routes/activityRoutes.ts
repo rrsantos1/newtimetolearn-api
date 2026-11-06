@@ -64,6 +64,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
   app.post("/media-library/upload", {
     bodyLimit: 5 * 1024 * 1024,
+    config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
     preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)],
   }, createMediaAssetController);
 
