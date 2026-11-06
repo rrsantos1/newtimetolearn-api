@@ -4,6 +4,7 @@ import { ActivityVersionStatus } from "../../types/ActivityVersionStatus";
 
 export interface IActivityVersionRepository {
   findById(id: string): Promise<ActivityVersion | null>;
+  hasAudioStorageKeyReference(storageKey: string, excludingVersionId: string): Promise<boolean>;
 
   findByIdAndActivityIdForUpdate(
     manager: EntityManager,
