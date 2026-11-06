@@ -9,6 +9,7 @@ import { activityRoutes } from "./modules/activities/routes/activityRoutes";
 import { teacherStudentRoutes } from "./modules/teacher-students/routes/teacherStudentRoutes";
 import { notificationRoutes } from "./modules/notifications/routes/notificationRoutes";
 import { notebookRoutes } from "./modules/notebooks/routes/notebookRoutes";
+import { subscriptionRoutes } from "./modules/subscriptions/routes/subscriptionRoutes";
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const notebookAttachmentContentTypes = [
@@ -53,5 +54,6 @@ export function buildApp(): FastifyInstance {
   app.register(notificationRoutes, { prefix: "/api/v1/notifications" });
   app.register(notebookRoutes, { prefix: "/api/v1/notebooks" });
   app.register(activityRoutes, { prefix: "/api/v1/activities" });
+  app.register(subscriptionRoutes, { prefix: "/api/v1/subscriptions" });
   return app;
 }
