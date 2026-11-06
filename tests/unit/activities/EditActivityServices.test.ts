@@ -186,7 +186,7 @@ describe("EditActivityServices", () => {
       statusCode: 404,
     });
     publishedVersion.status = ActivityVersionStatus.PUBLISHED;
-    await expect(service.execute({ ...validInput, content: { questions: [] } })).rejects.toMatchObject({
+    await expect(service.execute({ ...validInput, content: { questions: [{ id: "duplicate", options: [] }, { id: "duplicate", options: [] }] } })).rejects.toMatchObject({
       code: "VALIDATION_ERROR",
       statusCode: 400,
     });
