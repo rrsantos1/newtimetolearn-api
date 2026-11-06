@@ -1,5 +1,6 @@
 import { AppDataSource } from "../../../../shared/database/data-source";
 import { MediaAsset } from "../../entities/MediaAsset";
+import { StorageUsageRepository } from "../../../../shared/storage/repositories/StorageUsageRepository";
 import type { CreateMediaAssetInput, IMediaAssetRepository, ListMediaAssetsFilters, ListMediaAssetsResult, MediaAssetStatus } from "../interfaces/IMediaAssetRepository";
 
 export class MediaAssetRepository implements IMediaAssetRepository {
@@ -35,12 +36,7 @@ export class MediaAssetRepository implements IMediaAssetRepository {
   }
 
   async getStorageUsage(uploadedBy: string): Promise<number> {
-    const result = await this.repository.createQueryBuilder("asset")
-      .select("COALESCE(SUM(asset.size_bytes + COALESCE(asset.thumbnail_size_bytes, 0)), 0)", "total")
-      .where("asset.uploaded_by = :uploadedBy", { uploadedBy })
-      .andWhere("asset.status IN (:...statuses)", { statuses: ["APPROVED", "PENDING_REVIEW"] })
-      .getRawOne<{ total: string | number }>();
-    return Number(result?.total ?? 0);
+    return new StorageUsageRepository().getUsageByTeacherId(uploadedBy);
   }
 
   async listStoredKeys(): Promise<string[]> {
