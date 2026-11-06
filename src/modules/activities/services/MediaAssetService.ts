@@ -6,6 +6,24 @@ import { makeStorageProvider } from "../../../shared/storage/storageFactory";
 import type { IMediaAssetRepository, ListMediaAssetsFilters } from "../repositories/interfaces/IMediaAssetRepository";
 
 const allowedContentTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+function hasValidImageSignature(contentType: string, body: Buffer): boolean {
+  if (contentType === "image/jpeg") {
+    return body.length >= 3 && body[0] === 0xff && body[1] === 0xd8 && body[2] === 0xff;
+  }
+  if (contentType === "image/png") {
+    return body.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+  }
+  if (contentType === "image/gif") {
+    const signature = body.subarray(0, 6).toString("ascii");
+    return signature === "GIF87a" || signature === "GIF89a";
+  }
+  if (contentType === "image/webp") {
+    return body.subarray(0, 4).toString("ascii") === "RIFF"
+      && body.subarray(8, 12).toString("ascii") === "WEBP";
+  }
+  return false;
+}
+
 const extensionByType: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -81,6 +99,9 @@ export class CreateMediaAssetService {
       throw new Error("INVALID_IMAGE_SIZE");
     }
     if (input.imageBuffer.byteLength !== input.sizeBytes) throw new Error("INVALID_IMAGE_SIZE");
+    if (!hasValidImageSignature(input.contentType, input.imageBuffer)) {
+      throw new Error("INVALID_IMAGE_CONTENT");
+    }
 
     const status = await moderateImage(input.imageBuffer);
     if (status === "REJECTED") throw new Error("IMAGE_REJECTED_BY_MODERATION");
@@ -100,6 +121,9 @@ export class CreateMediaAssetService {
       storageKey,
       contentType: input.contentType,
       body: input.imageBuffer,
+      ...(isPending
+        ? { cacheControl: "private, no-store" }
+        : { cacheControl: "public, max-age=31536000, immutable" }),
     });
 
     try {
@@ -169,6 +193,7 @@ export class ReviewMediaAssetService {
       storageKey: publicStorageKey,
       contentType: asset.contentType,
       body: imageBuffer,
+      cacheControl: "public, max-age=31536000, immutable",
     });
 
     const publicUrl = `${env.B2_PUBLIC_BASE_URL!.replace(/\/+$/, "")}/${publicStorageKey}`;
