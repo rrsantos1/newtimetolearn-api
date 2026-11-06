@@ -3,6 +3,7 @@ import vision from "@google-cloud/vision";
 import { AuthError } from "../../auth/errors/AuthError";
 import { env } from "../../../shared/config/env";
 import { makeStorageProvider } from "../../../shared/storage/storageFactory";
+import { StorageUsageRepository } from "../../../shared/storage/repositories/StorageUsageRepository";
 import type { NotificationService } from "../../notifications/services/NotificationService";
 import { NotificationType } from "../../notifications/types/NotificationType";
 import type { NotebookEntryKind } from "../entities/NotebookEntry";
@@ -82,6 +83,7 @@ export class NotebookService {
   constructor(
     private readonly repository: NotebookRepository,
     private readonly notifications: NotificationService,
+    private readonly storageUsageRepository: StorageUsageRepository,
   ) {}
 
   private async getAuthorizedRelationship(relationshipId: string, userId: string) {
@@ -189,6 +191,11 @@ export class NotebookService {
     }
     if (input.contentType.startsWith("image/")) {
       await validateNotebookImage(input.body);
+    }
+
+    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(relationship.teacherId);
+    if (currentUsage + input.body.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+      throw new Error("STORAGE_QUOTA_EXCEEDED");
     }
 
     const fileName = safeFileName(input.fileName);
