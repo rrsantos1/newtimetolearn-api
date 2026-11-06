@@ -22,7 +22,7 @@ export class MarketplaceSellerAccountService {
     const stateHash = createHash("sha256").update(state).digest("hex");
     await this.repository.createState(userId, stateHash, new Date(Date.now() + 10 * 60 * 1000));
 
-    const url = new URL("https://auth.mercadopago.com.br/authorization");
+    const url = new URL("https://auth.mercadopago.com/authorization");
     url.searchParams.set("client_id", env.MERCADO_PAGO_CLIENT_ID!);
     url.searchParams.set("response_type", "code");
     url.searchParams.set("platform_id", "mp");
