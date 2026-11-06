@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EntityManager } from "typeorm";
-import { Activity } from "../../src/modules/activities/entities/Activity";
-import { ActivityVersion } from "../../src/modules/activities/entities/ActivityVersion";
-import { EditDragDropActivityService } from "../../src/modules/activities/services/EditDragDropActivityService";
-import { EditQuizActivityService } from "../../src/modules/activities/services/EditQuizActivityService";
-import type { IActivityRepository } from "../../src/modules/activities/repositories/interfaces/IActivityRepository";
-import type { IActivityVersionRepository } from "../../src/modules/activities/repositories/interfaces/IActivityVersionRepository";
-import { ActivityDifficulty } from "../../src/modules/activities/types/ActivityDifficulty";
-import { ActivityStatus } from "../../src/modules/activities/types/ActivityStatus";
-import { ActivityType } from "../../src/modules/activities/types/ActivityType";
-import { ActivityVersionStatus } from "../../src/modules/activities/types/ActivityVersionStatus";
-import { ActivityVisibility } from "../../src/modules/activities/types/ActivityVisibility";
+import { Activity } from "../../../src/modules/activities/entities/Activity";
+import { ActivityVersion } from "../../../src/modules/activities/entities/ActivityVersion";
+import { EditDragDropActivityService } from "../../../src/modules/activities/services/EditDragDropActivityService";
+import { EditQuizActivityService } from "../../../src/modules/activities/services/EditQuizActivityService";
+import type { IActivityRepository } from "../../../src/modules/activities/repositories/interfaces/IActivityRepository";
+import type { IActivityVersionRepository } from "../../../src/modules/activities/repositories/interfaces/IActivityVersionRepository";
+import { ActivityDifficulty } from "../../../src/modules/activities/types/ActivityDifficulty";
+import { ActivityStatus } from "../../../src/modules/activities/types/ActivityStatus";
+import { ActivityType } from "../../../src/modules/activities/types/ActivityType";
+import { ActivityVersionStatus } from "../../../src/modules/activities/types/ActivityVersionStatus";
+import { ActivityVisibility } from "../../../src/modules/activities/types/ActivityVisibility";
 
 const teacherId = "teacher-123";
 const slug = "atividade-exemplo";
