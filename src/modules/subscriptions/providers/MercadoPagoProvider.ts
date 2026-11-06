@@ -17,7 +17,14 @@ export class MercadoPagoProvider {
       }),
       signal: AbortSignal.timeout(15_000),
     });
-    if (!response.ok) throw new Error("MERCADO_PAGO_CREATE_SUBSCRIPTION_FAILED");
+    if (!response.ok) {
+      const errorBody = await response.text();
+
+      throw new Error(
+        `MERCADO_PAGO_CREATE_SUBSCRIPTION_FAILED: HTTP ${response.status} - ${errorBody.slice(0, 1500)}`,
+      );
+    }
+
     return response.json() as Promise<MercadoPagoSubscription>;
   }
   async getSubscription(subscriptionId: string): Promise<MercadoPagoSubscription> {
