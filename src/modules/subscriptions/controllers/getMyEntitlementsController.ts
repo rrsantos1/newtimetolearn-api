@@ -1,4 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
+import { env } from "../../../shared/config/env";
 import { makeTeacherEntitlementsService } from "../factories/make-teacher-entitlements-service";
 
 export async function getMyEntitlementsController(request: FastifyRequest, reply: FastifyReply): Promise<FastifyReply> {
@@ -12,6 +13,7 @@ export async function getMyEntitlementsController(request: FastifyRequest, reply
       success: true,
       data: {
         ...entitlements,
+        paymentIntegrationEnabled: env.MERCADO_PAGO_ENABLED === "true",
         reservedStudents,
         studentsRemaining: entitlements.studentLimit === null ? null : Math.max(0, entitlements.studentLimit - reservedStudents),
       },

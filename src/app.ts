@@ -10,6 +10,7 @@ import { teacherStudentRoutes } from "./modules/teacher-students/routes/teacherS
 import { notificationRoutes } from "./modules/notifications/routes/notificationRoutes";
 import { notebookRoutes } from "./modules/notebooks/routes/notebookRoutes";
 import { subscriptionRoutes } from "./modules/subscriptions/routes/subscriptionRoutes";
+import { mercadoPagoWebhookRoutes } from "./modules/subscriptions/routes/mercadoPagoWebhookRoutes";
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const notebookAttachmentContentTypes = [
@@ -43,7 +44,7 @@ export function buildApp(): FastifyInstance {
   app.register(cors, {
     origin: ["http://localhost:3000"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id"],
     credentials: true,
   });
 
@@ -55,5 +56,6 @@ export function buildApp(): FastifyInstance {
   app.register(notebookRoutes, { prefix: "/api/v1/notebooks" });
   app.register(activityRoutes, { prefix: "/api/v1/activities" });
   app.register(subscriptionRoutes, { prefix: "/api/v1/subscriptions" });
+  app.register(mercadoPagoWebhookRoutes, { prefix: "/api/v1/webhooks" });
   return app;
 }
