@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const { listObjects, deleteObject } = vi.hoisted(() => ({
   listObjects: vi.fn(),
@@ -27,7 +27,7 @@ describe("CleanupOrphanMediaFilesService", () => {
   let repository: { listReferencedObjects: ReturnType<typeof vi.fn> };
   let service: CleanupOrphanMediaFilesService;
 
-  beforeEach(() => {
+  afterEach(() => {\n    vi.useRealTimers();\n  });\n\n  beforeEach(() => {
     vi.useFakeTimers();
     vi.setSystemTime(now);
     vi.clearAllMocks();
@@ -92,7 +92,7 @@ describe("CleanupOrphanMediaFilesService", () => {
 
     expect(result.dryRun).toBe(false);
     expect(result.deleted).toBe(1);
-    expect(deleteObject).toHaveBeenCalledWith("media/referenced.webp", "public-test");
+    expect(deleteObject).toHaveBeenCalledWith("media/orphan.webp", "public-test");
   });
 
   it("limita a 500 exclusões por execução", async () => {
