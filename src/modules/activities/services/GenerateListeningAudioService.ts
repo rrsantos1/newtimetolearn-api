@@ -146,8 +146,15 @@ export class GenerateListeningAudioService {
       }
     }
 
+    const previousStorageKey = passage.audio.storageKey;
+    const previousAudioIsShared = previousStorageKey
+      ? await this.activityVersionRepository.hasAudioStorageKeyReference(previousStorageKey, version.id)
+      : true;
+    const reclaimableBytes = previousStorageKey && !previousAudioIsShared
+      ? passage.audio.sizeBytes ?? 0
+      : 0;
     const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(input.teacherId);
-    if (!input.isAdmin && currentUsage + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
+    if (!input.isAdmin && currentUsage - reclaimableBytes + audioBuffer.byteLength > env.TEACHER_STORAGE_LIMIT_BYTES) {
       throw new AppError("STORAGE_QUOTA_EXCEEDED", 413, "Você atingiu o limite de armazenamento de 1 GB. Remova arquivos da biblioteca ou anexos para liberar espaço.");
     }
 
@@ -212,8 +219,7 @@ export class GenerateListeningAudioService {
       throw error;
     }
 
-    const previousStorageKey = passage.audio.storageKey;
-    if (previousStorageKey && previousStorageKey.startsWith("audio/listening/") && previousStorageKey !== storageKey) {
+    if (previousStorageKey && !previousAudioIsShared && previousStorageKey.startsWith("audio/listening/") && previousStorageKey !== storageKey) {
       await storage.deleteObject(previousStorageKey, env.B2_BUCKET_NAME).catch((error: unknown) => {
         console.warn("Áudio anterior não pôde ser removido do armazenamento.", error);
       });
