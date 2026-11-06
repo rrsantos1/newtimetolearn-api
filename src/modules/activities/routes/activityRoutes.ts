@@ -65,7 +65,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
   app.get("/media-library/:id/preview", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, getQuarantinedMediaAssetController);
   app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
-  app.post("/media-library/cleanup-orphans", { config: { rateLimit: { max: 1, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, cleanupOrphanMediaFilesController);
+  app.post("/media-library/cleanup-orphans", { config: { rateLimit: { max: 3, timeWindow: "1 minute" } }, preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, cleanupOrphanMediaFilesController);
   app.post("/media-library/upload", {
     bodyLimit: 5 * 1024 * 1024,
     config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
