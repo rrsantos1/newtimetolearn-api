@@ -15,6 +15,26 @@ export class ActivityVersionRepository
     });
   }
 
+  async hasAudioStorageKeyReference(
+    storageKey: string,
+    excludingVersionId: string,
+  ): Promise<boolean> {
+    const rows = await AppDataSource.query<Array<{ exists: boolean }>>(
+      `SELECT EXISTS (
+        SELECT 1
+        FROM public.activity_versions version
+        CROSS JOIN LATERAL jsonb_array_elements(
+          CASE WHEN jsonb_typeof(version.content->'passages') = 'array'
+            THEN version.content->'passages' ELSE '[]'::jsonb END
+        ) AS passage
+        WHERE version.id <> $2
+          AND passage->'audio'->>'storageKey' = $1
+      ) AS exists`,
+      [storageKey, excludingVersionId],
+    );
+    return rows[0]?.exists ?? false;
+  }
+
   async findByIdAndActivityIdForUpdate(
     manager: EntityManager,
     id: string,
