@@ -90,11 +90,11 @@ export class MarketplaceRepository {
           (id,seller_user_id,publisher_type,title,description,category,price_cents,original_key,
            original_file_name,original_content_type,original_size_bytes,cover_key,preview_pages,status,published_at)
          VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,
-           CASE WHEN $14='PUBLISHED' THEN CURRENT_TIMESTAMP ELSE NULL END)`,
+           CASE WHEN $15::boolean THEN CURRENT_TIMESTAMP ELSE NULL END)`,
         [
           id, input.seller, input.publisherType, input.title, input.description, input.category,
           input.price, input.originalKey, input.fileName, input.type, input.size, input.coverKey,
-          input.previewKeys.length, input.status,
+          input.previewKeys.length, input.status, input.status === "PUBLISHED",
         ],
       );
       for (let index = 0; index < input.previewKeys.length; index += 1) {
