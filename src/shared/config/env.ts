@@ -22,6 +22,7 @@ const envSchema = z.object({
   MERCADO_PAGO_CLIENT_SECRET: z.string().min(1).optional(),
   MERCADO_PAGO_OAUTH_REDIRECT_URI: z.url().optional(),
   MERCADO_PAGO_TOKEN_ENCRYPTION_KEY: z.string().regex(/^[a-f0-9]{64}$/i).optional(),
+  MARKETPLACE_COMMISSION_PERCENT: z.coerce.number().int().min(0).max(100).default(20),
   EMAIL_FROM: z.string().min(1).default("onboarding@resend.dev"),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   PORT: z.coerce.number().int().min(1).max(65535).default(3000),
