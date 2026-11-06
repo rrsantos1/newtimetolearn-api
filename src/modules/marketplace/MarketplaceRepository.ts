@@ -162,9 +162,9 @@ export class MarketplaceRepository {
     return rows.length > 0;
   }
 
-  async pending(): Promise<Array<{ id: string; title: string; description: string; category: string; price_cents: number; author_name: string; created_at: string }>> {
+  async pending(): Promise<Array<{ id: string; title: string; description: string; category: string; price_cents: number; author_name: string; created_at: string; delivery_type: "FILE" | "EXTERNAL_URL"; external_url: string | null }>> {
     return AppDataSource.query(
-      "SELECT p.id,p.title,p.description,p.category,p.price_cents,u.name AS author_name,p.created_at FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id WHERE p.status='PENDING_REVIEW' ORDER BY p.created_at ASC",
+      "SELECT p.id,p.title,p.description,p.category,p.price_cents,u.name AS author_name,p.created_at,p.delivery_type,p.external_url FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id WHERE p.status='PENDING_REVIEW' ORDER BY p.created_at ASC",
     );
   }
 
