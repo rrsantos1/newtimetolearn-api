@@ -193,7 +193,10 @@ export class ListPendingMediaAssetsService {
 }
 
 export class ReviewMediaAssetService {
-  constructor(private readonly repository: IMediaAssetRepository) {}
+  constructor(
+    private readonly repository: IMediaAssetRepository,
+    private readonly storageUsageRepository: StorageUsageRepository,
+  ) {}
 
   async execute(id: string, decision: "APPROVE" | "REJECT") {
     const asset = await this.repository.findById(id);
@@ -223,6 +226,13 @@ export class ReviewMediaAssetService {
 
     const imageBuffer = Buffer.from(await response.Body.transformToByteArray());
     const optimized = await optimizeImage(imageBuffer, asset.contentType);
+    const currentUsage = await this.storageUsageRepository.getUsageByTeacherId(asset.uploadedBy);
+    const projectedUsage = currentUsage - asset.sizeBytes
+      + optimized.imageBuffer.byteLength
+      + optimized.thumbnailBuffer.byteLength;
+    if (projectedUsage > env.TEACHER_STORAGE_LIMIT_BYTES) {
+      throw new Error("STORAGE_QUOTA_EXCEEDED");
+    }
     const date = new Date().toISOString().slice(0, 10);
     const idSuffix = randomUUID();
     const extension = extensionByType[optimized.contentType];
@@ -259,6 +269,10 @@ export class ReviewMediaAssetService {
           storageKey: thumbnailStorageKey,
           publicUrl: `${publicBaseUrl}/${thumbnailStorageKey}`,
           sizeBytes: optimized.thumbnailBuffer.byteLength,
+        },
+        {
+          contentType: optimized.contentType,
+          sizeBytes: optimized.imageBuffer.byteLength,
         },
       );
       try {
