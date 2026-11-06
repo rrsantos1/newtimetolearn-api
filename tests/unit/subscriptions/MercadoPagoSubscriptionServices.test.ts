@@ -117,4 +117,16 @@ describe("Mercado Pago subscription services", () => {
       status: "PAST_DUE",
     }));
   });
+  it("cancels the provider subscription before updating the local record", async () => {
+    const service = new CancelTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).resolves.toBeUndefined();
+
+    expect(repository.findCurrentSubscription).toHaveBeenCalledWith("teacher-1");
+    expect(provider.cancelSubscription).toHaveBeenCalledWith("mp-subscription-1");
+    expect(repository.markCurrentSubscriptionCancelled).toHaveBeenCalledWith("local-subscription-1");
+  });
 });
