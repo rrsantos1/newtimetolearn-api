@@ -146,6 +146,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
           Key: input.storageKey,
           Body: input.body,
           ContentType: input.contentType,
+          ...(input.cacheControl ? { CacheControl: input.cacheControl } : {}),
         }),
         { abortSignal: AbortSignal.timeout(timeoutMs) },
       );
