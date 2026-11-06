@@ -224,6 +224,20 @@ export class NotebookService {
     }
   }
 
+  async getAttachmentDownloadUrl(relationshipId: string, entryId: string, userId: string) {
+    await this.getAuthorizedRelationship(relationshipId, userId);
+    const entry = await this.repository.findAttachmentEntry(relationshipId, entryId);
+    if (!entry) throw new AuthError("NOTEBOOK_ATTACHMENT_NOT_FOUND", 404, "Anexo não encontrado.");
+
+    const storageKey = entry.content.storageKey;
+    if (typeof storageKey !== "string") throw new Error("INVALID_NOTEBOOK_ATTACHMENT_METADATA");
+    const bucketName = env.B2_QUARANTINE_BUCKET_NAME;
+    if (!bucketName) throw new Error("PRIVATE_STORAGE_NOT_CONFIGURED");
+
+    const downloadUrl = await makeStorageProvider().createDownloadUrl(storageKey, bucketName, 300);
+    return { downloadUrl, expiresInSeconds: 300 };
+  }
+
   async getAttachment(relationshipId: string, entryId: string, userId: string, range?: string) {
     await this.getAuthorizedRelationship(relationshipId, userId);
     const entry = await this.repository.findAttachmentEntry(relationshipId, entryId);
