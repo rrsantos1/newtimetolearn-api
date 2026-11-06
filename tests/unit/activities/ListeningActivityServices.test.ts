@@ -160,7 +160,6 @@ describe("ListeningActivityServices", () => {
       model: null,
       voice: null,
       textHash: null,
-      sizeBytes: null,
     });
   });
 
