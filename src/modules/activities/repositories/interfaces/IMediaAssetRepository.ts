@@ -28,5 +28,6 @@ export interface IMediaAssetRepository {
     storageKey: string,
     publicUrl: string,
     thumbnail?: { storageKey: string; publicUrl: string; sizeBytes: number } | null,
+    optimized?: { contentType: string; sizeBytes: number },
   ): Promise<MediaAsset>;
 }
