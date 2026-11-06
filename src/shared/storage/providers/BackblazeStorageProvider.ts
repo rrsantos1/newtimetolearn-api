@@ -190,7 +190,7 @@ export class BackblazeStorageProvider implements IStorageProvider {
 
     const canonicalUri = "/" + encodePath(bucketName) + "/" + encodePath(storageKey);
     const now = new Date();
-    const amzDate = now.toISOString().replace(/[:-]|\\.\\d{3}/g, "");
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, "");
     const dateStamp = amzDate.slice(0, 8);
     const credentialScope = dateStamp + "/" + env.B2_REGION + "/" + S3_SERVICE + "/aws4_request";
     const queryParameters: Record<string, string> = {
@@ -204,9 +204,9 @@ export class BackblazeStorageProvider implements IStorageProvider {
       .map(([key, value]) => [encodeRfc3986(key), encodeRfc3986(value)] as const)
       .sort(([keyA, valueA], [keyB, valueB]) => keyA === keyB ? (valueA < valueB ? -1 : valueA > valueB ? 1 : 0) : (keyA < keyB ? -1 : 1))
       .map(([key, value]) => key + "=" + value).join("&");
-    const canonicalHeaders = "host:" + endpoint.host + "\\n";
-    const canonicalRequest = ["GET", canonicalUri, canonicalQueryString, canonicalHeaders, "host", "UNSIGNED-PAYLOAD"].join("\\n");
-    const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\\n");
+    const canonicalHeaders = "host:" + endpoint.host + "\n";
+    const canonicalRequest = ["GET", canonicalUri, canonicalQueryString, canonicalHeaders, "host", "UNSIGNED-PAYLOAD"].join("\n");
+    const stringToSign = [AWS_ALGORITHM, amzDate, credentialScope, sha256(canonicalRequest)].join("\n");
     const signature = hmac(getSigningKey(env.B2_APPLICATION_KEY!, dateStamp, env.B2_REGION!), stringToSign).toString("hex");
 
     return endpoint.origin + canonicalUri + "?" + canonicalQueryString + "&X-Amz-Signature=" + signature;
