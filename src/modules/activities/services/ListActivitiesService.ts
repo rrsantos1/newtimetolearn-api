@@ -60,6 +60,10 @@ export class ListActivitiesService {
     private readonly activityRepository: IActivityRepository,
   ) {}
 
+  async getFavoriteIds(userId: string): Promise<string[]> {
+    return this.activityRepository.listFavoriteIds(userId);
+  }
+
   async execute(
     input: ListActivitiesInput,
   ): Promise<ListActivitiesResponse> {
