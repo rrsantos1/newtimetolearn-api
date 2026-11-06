@@ -10,6 +10,7 @@ export interface CleanupOrphanMediaFilesResult {
   referenced: number;
   deleted: number;
   skippedRecent: number;
+  eligibleForDeletion: number;
   dryRun: boolean;
 }
 
@@ -73,6 +74,7 @@ export class CleanupOrphanMediaFilesService {
       ).length,
       deleted,
       skippedRecent,
+      eligibleForDeletion: orphanCandidates.length,
       dryRun,
     };
   }
