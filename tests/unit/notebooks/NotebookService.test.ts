@@ -23,6 +23,7 @@ vi.mock("../../../src/shared/config/env", () => ({
   env: {
     GOOGLE_APPLICATION_CREDENTIALS: "test-credentials.json",
     B2_QUARANTINE_BUCKET_NAME: "notebook-private-test",
+    TEACHER_STORAGE_LIMIT_BYTES: 1024,
   },
 }));
 
@@ -99,6 +100,19 @@ describe("NotebookService", () => {
       notifications as unknown as NotificationService,
       storageUsage as unknown as StorageUsageRepository,
     );
+  });
+
+  it("bloqueia anexos quando a cota compartilhada de armazenamento foi atingida", async () => {
+    storageUsage.getUsageByTeacherId.mockResolvedValue(1024);
+
+    await expect(service.createAttachment(relationshipId, teacherId, {
+      fileName: "material.pdf",
+      contentType: "application/pdf",
+      body: Buffer.from("%PDF-1.7 conteúdo"),
+    })).rejects.toThrow("STORAGE_QUOTA_EXCEEDED");
+
+    expect(uploadObject).not.toHaveBeenCalled();
+    expect(repository.createEntry).not.toHaveBeenCalled();
   });
 
   it("permite que professor e aluno consultem o caderno do vínculo ativo", async () => {
