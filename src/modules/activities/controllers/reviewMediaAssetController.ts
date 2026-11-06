@@ -16,6 +16,9 @@ export async function reviewMediaAssetController(request: FastifyRequest, reply:
     const asset = await makeReviewMediaAssetService().execute(params.data.id, body.data.decision);
     return reply.send({ success: true, data: asset });
   } catch (error: unknown) {
+    if (error instanceof Error && error.message === "STORAGE_QUOTA_EXCEEDED") {
+      return reply.status(413).send({ success: false, error: { code: error.message, message: "A imagem não pode ser aprovada porque ultrapassaria a cota de armazenamento do professor." }, requestId: request.id });
+    }
     if (error instanceof Error && error.message === "MEDIA_ASSET_NOT_FOUND") {
       return reply.status(404).send({ success: false, error: { code: error.message, message: "Imagem não encontrada." }, requestId: request.id });
     }
