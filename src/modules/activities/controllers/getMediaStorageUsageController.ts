@@ -1,5 +1,5 @@
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { env } from "../../../shared/config/env";
+import { makeTeacherEntitlementsService } from "../../subscriptions/factories/make-teacher-entitlements-service";
 import { RoleCode } from "../../users/types/RoleCode";
 import { MediaAssetRepository } from "../repositories/implementations/MediaAssetRepository";
 
@@ -10,7 +10,10 @@ export async function getMediaStorageUsageController(
   try {
     const isAdmin = request.user.roles.includes(RoleCode.ADMIN);
     const usageBytes = await new MediaAssetRepository().getStorageUsage(request.user.sub);
-    const limitBytes = isAdmin ? null : env.TEACHER_STORAGE_LIMIT_BYTES;
+    const entitlements = isAdmin
+      ? null
+      : await makeTeacherEntitlementsService().getForTeacher(request.user.sub);
+    const limitBytes = entitlements?.storageLimitBytes ?? null;
     return reply.status(200).send({
       success: true,
       data: {
