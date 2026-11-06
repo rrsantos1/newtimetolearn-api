@@ -53,7 +53,7 @@ export function buildApp(): FastifyInstance {
   app.register(cors, {
     origin: ["http://localhost:3000"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id", "x-marketplace-title", "x-marketplace-description", "x-marketplace-category", "x-marketplace-price-cents"],
     credentials: true,
   });
 
