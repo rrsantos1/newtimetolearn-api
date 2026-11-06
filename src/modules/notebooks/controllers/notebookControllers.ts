@@ -254,10 +254,9 @@ export async function getNotebookAttachmentController(
     const rangeHeader = request.headers.range;
     if (rangeHeader && !/^bytes=(?:\d+-\d*|-\d+)$/.test(rangeHeader)) {
       return reply
-        .status(416)
+        .status(400)
         .header("Accept-Ranges", "bytes")
-        .header("Content-Range", "bytes */*")
-        .send();
+        .send({ success: false, error: { code: "INVALID_RANGE_HEADER", message: "A faixa de bytes solicitada é inválida." } });
     }
 
     const file = await makeNotebookService().getAttachment(
@@ -268,7 +267,7 @@ export async function getNotebookAttachmentController(
     );
     const encodedFileName = encodeURIComponent(file.fileName).replace(/[!'()*]/g, (character) => "%" + character.charCodeAt(0).toString(16).toUpperCase());
     const response = reply
-      .header("Content-Disposition", `inline; filename*=UTF-8''${encodedFileName}`)
+      .header("Content-Disposition", `attachment; filename*=UTF-8''${encodedFileName}`)
       .header("Cache-Control", "private, max-age=300, must-revalidate")
       .header("Vary", "Authorization")
       .header("Accept-Ranges", "bytes")
