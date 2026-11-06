@@ -107,10 +107,10 @@ export class MarketplaceRepository {
     });
   }
 
-  async createOrder(productId: string, buyerId: string | null, email: string, amount: number): Promise<string> {
+  async createOrder(productId: string, buyerId: string | null, email: string, amount: number, marketplaceFeeCents: number): Promise<string> {
     const rows = await AppDataSource.query<Array<{ id: string }>>(
-      "INSERT INTO marketplace_orders(product_id,buyer_user_id,buyer_email,amount_cents,status) SELECT id,$2,$3,$4,'PENDING' FROM marketplace_products WHERE id=$1 AND status='PUBLISHED' AND price_cents=$4 RETURNING id",
-      [productId, buyerId, email.toLowerCase(), amount],
+      "INSERT INTO marketplace_orders(product_id,buyer_user_id,buyer_email,amount_cents,marketplace_fee_cents,status) SELECT id,$2,$3,$4,$5,'PENDING' FROM marketplace_products WHERE id=$1 AND status='PUBLISHED' AND price_cents=$4 RETURNING id",
+      [productId, buyerId, email.toLowerCase(), amount, marketplaceFeeCents],
     );
     if (!rows[0]?.id) throw new Error("MARKETPLACE_PRODUCT_UNAVAILABLE");
     return rows[0].id;
