@@ -45,6 +45,7 @@ import { updateActivityCoverController } from "../controllers/updateActivityCove
 import { generateActivityCoverController } from "../controllers/generateActivityCoverController";
 import { createActivityCoverGenerationController } from "../controllers/createActivityCoverGenerationController";
 import { getActivityCoverGenerationController } from "../controllers/getActivityCoverGenerationController";
+import { cleanupOrphanMediaFilesController } from "../controllers/cleanupOrphanMediaFilesController";
 
 export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.get("/public", listPublicActivitiesController);
@@ -62,6 +63,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   app.get("/media-library/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, listPendingMediaAssetsController);
   app.get("/media-library/:id/preview", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, getQuarantinedMediaAssetController);
   app.patch("/media-library/:id/review", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, reviewMediaAssetController);
+  app.post("/media-library/cleanup-orphans", { preHandler: [authMiddleware, authorizeRoles(RoleCode.ADMIN)] }, cleanupOrphanMediaFilesController);
   app.post("/media-library/upload", {
     bodyLimit: 5 * 1024 * 1024,
     config: { rateLimit: { max: 10, timeWindow: "1 minute" } },
