@@ -34,6 +34,26 @@ export class MediaAssetRepository implements IMediaAssetRepository {
     return this.repository.findOneBy({ id });
   }
 
+  async getStorageUsage(uploadedBy: string): Promise<number> {
+    const result = await this.repository.createQueryBuilder("asset")
+      .select("COALESCE(SUM(asset.size_bytes + COALESCE(asset.thumbnail_size_bytes, 0)), 0)", "total")
+      .where("asset.uploaded_by = :uploadedBy", { uploadedBy })
+      .andWhere("asset.status IN (:...statuses)", { statuses: ["APPROVED", "PENDING_REVIEW"] })
+      .getRawOne<{ total: string | number }>();
+    return Number(result?.total ?? 0);
+  }
+
+  async listStoredKeys(): Promise<string[]> {
+    const assets = await this.repository.createQueryBuilder("asset")
+      .select(["asset.storage_key", "asset.thumbnail_storage_key"])
+      .where("asset.status IN (:...statuses)", { statuses: ["APPROVED", "PENDING_REVIEW"] })
+      .getMany();
+    return assets.flatMap((asset) => [
+      asset.storageKey,
+      ...(asset.thumbnailStorageKey ? [asset.thumbnailStorageKey] : []),
+    ]);
+  }
+
   async updateReview(
     id: string,
     status: Exclude<MediaAssetStatus, "PENDING_REVIEW">,
