@@ -47,7 +47,7 @@ export async function optimizeImage(
       };
     }
 
-    const imageBuffer = await sharp(inputBuffer, {
+    const optimizedBuffer = await sharp(inputBuffer, {
       limitInputPixels: MAX_INPUT_PIXELS,
       failOn: "error",
     })
@@ -61,9 +61,10 @@ export async function optimizeImage(
       .webp({ quality: 82, effort: 4 })
       .toBuffer();
 
+    const useOptimizedBuffer = optimizedBuffer.byteLength < inputBuffer.byteLength;
     return {
-      imageBuffer,
-      contentType: "image/webp",
+      imageBuffer: useOptimizedBuffer ? optimizedBuffer : inputBuffer,
+      contentType: useOptimizedBuffer ? "image/webp" : contentType,
       thumbnailBuffer,
       isAnimated: false,
     };
