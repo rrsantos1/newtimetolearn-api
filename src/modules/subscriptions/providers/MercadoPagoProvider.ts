@@ -49,8 +49,13 @@ export class MercadoPagoProvider {
   validateWebhookSignature(signature: string | undefined, requestId: string | undefined, dataId: string | undefined): boolean {
     if (!signature || !env.MERCADO_PAGO_WEBHOOK_SECRET || !requestId || !dataId) return false;
     const fields = new Map<string, string>(signature.split(",").map((part): [string, string] => {
-      const [key, ...value] = part.trim().split("=");
-      return [key, value.join("=")];
+      const separatorIndex = part.indexOf("=");
+      if (separatorIndex < 1) return ["", ""];
+
+      return [
+        part.slice(0, separatorIndex).trim(),
+        part.slice(separatorIndex + 1).trim(),
+      ];
     }));
     const timestamp = fields.get("ts");
     const receivedHash = fields.get("v1");
