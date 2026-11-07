@@ -11,6 +11,7 @@ import { generateListeningAudioController } from "../controllers/generateListeni
 import { generateListeningAudioPreviewController } from "../controllers/generateListeningAudioPreviewController";
 import { createMemoryActivityController } from "../controllers/createMemoryActivityController";
 import { createMoleHitActivityController } from "../controllers/createMoleHitActivityController";
+import { editMoleHitActivityController } from "../controllers/editMoleHitActivityController";
 import { submitMoleHitAttemptController } from "../controllers/submitMoleHitAttemptController";
 import { getMoleHitRankingController } from "../controllers/getMoleHitRankingController";
 import { editMemoryActivityController } from "../controllers/editMemoryActivityController";
@@ -85,6 +86,7 @@ export async function activityRoutes(app: FastifyInstance): Promise<void> {
   }, generateListeningAudioController);
   app.post("/memory", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMemoryActivityController);
   app.post("/mole-hit", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, createMoleHitActivityController);
+  app.patch("/:slug/mole-hit", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, editMoleHitActivityController);
   app.post("/:slug/mole-hit/attempts", { preHandler: [authMiddleware, authorizeRoles(RoleCode.STUDENT)] }, submitMoleHitAttemptController);
   app.get("/:slug/mole-hit/ranking", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN, RoleCode.STUDENT)] }, getMoleHitRankingController);
   app.post("/multiple-choice", { preHandler: [authMiddleware, authorizeRoles(RoleCode.TEACHER, RoleCode.ADMIN)] }, makeCreateDragDropActivityController(ActivityType.MULTIPLE_CHOICE));
