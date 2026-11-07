@@ -6,6 +6,8 @@ import {PresentationPreviewGenerator} from "../../../src/modules/marketplace/Pre
 import {TeacherEntitlementsRepository} from "../../../src/modules/subscriptions/repositories/TeacherEntitlementsRepository";
 
 const create=vi.fn();
+const archiveProduct=vi.fn();
+const sellerProducts=vi.fn();
 const uploadObject=vi.fn();
 const deleteObject=vi.fn();
 const generate=vi.fn();
@@ -14,7 +16,7 @@ const findByTeacherId=vi.fn();
 const input={seller:"teacher-1",title:"Material de teste",description:"Descrição de material para teste.",category:"Apresentação",price:1990,fileName:"material.pdf",type:"application/pdf",file:Buffer.from("pdf-content")};
 
 function makeService():MarketplaceService{
- const repository={create} as unknown as MarketplaceRepository;
+ const repository={create,archiveProduct,sellerProducts} as unknown as MarketplaceRepository;
  const storage={uploadObject,deleteObject} as unknown as BackblazeStorageProvider;
  const generator={generate} as unknown as PresentationPreviewGenerator;
  const entitlements={findByTeacherId} as unknown as TeacherEntitlementsRepository;
@@ -25,9 +27,21 @@ describe("MarketplaceService publishing permissions",()=>{
  beforeEach(()=>{
   vi.clearAllMocks();
   create.mockResolvedValue("product-1");
+  archiveProduct.mockResolvedValue(true);
+  sellerProducts.mockResolvedValue([]);
   uploadObject.mockResolvedValue(undefined);
   deleteObject.mockResolvedValue(undefined);
   generate.mockResolvedValue([{pageNumber:1,buffer:Buffer.from("preview"),thumbnailBuffer:Buffer.from("thumbnail-webp")}]);
+ });
+
+ it("archives a product through the repository",async()=>{
+  await expect(makeService().archiveProduct("product-1","teacher-1",false)).resolves.toBeUndefined();
+  expect(archiveProduct).toHaveBeenCalledWith("product-1","teacher-1",false);
+ });
+
+ it("rejects attempts to archive products that do not belong to the caller",async()=>{
+  archiveProduct.mockResolvedValue(false);
+  await expect(makeService().archiveProduct("product-2","teacher-1",false)).rejects.toThrow("sem permissão");
  });
 
  it("allows active subscribers to submit products for admin review",async()=>{
