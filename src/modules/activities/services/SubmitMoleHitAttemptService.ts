@@ -14,6 +14,7 @@ export interface SubmitMoleHitAttemptInput {
   hits: number;
   misses: number;
   elapsedSeconds: number;
+  attemptToken: string;
 }
 
 export interface SubmitMoleHitAttemptResult {
@@ -38,6 +39,18 @@ export class SubmitMoleHitAttemptService {
     }
     const version = activity.versions.find((item) => item.id === activity.currentPublishedVersionId && item.status === ActivityVersionStatus.PUBLISHED);
     if (!version) throw new AppError("ACTIVITY_VERSION_NOT_FOUND", 404, "Versão publicada não encontrada.");
+    const existingAttempt = await this.attemptRepository.findByAttemptToken(activity.id, input.userId, input.attemptToken);
+    if (existingAttempt) {
+      const ranking = await this.attemptRepository.getRanking(activity.id);
+      return {
+        attempt: existingAttempt,
+        ranking,
+        isInRanking: ranking.some((entry) => entry.id === existingAttempt.id),
+        accuracyPoints: existingAttempt.accuracyPoints,
+        speedPoints: existingAttempt.speedPoints,
+      };
+    }
+
     const parsedContent = moleHitContentSchema.safeParse(version.content);
     if (!parsedContent.success) {
       throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O conteúdo desta atividade é inválido.");
@@ -66,6 +79,11 @@ export class SubmitMoleHitAttemptService {
       score,
       accuracyPoints,
       speedPoints,
+      attemptToken: input.attemptToken,
+      answers: [
+        { itemId: "hits", selectedId: String(hits) },
+        { itemId: "misses", selectedId: String(misses) },
+      ],
     });
     const ranking = await this.attemptRepository.getRanking(activity.id);
     return { attempt, ranking, isInRanking: ranking.some((entry) => entry.id === attempt.id), accuracyPoints, speedPoints };
