@@ -27,4 +27,35 @@ describe("MarketplaceRepository",()=>{
   await expect(new MarketplaceRepository().review("p1",true,"ok")).resolves.toBe(true);
   expect(query).toHaveBeenCalledWith(expect.stringContaining("status='PENDING_REVIEW'"),["p1","PUBLISHED","ok"]);
  });
+
+ it("aplica um pagamento aprovado e registra o evento de forma transacional",async()=>{
+  managerQuery.mockResolvedValueOnce([{id:"event-1"}]).mockResolvedValueOnce([{id:"order-1"}]).mockResolvedValueOnce([]);
+  await expect(new MarketplaceRepository().applyPayment({
+   orderId:"order-1",paymentId:"payment-1",eventId:"event-1",status:"APPROVED",payload:{status:"approved"},
+  })).resolves.toBe(true);
+  expect(transaction).toHaveBeenCalledOnce();
+  expect(managerQuery).toHaveBeenNthCalledWith(1,expect.stringContaining("ON CONFLICT(provider_event_id) DO NOTHING"),["event-1","order-1",JSON.stringify({status:"approved"})]);
+  expect(managerQuery).toHaveBeenNthCalledWith(2,expect.stringContaining("SET status=$2"),["order-1","APPROVED","payment-1"]);
+  expect(managerQuery).toHaveBeenNthCalledWith(3,expect.stringContaining("SET processed_at=CURRENT_TIMESTAMP"),["event-1"]);
+ });
+ it("ignora eventos de pagamento duplicados sem atualizar o pedido",async()=>{
+  managerQuery.mockResolvedValueOnce([]);
+  await expect(new MarketplaceRepository().applyPayment({
+   orderId:"order-1",paymentId:"payment-1",eventId:"duplicate-event",status:"APPROVED",payload:{},
+  })).resolves.toBe(false);
+  expect(managerQuery).toHaveBeenCalledOnce();
+ });
+ it("falha a transação quando o pedido do evento não existe",async()=>{
+  managerQuery.mockResolvedValueOnce([{id:"event-2"}]).mockResolvedValueOnce([]);
+  await expect(new MarketplaceRepository().applyPayment({
+   orderId:"missing-order",paymentId:"payment-2",eventId:"event-2",status:"APPROVED",payload:{},
+  })).rejects.toThrow("MARKETPLACE_ORDER_NOT_FOUND");
+  expect(managerQuery).toHaveBeenCalledTimes(2);
+ });
+ it("autoriza download somente para compra aprovada do próprio comprador e arquivo",async()=>{
+  query.mockResolvedValueOnce([]);
+  await expect(new MarketplaceRepository().download("order-1","buyer-1")).resolves.toBeNull();
+  expect(query).toHaveBeenCalledWith(expect.stringContaining("o.buyer_user_id=$2 AND o.status='APPROVED' AND p.delivery_type='FILE'"),["order-1","buyer-1"]);
+ });
+
 });
