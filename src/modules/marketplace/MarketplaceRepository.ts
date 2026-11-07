@@ -68,6 +68,29 @@ export class MarketplaceRepository {
       [id],
     );
   }
+  async sellerProducts(userId: string): Promise<Array<ProductRow & { status: string; created_at: string }>> {
+    return AppDataSource.query(
+      `SELECT p.id,p.slug,p.title,p.description,p.category,p.price_cents,p.currency,
+        u.name AS author_name,p.preview_pages,p.cover_key,p.delivery_type,p.status,p.created_at
+       FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id
+       WHERE p.seller_user_id=$1 AND p.status <> 'ARCHIVED'
+       ORDER BY p.created_at DESC`,
+      [userId],
+    );
+  }
+
+  async archiveProduct(id: string, userId: string, isAdmin: boolean): Promise<boolean> {
+    const rows = await AppDataSource.query<Array<{ id: string }>>(
+      `UPDATE marketplace_products
+       SET status='ARCHIVED',updated_at=CURRENT_TIMESTAMP
+       WHERE id=$1 AND status <> 'ARCHIVED'
+         AND (seller_user_id=$2 OR $3::boolean)
+       RETURNING id`,
+      [id, userId, isAdmin],
+    );
+    return rows.length > 0;
+  }
+
 
   async create(input: {
     seller: string;
@@ -181,7 +204,7 @@ export class MarketplaceRepository {
 
   async download(orderId: string, userId: string): Promise<{ key: string } | null> {
     const rows = await AppDataSource.query<Array<{ key: string }>>(
-      "SELECT p.original_key AS key FROM marketplace_orders o JOIN marketplace_products p ON p.id=o.product_id WHERE o.id=$1 AND o.buyer_user_id=$2 AND o.status='APPROVED' AND p.status='PUBLISHED'",
+      "SELECT p.original_key AS key FROM marketplace_orders o JOIN marketplace_products p ON p.id=o.product_id WHERE o.id=$1 AND o.buyer_user_id=$2 AND o.status='APPROVED' AND p.delivery_type='FILE'",
       [orderId, userId],
     );
     return rows[0] ?? null;
