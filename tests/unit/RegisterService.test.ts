@@ -110,8 +110,9 @@ describe("RegisterService", () => {
     });
     transaction.mockRejectedValueOnce(duplicateEmailError);
 
-    await expect(service.execute(input)).rejects.toBeInstanceOf(AuthError);
-    await expect(service.execute(input)).rejects.toMatchObject({
+    const result = service.execute(input);
+    await expect(result).rejects.toBeInstanceOf(AuthError);
+    await expect(result).rejects.toMatchObject({
       code: "EMAIL_ALREADY_REGISTERED",
       statusCode: 409,
     });
