@@ -80,11 +80,11 @@ describe("MarketplaceSellerAccountService", () => {
     expect(url.searchParams.get("client_id")).toBe("client-id");
     expect(url.searchParams.get("redirect_uri")).toBe("https://api.example.com/callback");
     expect(state).toBeTruthy();
-    expect(repositoryMocks.createState).toHaveBeenCalledWith(
-      "teacher-1",
-      expect.not.stringMatching(state ?? ""),
-      expect.any(Date),
-    );
+    expect(repositoryMocks.createState).toHaveBeenCalledOnce();
+    expect(repositoryMocks.createState.mock.calls[0]?.[0]).toBe("teacher-1");
+    const storedStateHash = repositoryMocks.createState.mock.calls[0]?.[1] as string;
+    expect(storedStateHash).toMatch(/^[a-f0-9]{64}$/);
+    expect(storedStateHash).not.toBe(state);
     const expiry = repositoryMocks.createState.mock.calls[0]?.[2] as Date;
     expect(expiry.getTime()).toBeGreaterThan(Date.now() + 9 * 60 * 1000);
     expect(expiry.getTime()).toBeLessThanOrEqual(Date.now() + 10 * 60 * 1000);
