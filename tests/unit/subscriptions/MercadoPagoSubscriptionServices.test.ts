@@ -198,4 +198,89 @@ describe("Mercado Pago subscription services", () => {
     expect(provider.cancelSubscription).toHaveBeenCalledWith("mp-subscription-1");
     expect(repository.markCurrentSubscriptionCancelled).toHaveBeenCalledWith("local-subscription-1");
   });
+
+  it("rejects subscription creation when the teacher does not exist", async () => {
+    repository.findTeacherEmail.mockResolvedValue(null);
+    const service = new CreateTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("missing-teacher")).rejects.toMatchObject({
+      code: "USER_NOT_FOUND",
+      statusCode: 404,
+    });
+    expect(repository.findPaidPlan).not.toHaveBeenCalled();
+    expect(repository.createPendingSubscription).not.toHaveBeenCalled();
+  });
+
+  it("rejects subscription creation when the paid plan is not configured", async () => {
+    repository.findPaidPlan.mockResolvedValue(null);
+    const service = new CreateTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).rejects.toThrow("SUBSCRIPTION_PLAN_NOT_CONFIGURED");
+    expect(repository.createPendingSubscription).not.toHaveBeenCalled();
+    expect(provider.createSubscription).not.toHaveBeenCalled();
+  });
+
+  it("cancels the remote subscription when Mercado Pago returns an incomplete checkout", async () => {
+    provider.createSubscription.mockResolvedValue({
+      id: "remote-subscription-2",
+      init_point: "",
+    });
+    const service = new CreateTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).rejects.toThrow("MERCADO_PAGO_INVALID_CHECKOUT_RESPONSE");
+    expect(provider.cancelSubscription).toHaveBeenCalledWith("remote-subscription-2");
+    expect(repository.markSubscriptionCancelled).toHaveBeenCalledWith("local-subscription-1");
+  });
+
+  it("does not mark a subscription cancelled when the provider refuses cancellation", async () => {
+    provider.cancelSubscription.mockRejectedValue(new Error("provider unavailable"));
+    const service = new CancelTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).rejects.toThrow("provider unavailable");
+    expect(repository.markCurrentSubscriptionCancelled).not.toHaveBeenCalled();
+  });
+
+  it("cancels a local pending subscription that has no provider identifier", async () => {
+    repository.findCurrentSubscription.mockResolvedValue({
+      id: "local-subscription-2",
+      provider_subscription_id: null,
+      status: "PENDING",
+    });
+    const service = new CancelTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).resolves.toBeUndefined();
+    expect(provider.cancelSubscription).not.toHaveBeenCalled();
+    expect(repository.markCurrentSubscriptionCancelled).toHaveBeenCalledWith("local-subscription-2");
+  });
+
+  it("returns not found when the teacher has no current subscription to cancel", async () => {
+    repository.findCurrentSubscription.mockResolvedValue(null);
+    const service = new CancelTeacherSubscriptionService(
+      repository as unknown as SubscriptionPaymentRepository,
+      provider as unknown as MercadoPagoProvider,
+    );
+
+    await expect(service.execute("teacher-1")).rejects.toMatchObject({
+      code: "SUBSCRIPTION_NOT_FOUND",
+      statusCode: 404,
+    });
+    expect(provider.cancelSubscription).not.toHaveBeenCalled();
+    expect(repository.markCurrentSubscriptionCancelled).not.toHaveBeenCalled();
+  });
+
 });
