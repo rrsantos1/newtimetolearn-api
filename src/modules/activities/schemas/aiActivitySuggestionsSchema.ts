@@ -19,11 +19,6 @@ export const aiActivitySuggestionsSchema = z.discriminatedUnion("activityType", 
     instructions: z.string().trim().max(500).optional(),
   }).strict(),
   z.object({
-    activityType: z.literal("mole_hit"),
-    correctOptions: z.array(z.string().trim().min(1).max(80)).min(2).max(15),
-    incorrectOptions: z.array(z.string().trim().min(1).max(80)).min(2).max(15),
-  }).strict(),
-  z.object({
     activityType: z.literal("word_search"),
     topic: z.string().trim().min(2).max(160),
     quantity: z.coerce.number().int().min(3).max(25),
@@ -83,6 +78,11 @@ export const aiActivitySuggestionsOutputSchema = z.discriminatedUnion("activityT
     title: z.string().trim().min(3).max(160),
     text: z.string().trim().min(100).max(4096),
     suggestedBlanks: z.array(z.string().trim().min(1).max(100)).min(1).max(20),
+  }).strict(),
+  z.object({
+    activityType: z.literal("mole_hit"),
+    correctOptions: z.array(z.string().trim().min(1).max(80)).min(2).max(15),
+    incorrectOptions: z.array(z.string().trim().min(1).max(80)).min(2).max(15),
   }).strict(),
   z.object({
     activityType: z.literal("word_search"),
