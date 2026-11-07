@@ -22,9 +22,10 @@ ALTER TABLE marketplace_products
       AND original_file_name IS NULL
       AND original_content_type IS NULL
       AND original_size_bytes IS NULL
-      AND cover_key IS NOT NULL
-      AND preview_pages IS NOT NULL
-      AND preview_pages BETWEEN 1 AND 120)
+      AND (
+        (cover_key IS NULL AND preview_pages = 0)
+        OR (cover_key IS NOT NULL AND preview_pages BETWEEN 1 AND 120)
+      ))
   );
 
 COMMIT;
