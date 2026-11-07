@@ -210,4 +210,21 @@ describe("Marketplace payment confirmation", () => {
     await expect(makeService().payment("payment-8", "duplicate-event", {})).resolves.toBe(false);
     expect(applyPayment).toHaveBeenCalledOnce();
   });
+
+  it("rejects a payment in a currency other than BRL", async () => {
+    globalThis.fetch = vi.fn<typeof fetch>().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        id: "payment-9",
+        status: "approved",
+        external_reference: "order-1",
+        transaction_amount: 25,
+        currency_id: "USD",
+      }),
+    } as Response);
+
+    await expect(makeService().payment("payment-9", "event-9", {})).rejects.toThrow("PAYMENT_ORDER_MISMATCH");
+    expect(applyPayment).not.toHaveBeenCalled();
+  });
+
 });
