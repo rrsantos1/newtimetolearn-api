@@ -26,6 +26,7 @@ export async function createMoleHitActivityController(request: FastifyRequest, r
         teacherId: request.user.sub,
         isAdmin: request.user.roles.includes(RoleCode.ADMIN),
         ...parsedBody.data,
+        content: { ...parsedBody.data.content, theme: parsedBody.data.name },
       });
     });
     return reply.status(201).send({ success: true, data: result });
