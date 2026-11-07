@@ -48,7 +48,7 @@ describe("MarketplaceService publishing permissions",()=>{
   expect(findByTeacherId).not.toHaveBeenCalled();
   expect(create).toHaveBeenCalledWith(expect.objectContaining({status:"PUBLISHED",publisherType:"ADMIN",seller:"teacher-1"}));
  });
- it("stores Google Slides links as copy URLs without generating or uploading files",async()=>{
+ it("stores Google Slides copy URLs and generates a watermarked preview",async()=>{
   await expect(makeService().createAdminExternal({
    seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
    externalUrl:"https://docs.google.com/presentation/d/abc_123/edit?usp=sharing",previewFile:Buffer.from("preview-pdf"),
