@@ -5,6 +5,7 @@ import { makeSubmitMoleHitAttemptService } from "../factories/make-submit-mole-h
 
 const paramsSchema = z.object({ slug: z.string().trim().min(1).max(150) });
 const bodySchema = z.object({
+  attemptToken: z.string().uuid(),
   hits: z.number().int().min(0).max(10000),
   misses: z.number().int().min(0).max(10000),
   elapsedSeconds: z.number().int().min(0).max(300),
