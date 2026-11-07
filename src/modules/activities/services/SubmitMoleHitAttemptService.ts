@@ -42,10 +42,10 @@ export class SubmitMoleHitAttemptService {
       throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O conteúdo desta atividade é inválido.");
     }
 
-    const elapsedSeconds = Math.min(input.elapsedSeconds, version.timeLimitSeconds ?? 30);
+    const timeLimit = Math.max(1, version.timeLimitSeconds ?? 30);
+    const elapsedSeconds = Math.min(input.elapsedSeconds, timeLimit);
     const totalEvents = input.hits + input.misses;
     const accuracyPoints = totalEvents === 0 ? 0 : Math.round((input.hits / totalEvents) * 70);
-    const timeLimit = Math.max(1, version.timeLimitSeconds ?? 30);
     const speedPoints = Math.round(Math.max(0, 1 - elapsedSeconds / timeLimit) * 30);
     const score = Math.max(0, Math.min(100, accuracyPoints + speedPoints));
     const user = await this.userRepository.findById(input.userId);
