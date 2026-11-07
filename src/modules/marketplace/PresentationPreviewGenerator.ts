@@ -13,6 +13,7 @@ const MAX_PAGES = 120;
 export interface PreviewPage {
   pageNumber: number;
   buffer: Buffer;
+  thumbnailBuffer: Buffer;
 }
 
 function resolveExecutable(environmentVariable: string, fallback: string): string {
@@ -111,12 +112,30 @@ export class PresentationPreviewGenerator {
           `<svg width="${width}" height="${height}"><g transform="rotate(-25 ${width / 2} ${height / 2})"><text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="${Math.max(36, width / 12)}" font-weight="800" fill="#dc2626" fill-opacity=".60">TIMETOLEARN • PRÉVIA</text></g><text x="50%" y="96%" text-anchor="middle" font-family="Arial" font-size="${Math.max(16, width / 60)}" font-weight="700" fill="#b91c1c" fill-opacity=".75">Material protegido • Uso demonstrativo</text></svg>`,
         );
 
+        const optimizedBuffer = await sharp(source)
+          .composite([{ input: watermark }])
+          .resize({
+            width: 1600,
+            height: 1600,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .jpeg({ quality: 72, mozjpeg: true })
+          .toBuffer();
+        const thumbnailBuffer = await sharp(optimizedBuffer)
+          .resize({
+            width: 480,
+            height: 480,
+            fit: "inside",
+            withoutEnlargement: true,
+          })
+          .webp({ quality: 76, effort: 4 })
+          .toBuffer();
+
         result.push({
           pageNumber: index + 1,
-          buffer: await sharp(source)
-            .composite([{ input: watermark }])
-            .jpeg({ quality: 78, mozjpeg: true })
-            .toBuffer(),
+          buffer: optimizedBuffer,
+          thumbnailBuffer,
         });
       }
 
