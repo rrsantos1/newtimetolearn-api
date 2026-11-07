@@ -45,7 +45,6 @@ export class SubmitMoleHitAttemptService {
 
     const timeLimit = Math.max(1, version.timeLimitSeconds ?? 30);
     const elapsedSeconds = Math.min(input.elapsedSeconds, timeLimit);
-    const totalEvents = input.hits + input.misses;
     const maxEvents = Math.ceil(timeLimit * 1000 / 250);
     const hits = Math.min(input.hits, maxEvents);
     const misses = Math.min(input.misses, maxEvents - hits);
