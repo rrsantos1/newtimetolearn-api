@@ -92,4 +92,22 @@ describe("MarketplaceService publishing permissions",()=>{
   expect(create).not.toHaveBeenCalled();
  });
 
+ it("removes all generated objects when a file upload partially fails",async()=>{
+  uploadObject.mockRejectedValueOnce(new Error("storage unavailable"));
+  await expect(makeService().createAdmin(input)).rejects.toThrow("storage unavailable");
+  expect(uploadObject).toHaveBeenCalledTimes(3);
+  expect(deleteObject).toHaveBeenCalledTimes(3);
+  expect(create).not.toHaveBeenCalled();
+ });
+ it("removes all generated objects when a Google Slides preview upload partially fails",async()=>{
+  uploadObject.mockRejectedValueOnce(new Error("storage unavailable"));
+  await expect(makeService().createAdminExternal({
+   seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/edit",previewFile:Buffer.from("preview-pdf"),
+  })).rejects.toThrow("storage unavailable");
+  expect(uploadObject).toHaveBeenCalledTimes(2);
+  expect(deleteObject).toHaveBeenCalledTimes(2);
+  expect(create).not.toHaveBeenCalled();
+ });
+
 });
