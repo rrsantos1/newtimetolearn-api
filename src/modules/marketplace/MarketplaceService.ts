@@ -118,7 +118,7 @@ export class MarketplaceService {
       throw new AppError("INVALID_EXTERNAL_URL", 400, "Informe um link válido do Google Slides.");
     }
     const match = url.hostname === "docs.google.com"
-      ? url.pathname.match(/^\\/presentation\\/d\\/([a-zA-Z0-9_-]+)\\/(?:edit|copy|present)$/)
+      ? url.pathname.match(/^\/presentation\/d\/([a-zA-Z0-9_-]+)\/(?:edit|copy|present)$/)
       : null;
     if (url.protocol !== "https:" || (url.port !== "" && url.port !== "443") || !match?.[1] || url.username || url.password) {
       throw new AppError("UNSUPPORTED_EXTERNAL_URL", 400, "Por enquanto, aceitamos somente links do Google Slides.");
