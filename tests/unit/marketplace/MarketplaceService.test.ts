@@ -63,6 +63,11 @@ describe("MarketplaceService publishing permissions",()=>{
   }));
   expect(generate).toHaveBeenCalledWith(Buffer.from("preview-pdf"),"application/pdf");
   expect(uploadObject).toHaveBeenCalledTimes(2);
+  expect(uploadObject).toHaveBeenCalledWith(expect.objectContaining({
+   contentType:"image/webp",
+   body:Buffer.from("thumbnail-webp"),
+   storageKey:expect.stringContaining("/cover.webp"),
+  }));
  });
 
  it("rejects URLs outside Google Slides",async()=>{
