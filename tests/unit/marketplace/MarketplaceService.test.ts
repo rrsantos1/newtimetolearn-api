@@ -51,23 +51,24 @@ describe("MarketplaceService publishing permissions",()=>{
  it("stores Google Slides links as copy URLs without generating or uploading files",async()=>{
   await expect(makeService().createAdminExternal({
    seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
-   externalUrl:"https://docs.google.com/presentation/d/abc_123/edit?usp=sharing",
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/edit?usp=sharing",previewFile:Buffer.from("preview-pdf"),
   })).resolves.toBe("product-1");
   expect(create).toHaveBeenCalledWith(expect.objectContaining({
    deliveryType:"EXTERNAL_URL",
    externalUrl:"https://docs.google.com/presentation/d/abc_123/copy",
-   previewKeys:[],
+   previewKeys:expect.arrayContaining([expect.stringContaining("/preview-1.jpg")]),
+   coverKey:expect.stringContaining("/cover.jpg"),
    status:"PUBLISHED",
    originalKey:null,
   }));
-  expect(generate).not.toHaveBeenCalled();
-  expect(uploadObject).not.toHaveBeenCalled();
+  expect(generate).toHaveBeenCalledWith(Buffer.from("preview-pdf"),"application/pdf");
+  expect(uploadObject).toHaveBeenCalledTimes(2);
  });
 
  it("rejects URLs outside Google Slides",async()=>{
   await expect(makeService().createAdminExternal({
    seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
-   externalUrl:"https://example.com/presentation",
+   externalUrl:"https://example.com/presentation",previewFile:Buffer.from("preview-pdf"),
   })).rejects.toThrow("somente links do Google Slides");
   expect(create).not.toHaveBeenCalled();
  });
