@@ -6,7 +6,7 @@ import {RoleCode} from "../users/types/RoleCode";
 import {MercadoPagoProvider} from "../subscriptions/providers/MercadoPagoProvider";
 import {MarketplaceService} from "./MarketplaceService";
 import {env} from "../../shared/config/env";
-type JwtUser={sub?:string;email?:string};
+type JwtUser={sub?:string;email?:string;roles?:string[]};
 const service=()=>new MarketplaceService();
 export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
  app.get("/seller/oauth/callback",async(req,reply)=>{
@@ -50,6 +50,19 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
    const body=z.object({approved:z.boolean(),note:z.string().trim().max(1000).default("")}).safeParse(req.body);
    if(!params.success||!body.success)return reply.code(400).send({success:false,error:{code:"INVALID_REVIEW"}});
    await service().review(params.data.productId,body.data.approved,body.data.note);
+   return reply.send({success:true});
+  });
+  auth.get("/me/products",async(req,reply)=>{
+   const user=req.user as JwtUser|undefined;
+   if(!user?.sub)return reply.code(401).send({success:false});
+   return reply.send({success:true,data:await service().sellerProducts(user.sub)});
+  });
+  auth.delete("/products/:productId",async(req,reply)=>{
+   const params=z.object({productId:z.string().uuid()}).safeParse(req.params);
+   const user=req.user as JwtUser|undefined;
+   if(!params.success)return reply.code(400).send({success:false,error:{code:"INVALID_PRODUCT_ID"}});
+   if(!user?.sub)return reply.code(401).send({success:false});
+   await service().archiveProduct(params.data.productId,user.sub,user.roles?.includes(RoleCode.ADMIN)??false);
    return reply.send({success:true});
   });
   auth.get("/me/purchases",async(req,reply)=>{const user=req.user as JwtUser|undefined;if(!user?.sub)return reply.code(401).send({success:false});return reply.send({success:true,data:await service().purchases(user.sub)});});
