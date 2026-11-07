@@ -36,6 +36,7 @@ interface CreateExternalProductInput {
   category: string;
   price: number;
   externalUrl: string;
+  previewFile: Buffer;
 }
 
 export class MarketplaceService {
@@ -91,23 +92,52 @@ export class MarketplaceService {
     publisherType: "ADMIN" | "TEACHER",
   ): Promise<string> {
     const parsedUrl = this.normalizeGoogleSlidesCopyUrl(input.externalUrl);
-    return this.repo.create({
-      seller: input.seller,
-      publisherType,
-      title: input.title,
-      description: input.description,
-      category: input.category,
-      price: input.price,
-      deliveryType: "EXTERNAL_URL",
-      externalUrl: parsedUrl,
-      originalKey: null,
-      fileName: null,
-      type: null,
-      size: null,
-      coverKey: null,
-      previewKeys: [],
-      status,
-    });
+    const pages = await this.generator.generate(input.previewFile, "application/pdf");
+    const folder = `marketplace/${input.seller}/${randomUUID()}`;
+    const coverKey = `${folder}/cover.jpg`;
+    const previewKeys = pages.map((page) => `${folder}/preview-${page.pageNumber}.jpg`);
+
+    await Promise.all([
+      this.storage.uploadObject({
+        bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
+        storageKey: coverKey,
+        contentType: "image/jpeg",
+        body: pages[0]!.buffer,
+        cacheControl: "private, no-store",
+      }),
+      ...pages.map((page, index) => this.storage.uploadObject({
+        bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
+        storageKey: previewKeys[index]!,
+        contentType: "image/jpeg",
+        body: page.buffer,
+        cacheControl: "private, max-age=300",
+      })),
+    ]);
+
+    try {
+      return await this.repo.create({
+        seller: input.seller,
+        publisherType,
+        title: input.title,
+        description: input.description,
+        category: input.category,
+        price: input.price,
+        deliveryType: "EXTERNAL_URL",
+        externalUrl: parsedUrl,
+        originalKey: null,
+        fileName: null,
+        type: null,
+        size: null,
+        coverKey,
+        previewKeys,
+        status,
+      });
+    } catch (error: unknown) {
+      await Promise.all([coverKey, ...previewKeys]
+        .map((key) => this.storage.deleteObject(key, env.B2_QUARANTINE_BUCKET_NAME!)))
+        .catch(() => undefined);
+      throw error;
+    }
   }
 
   private normalizeGoogleSlidesCopyUrl(value: string): string {
