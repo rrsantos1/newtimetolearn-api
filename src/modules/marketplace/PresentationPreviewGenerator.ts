@@ -108,7 +108,7 @@ export class PresentationPreviewGenerator {
         const width = meta.width ?? 1200;
         const height = meta.height ?? 900;
         const watermark = Buffer.from(
-          `<svg width="${width}" height="${height}"><g transform="rotate(-25 ${width / 2} ${height / 2})"><text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="${Math.max(24, width / 18)}" font-weight="700" fill="#222" fill-opacity=".25">TIMETOLEARN • PRÉVIA</text></g><text x="50%" y="96%" text-anchor="middle" font-family="Arial" font-size="${Math.max(12, width / 75)}" fill="#222" fill-opacity=".55">Material protegido • Uso demonstrativo</text></svg>`,
+          `<svg width="${width}" height="${height}"><g transform="rotate(-25 ${width / 2} ${height / 2})"><text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="${Math.max(36, width / 12)}" font-weight="800" fill="#dc2626" fill-opacity=".42">TIMETOLEARN • PRÉVIA</text></g><text x="50%" y="96%" text-anchor="middle" font-family="Arial" font-size="${Math.max(16, width / 60)}" font-weight="700" fill="#b91c1c" fill-opacity=".75">Material protegido • Uso demonstrativo</text></svg>`,
         );
 
         result.push({
