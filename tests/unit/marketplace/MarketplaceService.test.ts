@@ -27,7 +27,7 @@ describe("MarketplaceService publishing permissions",()=>{
   create.mockResolvedValue("product-1");
   uploadObject.mockResolvedValue(undefined);
   deleteObject.mockResolvedValue(undefined);
-  generate.mockResolvedValue([{pageNumber:1,buffer:Buffer.from("preview")}]);
+  generate.mockResolvedValue([{pageNumber:1,buffer:Buffer.from("preview"),thumbnailBuffer:Buffer.from("thumbnail-webp")}]);
  });
 
  it("allows active subscribers to submit products for admin review",async()=>{
@@ -57,7 +57,7 @@ describe("MarketplaceService publishing permissions",()=>{
    deliveryType:"EXTERNAL_URL",
    externalUrl:"https://docs.google.com/presentation/d/abc_123/copy",
    previewKeys:expect.arrayContaining([expect.stringContaining("/preview-1.jpg")]),
-   coverKey:expect.stringContaining("/cover.jpg"),
+   coverKey:expect.stringContaining("/cover.webp"),
    status:"PUBLISHED",
    originalKey:null,
   }));
