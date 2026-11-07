@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import sharp from "sharp";
 import { env } from "../../shared/config/env";
 import { AppError } from "../../shared/errors/AppError";
 import { BackblazeStorageProvider } from "../../shared/storage/providers/BackblazeStorageProvider";
@@ -94,15 +95,15 @@ export class MarketplaceService {
     const parsedUrl = this.normalizeGoogleSlidesCopyUrl(input.externalUrl);
     const pages = await this.generator.generate(input.previewFile, "application/pdf");
     const folder = `marketplace/${input.seller}/${randomUUID()}`;
-    const coverKey = `${folder}/cover.jpg`;
+    const coverKey = `${folder}/cover.webp`;
     const previewKeys = pages.map((page) => `${folder}/preview-${page.pageNumber}.jpg`);
 
     await Promise.all([
       this.storage.uploadObject({
         bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
         storageKey: coverKey,
-        contentType: "image/jpeg",
-        body: pages[0]!.buffer,
+        contentType: "image/webp",
+        body: pages[0]!.thumbnailBuffer,
         cacheControl: "private, no-store",
       }),
       ...pages.map((page, index) => this.storage.uploadObject({
@@ -220,6 +221,15 @@ export class MarketplaceService {
         .catch(() => undefined);
       throw error;
     }
+  }
+
+  async cover(slug: string): Promise<{ buffer: Buffer; contentType: string }> {
+    const product = await this.repo.detail(slug);
+    if (!product?.cover_key) throw new AppError("COVER_NOT_FOUND", 404, "Capa não encontrada.");
+    const buffer = (await this.storage.downloadObject(product.cover_key, env.B2_QUARANTINE_BUCKET_NAME!)).body;
+    const metadata = await sharp(buffer).metadata();
+    const contentType = metadata.format === "webp" ? "image/webp" : "image/jpeg";
+    return { buffer, contentType };
   }
 
   async preview(slug: string, page: number): Promise<Buffer> {
