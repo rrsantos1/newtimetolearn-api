@@ -46,7 +46,7 @@ export class MarketplaceRepository {
   async detail(slug: string): Promise<ProductRow | null> {
     const rows = await AppDataSource.query<ProductRow[]>(
       `SELECT p.id,p.slug,p.title,p.description,p.category,p.price_cents,p.currency,
-        u.name AS author_name,p.preview_pages,p.cover_key
+        u.name AS author_name,p.preview_pages,p.cover_key,p.delivery_type
        FROM marketplace_products p JOIN users u ON u.id=p.seller_user_id
        WHERE p.slug=$1 AND p.status='PUBLISHED'`,
       [slug],
