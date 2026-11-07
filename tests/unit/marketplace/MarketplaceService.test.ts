@@ -110,4 +110,32 @@ describe("MarketplaceService publishing permissions",()=>{
   expect(create).not.toHaveBeenCalled();
  });
 
+
+ it("requires an active subscription before creating an external teacher product",async()=>{
+  findByTeacherId.mockResolvedValue({planCode:"TEACHER_MONTHLY",subscriptionStatus:"ACTIVE"});
+  await expect(makeService().createTeacherExternal({
+   seller:"teacher-1",title:"Slides do professor",description:"Material externo para os alunos.",category:"Apresentação",price:2500,
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/edit",previewFile:Buffer.from("preview-pdf"),
+  })).resolves.toBe("product-1");
+  expect(create).toHaveBeenCalledWith(expect.objectContaining({
+   publisherType:"TEACHER",status:"PENDING_REVIEW",deliveryType:"EXTERNAL_URL",
+   externalUrl:"https://docs.google.com/presentation/d/abc_123/copy",
+  }));
+ });
+ it.each([
+  "http://docs.google.com/presentation/d/abc_123/edit",
+  "https://docs.google.com.evil.example/presentation/d/abc_123/edit",
+  "https://attacker@docs.google.com/presentation/d/abc_123/edit",
+  "https://docs.google.com:444/presentation/d/abc_123/edit",
+  "https://docs.google.com/document/d/abc_123/edit",
+ ])("rejects an unsafe or unsupported external URL: %s",async(url)=>{
+  await expect(makeService().createAdminExternal({
+   seller:"admin-1",title:"Slides de teste",description:"Material de apresentação para teste.",category:"Apresentação",price:2500,
+   externalUrl:url,previewFile:Buffer.from("preview-pdf"),
+  })).rejects.toThrow();
+  expect(generate).not.toHaveBeenCalled();
+  expect(uploadObject).not.toHaveBeenCalled();
+  expect(create).not.toHaveBeenCalled();
+ });
+
 });
