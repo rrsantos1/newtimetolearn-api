@@ -9,3 +9,5 @@ export const createMoleHitActivitySchema = z.object({
   timeLimitSeconds: z.number().int().min(10).max(300).nullable().optional(),
   content: moleHitContentSchema,
 }).strict();
+
+export type CreateMoleHitActivityBody = z.infer<typeof createMoleHitActivitySchema>;
