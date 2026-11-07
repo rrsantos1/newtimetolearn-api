@@ -57,7 +57,7 @@ export async function marketplaceRoutes(app:FastifyInstance):Promise<void>{
 }
 async function createTeacherProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"teacher");}
 async function createAdminProduct(req:FastifyRequest,reply:FastifyReply):Promise<FastifyReply>{return createMarketplaceProduct(req,reply,"admin");}
-async async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
+async function createMarketplaceProduct(req:FastifyRequest,reply:FastifyReply,publisher:"teacher"|"admin"):Promise<FastifyReply>{
  const user=req.user as JwtUser|undefined;
  if(!user?.sub)return reply.code(401).send({success:false});
  if(String(req.headers["content-type"]??"").includes("application/json")) {
