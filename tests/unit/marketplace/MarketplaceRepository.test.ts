@@ -1,10 +1,11 @@
 import {beforeEach,describe,expect,it,vi} from "vitest";
 const query=vi.fn();
 const transaction=vi.fn();
+const managerQuery=vi.fn();
 vi.mock("../../../src/shared/database/data-source",()=>({AppDataSource:{query:(...args:unknown[])=>query(...args),transaction:(...args:unknown[])=>transaction(...args)}}));
 import {MarketplaceRepository} from "../../../src/modules/marketplace/MarketplaceRepository";
 describe("MarketplaceRepository",()=>{
- beforeEach(()=>vi.clearAllMocks());
+ beforeEach(()=>{vi.clearAllMocks();transaction.mockImplementation(async (callback:(manager:{query:typeof managerQuery})=>Promise<unknown>)=>callback({query:managerQuery}));});
  it("lista somente materiais publicados e respeita paginação",async()=>{
   query.mockResolvedValueOnce([{id:"p1",title:"Aula"}]).mockResolvedValueOnce([{total:"1"}]);
   const result=await new MarketplaceRepository().list("aula","Apresentação",2,12);
