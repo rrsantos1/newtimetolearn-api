@@ -109,24 +109,26 @@ export class MarketplaceService {
     const coverKey = `${folder}/cover.webp`;
     const previewKeys = pages.map((page) => `${folder}/preview-${page.pageNumber}.jpg`);
 
-    await Promise.all([
-      this.storage.uploadObject({
-        bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
-        storageKey: coverKey,
-        contentType: "image/webp",
-        body: pages[0]!.thumbnailBuffer,
-        cacheControl: "private, no-store",
-      }),
-      ...pages.map((page, index) => this.storage.uploadObject({
-        bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
-        storageKey: previewKeys[index]!,
-        contentType: "image/jpeg",
-        body: page.buffer,
-        cacheControl: "private, max-age=300",
-      })),
-    ]);
-
     try {
+      const uploads = await Promise.allSettled([
+        this.storage.uploadObject({
+          bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
+          storageKey: coverKey,
+          contentType: "image/webp",
+          body: pages[0]!.thumbnailBuffer,
+          cacheControl: "private, no-store",
+        }),
+        ...pages.map((page, index) => this.storage.uploadObject({
+          bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
+          storageKey: previewKeys[index]!,
+          contentType: "image/jpeg",
+          body: page.buffer,
+          cacheControl: "private, max-age=300",
+        })),
+      ]);
+      const failedUpload = uploads.find((result) => result.status === "rejected");
+      if (failedUpload?.status === "rejected") throw failedUpload.reason;
+
       return await this.repo.create({
         seller: input.seller,
         publisherType,
@@ -206,9 +208,11 @@ export class MarketplaceService {
       body: page.buffer,
       cacheControl: "private, max-age=300",
     })));
-    await Promise.all(tasks);
-
     try {
+      const uploads = await Promise.allSettled(tasks);
+      const failedUpload = uploads.find((result) => result.status === "rejected");
+      if (failedUpload?.status === "rejected") throw failedUpload.reason;
+
       return await this.repo.create({
         seller: input.seller,
         publisherType,
