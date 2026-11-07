@@ -15,6 +15,7 @@ import { marketplaceRoutes, marketplaceWebhookRoutes } from "./modules/marketpla
 
 const imageContentTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 const marketplaceContentTypes = [
+  "application/pdf",
   "application/vnd.ms-powerpoint",
   "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ];
@@ -52,7 +53,7 @@ export function buildApp(): FastifyInstance {
   app.register(cors, {
     origin: ["http://localhost:3000"],
     methods: ["POST", "GET", "PUT", "DELETE", "PATCH"],
-    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id", "x-marketplace-title", "x-marketplace-description", "x-marketplace-category", "x-marketplace-price-cents"],
+    allowedHeaders: ["Content-Type", "Authorization", "x-file-name", "x-alt-text", "x-image-content-type", "x-signature", "x-request-id", "x-marketplace-title", "x-marketplace-description", "x-marketplace-category", "x-marketplace-price-cents", "x-marketplace-external-url"],
     credentials: true,
   });
 
