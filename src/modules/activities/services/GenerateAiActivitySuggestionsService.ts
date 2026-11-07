@@ -102,6 +102,8 @@ export class GenerateAiActivitySuggestionsService {
     }
 
     const resultCount = validated.data.activityType === "listening" ? 1
+      : validated.data.activityType === "mole_hit"
+        ? validated.data.correctOptions.length + validated.data.incorrectOptions.length
       : validated.data.activityType === "word_search"
         ? validated.data.words.length
         : validated.data.activityType === "crossword"
