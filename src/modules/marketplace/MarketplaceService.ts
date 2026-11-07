@@ -62,6 +62,17 @@ export class MarketplaceService {
       previews: Array.from({ length: product.preview_pages }, (_, index) => ({ pageNumber: index + 1 })),
     };
   }
+  async sellerProducts(userId: string) {
+    return this.repo.sellerProducts(userId);
+  }
+
+  async archiveProduct(productId: string, userId: string, isAdmin: boolean): Promise<void> {
+    const archived = await this.repo.archiveProduct(productId, userId, isAdmin);
+    if (!archived) {
+      throw new AppError("PRODUCT_NOT_FOUND_OR_FORBIDDEN", 404, "Material não encontrado ou sem permissão para removê-lo.");
+    }
+  }
+
 
   async createTeacher(input: CreateProductInput): Promise<string> {
     const entitlements = await this.entitlements.findByTeacherId(input.seller);
