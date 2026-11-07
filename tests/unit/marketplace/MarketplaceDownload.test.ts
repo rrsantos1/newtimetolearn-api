@@ -30,11 +30,9 @@ describe("MarketplaceDownload", () => {
     );
 
     expect(findDownload).toHaveBeenCalledWith("order-1", "buyer-1");
-    expect(createDownloadUrl).toHaveBeenCalledWith(
-      "marketplace/product/original.pdf",
-      expect.any(String),
-      120,
-    );
+    expect(createDownloadUrl).toHaveBeenCalledOnce();
+    expect(createDownloadUrl.mock.calls[0]?.[0]).toBe("marketplace/product/original.pdf");
+    expect(createDownloadUrl.mock.calls[0]?.[2]).toBe(120);
   });
 
   it("does not create a download URL when the purchase is not authorized", async () => {
