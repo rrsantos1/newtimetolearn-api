@@ -170,7 +170,7 @@ export class MarketplaceService {
     const pages = await this.generator.generate(input.file, input.type);
     const folder = `marketplace/${input.seller}/${randomUUID()}`;
     const originalKey = `${folder}/original.${EXT[input.type]}`;
-    const coverKey = `${folder}/cover.jpg`;
+    const coverKey = `${folder}/cover.webp`;
     const previewKeys = pages.map((page) => `${folder}/preview-${page.pageNumber}.jpg`);
     const tasks: Promise<void>[] = [
       this.storage.uploadObject({
@@ -183,8 +183,8 @@ export class MarketplaceService {
       this.storage.uploadObject({
         bucketName: env.B2_QUARANTINE_BUCKET_NAME!,
         storageKey: coverKey,
-        contentType: "image/jpeg",
-        body: pages[0]!.buffer,
+        contentType: "image/webp",
+        body: pages[0]!.thumbnailBuffer,
         cacheControl: "private, no-store",
       }),
     ];
