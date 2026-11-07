@@ -38,14 +38,19 @@ export class SubmitMoleHitAttemptService {
     }
     const version = activity.versions.find((item) => item.id === activity.currentPublishedVersionId && item.status === ActivityVersionStatus.PUBLISHED);
     if (!version) throw new AppError("ACTIVITY_VERSION_NOT_FOUND", 404, "Versão publicada não encontrada.");
-    if (!moleHitContentSchema.safeParse(version.content).success) {
+    const parsedContent = moleHitContentSchema.safeParse(version.content);
+    if (!parsedContent.success) {
       throw new AppError("INVALID_ACTIVITY_CONTENT", 422, "O conteúdo desta atividade é inválido.");
     }
 
     const timeLimit = Math.max(1, version.timeLimitSeconds ?? 30);
     const elapsedSeconds = Math.min(input.elapsedSeconds, timeLimit);
     const totalEvents = input.hits + input.misses;
-    const accuracyPoints = totalEvents === 0 ? 0 : Math.round((input.hits / totalEvents) * 70);
+    const maxEvents = Math.ceil(timeLimit * 1000 / 250);
+    const hits = Math.min(input.hits, maxEvents);
+    const misses = Math.min(input.misses, maxEvents - hits);
+    const boundedEvents = hits + misses;
+    const accuracyPoints = boundedEvents === 0 ? 0 : Math.round((hits / boundedEvents) * 70);
     const speedPoints = Math.round(Math.max(0, 1 - elapsedSeconds / timeLimit) * 30);
     const score = Math.max(0, Math.min(100, accuracyPoints + speedPoints));
     const user = await this.userRepository.findById(input.userId);
@@ -57,7 +62,7 @@ export class SubmitMoleHitAttemptService {
       userId: user.id,
       studentName: user.name,
       wordsFound: [],
-      totalWords: totalEvents,
+      totalWords: boundedEvents,
       elapsedSeconds,
       score,
       accuracyPoints,
