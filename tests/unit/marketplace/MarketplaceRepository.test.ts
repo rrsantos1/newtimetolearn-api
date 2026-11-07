@@ -60,4 +60,17 @@ describe("MarketplaceRepository",()=>{
   expect(query).toHaveBeenCalledWith(expect.stringContaining("o.buyer_user_id=$2 AND o.status='APPROVED' AND p.delivery_type='FILE'"),["order-1","buyer-1"]);
  });
 
+
+ it("archives only the seller's own product unless the caller is an admin",async()=>{
+  query.mockResolvedValueOnce([{id:"product-1"}]);
+  await expect(new MarketplaceRepository().archiveProduct("product-1","teacher-1",false)).resolves.toBe(true);
+  expect(query).toHaveBeenCalledWith(expect.stringContaining("(seller_user_id=$2 OR $3::boolean)"),["product-1","teacher-1",false]);
+  expect(query.mock.calls[0]?.[0]).toContain("status <> 'ARCHIVED'");
+ });
+ it("allows an administrator to archive another seller's product",async()=>{
+  query.mockResolvedValueOnce([{id:"product-2"}]);
+  await expect(new MarketplaceRepository().archiveProduct("product-2","admin-1",true)).resolves.toBe(true);
+  expect(query).toHaveBeenCalledWith(expect.stringContaining("(seller_user_id=$2 OR $3::boolean)"),["product-2","admin-1",true]);
+ });
+
 });
