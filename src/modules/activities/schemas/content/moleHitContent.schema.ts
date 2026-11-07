@@ -4,7 +4,7 @@ const optionSchema = z.string().trim().min(1).max(80);
 
 export const moleHitContentSchema = z.object({
   holeCount: z.union([z.literal(6), z.literal(9), z.literal(12)]),
-  theme: z.string().trim().min(2).max(160),
+  theme: z.string().trim().min(2).max(160).optional(),
   correctOptions: z.array(optionSchema).min(2).max(30),
   incorrectOptions: z.array(optionSchema).min(2).max(30),
 }).strict().superRefine((content, context) => {
