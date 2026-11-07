@@ -1,6 +1,6 @@
 export interface MoleHitContent {
   holeCount: 6 | 9 | 12;
-  theme: string;
+  theme?: string;
   correctOptions: string[];
   incorrectOptions: string[];
 }
