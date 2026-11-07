@@ -62,8 +62,9 @@ export class SubmitMoleHitAttemptService {
     const hits = Math.min(input.hits, maxEvents);
     const misses = Math.min(input.misses, maxEvents - hits);
     const boundedEvents = hits + misses;
-    const accuracyPoints = boundedEvents === 0 ? 0 : Math.round((hits / boundedEvents) * 70);
-    const speedPoints = Math.round(Math.max(0, 1 - elapsedSeconds / timeLimit) * 30);
+    const accuracyPoints = boundedEvents === 0 ? 0 : Math.round((hits / boundedEvents) * 80);
+    const hitsPerSecond = elapsedSeconds > 0 ? hits / elapsedSeconds : hits;
+    const speedPoints = Math.min(20, Math.round((hitsPerSecond / 2) * 20));
     const score = Math.max(0, Math.min(100, accuracyPoints + speedPoints));
     const user = await this.userRepository.findById(input.userId);
     if (!user) throw new AppError("USER_NOT_FOUND", 404, "Usuário não encontrado.");
